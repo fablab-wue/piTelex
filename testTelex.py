@@ -10,38 +10,21 @@ __version__     = "0.0.1"
 
 import TelexSerial
 import Screen
-#import pigpio
+
 import time
-import math
 from argparse import ArgumentParser
-import os
-
-
 
 #######
 # definitions and configuration
 
-#REMOTE_RPI = 'raspberrypi.local'
-GPIO_BUTTON = 21
-
-#######
-# init PIGPIO lib and deamon
-
-#try:
-#    PI = pigpio.pi()
-#except:
-#    PI = pigpio.pi(REMOTE_RPI)
-#    if not PI.connected:
-#        raise Exception('No connection to PIGPIO deamon on RPi')
 
 #######
 # global variables
 
-last_button = -1
-
 args = None
 screen = None
 telex = None
+i_telex = None
 
 #######
 # -----
@@ -57,7 +40,7 @@ def init():
 
     screen = Screen.Screen()
 
-    args.tty = 'COM1'
+    #args.tty = 'COM1'
     telex = TelexSerial.TelexSerial(args.tty)
 
     #print('Hit any key, or ESC to exit')
@@ -67,25 +50,49 @@ def init():
 def exit():
     global args, screen, telex
 
+    #del telex
+    #del screen
+
 # =====
 
 def loop():
-    global args, screen, telex
+    global args, screen, telex, i_telex
+    cin = ''
+    out_screen = True
+    out_telex = True
+    out_i_telex = True
 
     if screen:
         c = screen.read()
         if c:
-            screen.write(c)   # local echo
-            #if c and ord(c) == 27: # ESC
-            #    break
-            if telex:
-                telex.write(c)
-
+            cin += c
+    
     if telex:
         c = telex.read()
         if c:
-            if screen:
-                screen.write(c)
+            out_telex = False
+            cin += c
+    
+    if i_telex:
+        c = i_telex.read()
+        if c:
+            out_i_telex = False
+            cin += c
+
+
+    if cin:
+        if args.id and cin.find('#') >= 0:   # found 'Wer da?'
+            cin = cin.replace('#', args.id)
+            out_telex = False
+            out_screen = True
+            out_i_telex = True
+
+        if telex and out_telex:
+            telex.write(cin)
+        if screen and out_screen:
+            screen.write(cin)
+        if i_telex and out_i_telex:
+            i_telex.write(cin)
 
     return
 
@@ -94,8 +101,17 @@ def loop():
 def main():
     global args
 
-    parser = ArgumentParser(prog='testTelex', conflict_handler='resolve')
+    parser = ArgumentParser(prog='-=TEST-TELEX=-', conflict_handler='resolve')
 
+    parser.add_argument("-t", "--tty", 
+                        dest="tty", default='ttyS0', metavar="TTY",
+                        help="Set serial port name communicating with Telex")
+
+    parser.add_argument("-#", "--ID", 
+                        dest="id", default='<test>', metavar="ID",
+                        help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
+
+    '''
     parser.add_argument("-u", "--nopentulum",
         dest="pentulum", default=True, action="store_false", 
         help="No Pentulum")
@@ -103,11 +119,6 @@ def main():
         dest="pentulum", default=True, action="store_true", 
         help="Use Pentulum")
 
-    parser.add_argument("-t", "--tty", 
-                        dest="tty", default='ttyS0', metavar="TTY",
-                        help="Set serial port name communicating with Telex")
-
-    '''
     parser.add_argument("-p", "--pin", 
         dest="pin", default=LED_PIN, metavar='GPIO', type=int,
         help="GPIO Number")
@@ -139,6 +150,8 @@ def main():
     args = parser.parse_args()
 
     init()
+
+    print('-=TELEX=-')
 
     try:
         while True:

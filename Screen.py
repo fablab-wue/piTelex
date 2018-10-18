@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """
-testTelex for RPi Zero W
+Screen.py
+Nonblocking read single character from screen/keyboard
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -20,6 +21,36 @@ else:
     import termios
     import atexit
     from select import select
+
+#######
+
+valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=()$.,:!?\'#'
+replace_char = {
+    '@': '(AT)',
+    '&': '(AND)',
+    '%': '(PERCENT)',
+    '€': '($)',
+    '*': '(X)',
+    'Ä': 'AE',
+    'Ö': 'OE',
+    'Ü': 'UE',
+    'ß': 'SS',
+    '\r': '\r\n',
+    '\t': '(TAB)',
+    '~': '\a',
+    '<': '\r',
+    '>': '\r',
+    '|': '\n',
+    '_': '...',
+    ';': ',.',
+    '[': '((',
+    ']': '))',
+    '{': '(((',
+    '}': ')))',
+    '"': "''",
+    '\x1B': '(ESC)',
+    '\x08': '(BACK)',
+    }
 
 #######
 
@@ -47,12 +78,10 @@ class Screen:
             atexit.register(self.set_normal_term)
 
 
-    def __exit__(self,exc_type, exc_val, exc_tb):
-        self.set_normal_term()
-
-    def set_normal_term(self):
+    def __del__(self):
         ''' Resets to normal terminal.  On Windows this is a no-op.
         '''
+        #print('__del__ in Screen')
 
         if os.name == 'nt':
             pass
@@ -60,22 +89,26 @@ class Screen:
         else:
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
 
+    # =====
 
-    def read(self):
+    def read(self) -> str:
         if not self.kbhit():
             return ''
-        return self.getch()
+        c = self.getch()
+        c = c.upper()
+        if c not in valid_char:
+            c = replace_char.get(c, '<?>')
+        return c
+
 
     def write(self, c:str):
-        print(c, end='')
+        print(c, end='', flush=True)
 
     # =====
 
     def getch(self):
         ''' Returns a keyboard character after kbhit() has been called.
         '''
-
-        s = ''
 
         if os.name == 'nt':
             return msvcrt.getch().decode('ascii', errors='ignore')

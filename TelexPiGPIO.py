@@ -11,24 +11,16 @@ __version__     = "0.0.1"
 #https://www.programcreek.com/python/example/93338/pigpio.pi
 
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html
-import MurrayCode
+import TelexCode
 import time
 
 pi = pigpio.pi()
-
-counter_pulses = 0
-
-def callback_pulses(gpio, level, tick):
-   print(gpio, level, tick)
-
-   if level == 2:   # watchdog timeout
-       pass
 
 #######
 
 class TelexPiGPIO:
     def __init__(self, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int, invert:bool=False):
-        self._mc = MurrayCode.MurrayCode()
+        self._mc = TelexCode.BaudotMurrayCode()
         self._pin_rxd = pin_rxd
         self._pin_txd = pin_txd
         self._pin_rts = pin_rts
@@ -37,6 +29,7 @@ class TelexPiGPIO:
         self._tx_buffer = []
         self._rx_buffer = []
         self._cb = None
+        self._is_pulse_dial = False
         self._pulse_dial_count = 0
 
         # init GPIOs
@@ -51,7 +44,7 @@ class TelexPiGPIO:
         pi.write(self._pin_dtr, 1)
 
         # init bit bongo serial read
-        pi.set_noise_filter(self._pin_rxd, 1000, 1000)   # 1ms, 1ms
+        pi.set_glitch_filter(self._pin_rxd, 1000)   # 1ms
         pi.bb_serial_invert(self._pin_rxd, self._invert)
         status = pi.bb_serial_read_open(self._pin_rxd, 50)   # 50 baud
 
@@ -65,7 +58,7 @@ class TelexPiGPIO:
         pass
 
 
-    def __exit__(self,exc_type, exc_val, exc_tb):
+    def __del__(self):
         status = pi.bb_serial_read_close(self._pin_rxd)
         pi.wave_clear()
         pass
@@ -143,7 +136,9 @@ class TelexPiGPIO:
     def _callback_pulse_dial(self, gpio, level, tick):
         print(gpio, level, tick)
 
-        if level == 2:   # watchdog timeout
+        if level == pigpio.TIMEOUT:   # watchdog timeout
+            if self._pulse_dial_count == 10:
+                self._pulse_dial_count = 0
             self._rx_buffer += str(self._pulse_dial_count)
             self._pulse_dial_count = 0
         else:
