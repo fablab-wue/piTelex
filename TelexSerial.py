@@ -34,6 +34,7 @@ class TelexSerial:
         self._tty.stopbits = serial.STOPBITS_ONE_POINT_FIVE
 
         self._is_transmitting = False
+        self._rx_buffer = ''
 
 
     def __del__(self):
@@ -46,21 +47,30 @@ class TelexSerial:
             self._is_transmitting = False
             self._tty.rts = True   # RTS -> Low
 
-        if not self._tty.in_waiting:
-            return ''
+        ret = ''
 
-        m = self._tty.read(1)
-        a = self._mc.decode(m)
-        return a
+        if self._rx_buffer:
+            ret += self._rx_buffer
+            self._rx_buffer = ''
+
+        if self._tty.in_waiting:
+            m = self._tty.read(1)
+            ret += self._mc.decode(m)
+
+        return ret
 
 
     def write(self, a:str):
+        if a.find('#') >= 0:   # found 'Wer da?'
+            a = a.replace('#', '')
+            self._rx_buffer += '<ID>'
+
         m = self._mc.encode(a)
 
         self._is_transmitting = True
         self._tty.rts = False   # RTS -> High -> no loopback
 
-        #self._tty.write(m)
+        self._tty.write(m)
 
 #######
 

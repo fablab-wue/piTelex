@@ -26,8 +26,8 @@ class TelexPiGPIO:
         self._pin_rts = pin_rts
         self._pin_dtr = pin_dtr
         self._invert = invert
-        self._tx_buffer = []
-        self._rx_buffer = []
+        self._tx_buffer = ''
+        self._rx_buffer = ''
         self._cb = None
         self._is_pulse_dial = False
         self._pulse_dial_count = 0
@@ -79,16 +79,20 @@ class TelexPiGPIO:
 
         if self._rx_buffer:
             ret += self._rx_buffer
-            self._rx_buffer = []
+            self._rx_buffer = ''
 
         return ret
 
 
     def write(self, a:str):
+        if a.find('#') >= 0:   # found 'Wer da?'
+            a = a.replace('#', '')
+            self._rx_buffer += '<ID>'
+
         m = self._mc.encode(a)
     
         if m:
-            self._tx_buffer.append(m)
+            self._tx_buffer += m
             self._write_wave()
 
 
@@ -118,7 +122,7 @@ class TelexPiGPIO:
 
         self.last_wid = new_wid
 
-        self._tx_buffer = []
+        self._tx_buffer = ''
 
 
     def enable_pulse_dial(self, enable:bool):

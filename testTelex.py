@@ -40,7 +40,7 @@ def init():
 
     screen = Screen.Screen()
 
-    #args.tty = 'COM1'
+    args.tty = 'COM5'
     telex = TelexSerial.TelexSerial(args.tty)
 
     #print('Hit any key, or ESC to exit')
@@ -81,11 +81,11 @@ def loop():
 
 
     if cin:
-        if args.id and cin.find('#') >= 0:   # found 'Wer da?'
-            cin = cin.replace('#', args.id)
-            out_telex = False
-            out_screen = True
-            out_i_telex = True
+        #if args.id and cin.find('#') >= 0:   # found 'Wer da?'
+        #    cin = cin.replace('#', args.id)
+        #    out_telex = False
+        #    out_screen = True
+        #    out_i_telex = True
 
         if telex and out_telex:
             telex.write(cin)
