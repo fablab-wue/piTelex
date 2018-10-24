@@ -24,11 +24,10 @@ else:
 
 #######
 
-valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=()$.,:!?\'#'
+valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=()$.,:!?\'%@'
 replace_char = {
-    '@': '(AT)',
+    '#': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
     '&': '(AND)',
-    '%': '(PERCENT)',
     '€': '($)',
     '*': '(X)',
     'Ä': 'AE',
@@ -57,14 +56,12 @@ replace_char = {
 class Screen:
 
     def __init__(self):
-        '''Creates a Screen object that you can call to do various keyboard things.
-        '''
+        '''Creates a Screen object that you can call to do various keyboard things. '''
 
         if os.name == 'nt':
             pass
 
         else:
-
             # Save the terminal settings
             self.fd = sys.stdin.fileno()
             self.new_term = termios.tcgetattr(self.fd)
@@ -79,8 +76,7 @@ class Screen:
 
 
     def __del__(self):
-        ''' Resets to normal terminal.  On Windows this is a no-op.
-        '''
+        ''' Resets to normal terminal.  On Windows this is a no-op. '''
         #print('__del__ in Screen')
 
         if os.name == 'nt':
@@ -94,24 +90,28 @@ class Screen:
     def read(self) -> str:
         if not self.kbhit():
             return ''
-        c = self.getch()
-        c = c.upper()
-        if c not in valid_char:
-            c = replace_char.get(c, '<?>')
+        c = self.getch() #'à'
+        if c:
+            c = c.upper()
+            if c not in valid_char:
+                c = replace_char.get(c, '?')
         return c
 
 
     def write(self, c:str):
-        print(c, end='', flush=True)
+        if c == '\r' or c == '\n':
+            print(c, end='')
+        else:
+            print(c, end='', flush=True)
 
     # =====
 
     def getch(self):
-        ''' Returns a keyboard character after kbhit() has been called.
-        '''
+        ''' Returns a keyboard character after kbhit() has been called. '''
 
         if os.name == 'nt':
-            return msvcrt.getch().decode('ascii', errors='ignore')
+            return msvcrt.getch().decode('latin-1', errors='ignore')
+            #return msvcrt.getch().decode('iso_8859_1', errors='ignore')
             #return msvcrt.getch().decode('utf-8', errors='ignore')
             #return msvcrt.getch()
 
@@ -120,13 +120,12 @@ class Screen:
 
 
     def kbhit(self):
-        ''' Returns True if keyboard character was hit, False otherwise.
-        '''
+        ''' Returns True if keyboard character was hit, False otherwise. '''
         if os.name == 'nt':
             return msvcrt.kbhit()
 
         else:
-            dr,dw,de = select([sys.stdin], [], [], 0)
+            dr, dw, de = select([sys.stdin], [], [], 0)
             return dr != []
 
 #######

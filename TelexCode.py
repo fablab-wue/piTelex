@@ -16,9 +16,9 @@ CCITT-2:
 001.10	    I   	8
 001.11	    U   	7
 010.00	    <CR>    <CR>
-010.01	    D   	WRU?
+010.01	    D   	WRU? -> @
 010.10	    R   	4
-010.11	    J   	BELL <BEL>
+010.11	    J   	BELL <BEL> -> %
 011.00	    N   	,
 011.01	    F   	undef, $, Ä, %
 011.10	    C   	:
@@ -51,18 +51,13 @@ __version__     = "0.0.1"
 
 #######
 
-'''
- MurrayLTRS.index('A') -> 3
- MurrayLTRS[3] -> 'A'
-'''
-
 class BaudotMurrayCode:
-    _MurrayLUT = ['\x80E\nA SIU\rDRJNFCKTZLWHYPQOBG\x82MXV\x81', '\x803\n- \'87\r#4\a,\x80:(5+)2\x806019?\x80\x82./=\x81']
+    _MurrayLUT = ['\x80E\nA SIU\rDRJNFCKTZLWHYPQOBG\x82MXV\x81', '\x803\n- \'87\r@4%,$:(5+)2#6019?&\x82./=\x81']
     _MurraySwitchLUT = [0x1F, 0x1B]
 
     def __init__(self):
-        self._ModeA2M = None
-        self._ModeM2A = 0   # letters
+        self._ModeA2M = None   # 0=LTRS 1=FIGS
+        self._ModeM2A = 0   # 0=LTRS 1=FIGS
         
     def encode(self, ansi:str) -> list:
         ''' convert an ansi string to a list of baudot-murray-coded bytes '''

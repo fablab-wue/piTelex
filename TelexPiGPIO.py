@@ -19,7 +19,9 @@ pi = pigpio.pi()
 #######
 
 class TelexPiGPIO:
-    def __init__(self, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int, invert:bool=False):
+    def __init__(self, id:str, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int, invert:bool=False):
+        self._id = id
+
         self._mc = TelexCode.BaudotMurrayCode()
         self._pin_rxd = pin_rxd
         self._pin_txd = pin_txd
@@ -61,7 +63,6 @@ class TelexPiGPIO:
     def __del__(self):
         status = pi.bb_serial_read_close(self._pin_rxd)
         pi.wave_clear()
-        pass
     
 
     def read(self) -> str:
@@ -85,9 +86,9 @@ class TelexPiGPIO:
 
 
     def write(self, a:str):
-        if a.find('#') >= 0:   # found 'Wer da?'
-            a = a.replace('#', '')
-            self._rx_buffer += '<ID>'
+        if self._id and a.find('@') >= 0:   # found 'Wer da?'
+            a = a.replace('@', '')
+            self._rx_buffer += self._id
 
         m = self._mc.encode(a)
     

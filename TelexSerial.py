@@ -14,11 +14,13 @@ import TelexCode
 #######
 
 class TelexSerial:
-    def __init__(self, tty_name:str):
+    def __init__(self, id:str, tty_name:str):
         self._mc = TelexCode.BaudotMurrayCode()
 
+        self._id = id
+
         # init serial
-        self._tty = serial.Serial(tty_name)
+        self._tty = serial.Serial(tty_name, write_timeout=0)
         self._tty.rts = True    # RTS -> Low
         self._tty.dtr = True    # DTR -> Low
 
@@ -33,8 +35,10 @@ class TelexSerial:
         self._tty.bytesize = 5
         self._tty.stopbits = serial.STOPBITS_ONE_POINT_FIVE
 
-        self._is_transmitting = False
         self._rx_buffer = ''
+        self._tx_eat_bytes = 0
+        self._counter_LTRS = 0
+        self._counter_FIGS = 0
 
 
     def __del__(self):
@@ -43,34 +47,48 @@ class TelexSerial:
     
 
     def read(self) -> str:
-        if self._is_transmitting and not self._tty.out_waiting:
-            self._is_transmitting = False
-            self._tty.rts = True   # RTS -> Low
-
         ret = ''
-
-        if self._rx_buffer:
-            ret += self._rx_buffer
-            self._rx_buffer = ''
 
         if self._tty.in_waiting:
             m = self._tty.read(1)
             ret += self._mc.decode(m)
 
+            if self._tx_eat_bytes:
+                self._tx_eat_bytes -= 1
+                return ''
+
+            if m == 0x1F:
+                self._counter_LTRS += 1
+                if self._counter_LTRS == 5:
+                    ret += '\x02'
+            else:
+                self._counter_LTRS = 0
+
+            if m == 0x1B:
+                self._counter_FIGS += 1
+                if self._counter_FIGS == 5:
+                    ret += '\x01'
+            else:
+                self._counter_FIGS = 0
+
+        if self._rx_buffer:
+            ret += self._rx_buffer
+            self._rx_buffer = ''
+
         return ret
 
 
-    def write(self, a:str):
-        if a.find('#') >= 0:   # found 'Wer da?'
-            a = a.replace('#', '')
-            self._rx_buffer += '<ID>'
+    def write(self, a:str, loopback:bool=True):
+        if self._id and a.find('@') >= 0:   # found 'Wer da?'
+            a = a.replace('@', '')
+            self._rx_buffer += self._id
 
         m = self._mc.encode(a)
 
-        self._is_transmitting = True
-        self._tty.rts = False   # RTS -> High -> no loopback
-
-        self._tty.write(m)
+        n = self._tty.write(m)
+        if not loopback:
+            self._tx_eat_bytes += n
+        #print('-', n, '-')
 
 #######
 

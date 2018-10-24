@@ -40,59 +40,43 @@ def init():
 
     screen = Screen.Screen()
 
-    args.tty = 'COM5'
-    telex = TelexSerial.TelexSerial(args.tty)
-
-    #print('Hit any key, or ESC to exit')
+    telex = TelexSerial.TelexSerial(args.id.strip(), args.tty.strip())
 
 # =====
 
 def exit():
     global args, screen, telex
 
-    #del telex
-    #del screen
+    pass
 
 # =====
 
 def loop():
     global args, screen, telex, i_telex
-    cin = ''
-    out_screen = True
-    out_telex = True
-    out_i_telex = True
 
     if screen:
         c = screen.read()
         if c:
-            cin += c
+            if telex:
+                telex.write(c)
+            if i_telex:
+                i_telex.write(c)
     
     if telex:
         c = telex.read()
         if c:
-            out_telex = False
-            cin += c
+            if screen:
+                screen.write(c)
+            if i_telex:
+                i_telex.write(c)
     
     if i_telex:
         c = i_telex.read()
         if c:
-            out_i_telex = False
-            cin += c
-
-
-    if cin:
-        #if args.id and cin.find('#') >= 0:   # found 'Wer da?'
-        #    cin = cin.replace('#', args.id)
-        #    out_telex = False
-        #    out_screen = True
-        #    out_i_telex = True
-
-        if telex and out_telex:
-            telex.write(cin)
-        if screen and out_screen:
-            screen.write(cin)
-        if i_telex and out_i_telex:
-            i_telex.write(cin)
+            if telex:
+                telex.write(c)
+            if screen:
+                screen.write(c)
 
     return
 
@@ -104,10 +88,10 @@ def main():
     parser = ArgumentParser(prog='-=TEST-TELEX=-', conflict_handler='resolve')
 
     parser.add_argument("-t", "--tty", 
-                        dest="tty", default='ttyS0', metavar="TTY",
+                        dest="tty", default='COM4', metavar="TTY",   # '/dev/ttyS0'   '/dev/ttyAMA0'
                         help="Set serial port name communicating with Telex")
 
-    parser.add_argument("-#", "--ID", 
+    parser.add_argument("-d", "--id", 
                         dest="id", default='<test>', metavar="ID",
                         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
