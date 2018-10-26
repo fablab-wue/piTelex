@@ -17,13 +17,13 @@ The Telex adapter hardware have to source a constant (regulated) current of 40mA
 
 The current loop is specified in "TW39".
 
-![TelexOverview](TelexOverview.png){:height="25%" width="25%"}
+![TelexOverview](TelexOverview.png)<!-- .element height="25%" width="25%" -->
 
 To use a Telex as an USB-device you can use an USB-serial-converter based on a CH340 chip (other chips from FTDI and Prolofic don't work at 50 baud, 5 data-bits, 1.5 stop-bits).
 
 The commutate circuit (drawn in cyan) is optional and only needed when the telex is using a FSG. Without a FSG the cyan area can be removed.
 
-![TelexOverview](TelexCH340.png){:height="200px"}
+![TelexOverview](TelexCH340.png)<!-- .element height="25%" width="25%" -->
 
 To use router and FSG functionality the adapter hardware can be connected directly to a Raspberry Pi.
 
