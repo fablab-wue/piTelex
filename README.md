@@ -7,7 +7,7 @@ One part of the project is the hardware to adapt the current loop "TW39" to mode
 
 The other part is the Python software to send and receive the serial data (50 baud, 5 data-bits) and decode the "CCITT-2" character set (also called "Baudot-Murray-Code" or "ITA2") to ANSI.
 
-With the characters arrived in the PC/RPi the data can be routed to I-Telex or IRC. The telex can also be (miss-) used as printer or keyboard.
+With the characters arrived in the PC/RPi the data can be routed to i-Telex, eMail or IRC. The telex can also be (miss-) used as printer or keyboard.
 
 ## Electronic
 
@@ -21,6 +21,8 @@ The current loop is specified in "TW39".
 
 To use a Telex as an USB-device you can use an USB-serial-converter based on a CH340 chip (other chips from FTDI and Prolofic don't work at 50 baud, 5 data-bits, 1.5 stop-bits).
 
+The commutate circuit (drawn in cyan) is optional and only needed when the telex is using a FSG. Without a FSG the cyan area can be removed.
+
 ![TelexOverview](TelexCH340.png)
 
 To use router and FSG functionality the adapter hardware can be connected directly to a Raspberry Pi.
@@ -29,7 +31,7 @@ To use router and FSG functionality the adapter hardware can be connected direct
 
 ### Current Source and Regulator
 
-To simplify the device an adjustable DC/DC boost converter board (from China) is used to get a voltage of 15...24V. The voltage regulator LM317 is used as a fixed current source to get the 40mA. The ML317 works as a linear regulator and must be mounted on a heat sink.
+To simplify the device an adjustable DC/DC boost converter board (from China) is used to get a voltage of 20...30V. The voltage regulator LM317 is used as a fixed current source to get the 40mA. The LM317 works as a linear regulator and must be mounted on a heat sink.
 
 ![TelexCurrent](TelexCurrent.png)
 
@@ -53,11 +55,15 @@ To get data from the Telex the current has to be observed. A current of 40mA mea
 
 ![TelexRXD|small](TelexRXD.png)
 
-The RTS line is used to inhibit loopback on transmitting and can alternatively connected to GND if loopback is handled in software
-
 As opto-coupler a LTV817 or PC817 is recommended. All other coupler with coupling factor > 50% should also work.
 
 The receiver has a voltage drop on the current loop of about 2V.
+
+### Telex Commutate (Option)
+
+To signal the FSG a connection the voltage is pole changed with a relais.
+
+![TelexCommutate|small](TelexCommutate.png)
 
 ## Software
 
@@ -74,3 +80,10 @@ With the Python library "PySerial" all necessary settings can be done to handle 
 The build in UART of the RPi can’t handle 50 baud.
 
 The correct timing can be formed jitter-free with the library “PiGPIO”. Receiving can be handled by asynchronous callbacks implemented in this library. With this also a Linux based computer like the RPi can handle precise and reliable timings.
+
+## Additional Information
+
+BC337: ![](BC337.png)
+
+TIP41: ![](TIP41.png)
+
