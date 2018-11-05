@@ -9,15 +9,19 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import serial
-import TelexCode
+import txCode
+import txBase
 
 #######
 
-class TelexSerial:
-    def __init__(self, id:str, tty_name:str):
-        self._mc = TelexCode.BaudotMurrayCode()
+class TelexSerial(txBase.TelexBase):
+    def __init__(self, tty_name:str):
 
-        self._id = id
+        super().__init__()
+
+        self._mc = txCode.BaudotMurrayCode()
+
+        self.id = '~'
 
         # init serial
         self._tty = serial.Serial(tty_name, write_timeout=0)
@@ -44,49 +48,49 @@ class TelexSerial:
     def __del__(self):
         #print('__del__ in TelexSerial')
         self._tty.close()
+        super().__del__()
     
+    # =====
 
     def read(self) -> str:
         ret = ''
 
         if self._tty.in_waiting:
             m = self._tty.read(1)
-            ret += self._mc.decode(m)
-
+            a = self._mc.decode(m)
             if self._tx_eat_bytes:
                 self._tx_eat_bytes -= 1
                 return ''
+            
+            if a:
+                self._rx_buffer += a
 
             if m == 0x1F:
                 self._counter_LTRS += 1
                 if self._counter_LTRS == 5:
-                    ret += '\x02'
+                    self._rx_buffer += '>'
             else:
                 self._counter_LTRS = 0
 
             if m == 0x1B:
                 self._counter_FIGS += 1
                 if self._counter_FIGS == 5:
-                    ret += '\x01'
+                    self._rx_buffer += '#'
             else:
                 self._counter_FIGS = 0
 
         if self._rx_buffer:
-            ret += self._rx_buffer
-            self._rx_buffer = ''
+            ret = self._rx_buffer[0]
+            self._rx_buffer = self._rx_buffer[1:]
 
         return ret
 
 
-    def write(self, a:str, loopback:bool=True):
-        if self._id and a.find('@') >= 0:   # found 'Wer da?'
-            a = a.replace('@', '')
-            self._rx_buffer += self._id
-
+    def write(self, a:str, source:str):
         m = self._mc.encode(a)
 
         n = self._tty.write(m)
-        if not loopback:
+        if not self.loopback:
             self._tx_eat_bytes += n
         #print('-', n, '-')
 

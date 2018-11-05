@@ -8,8 +8,9 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
-import TelexSerial
-import Screen
+import txController
+import txSerial
+import txScreen
 
 import time
 from argparse import ArgumentParser
@@ -21,10 +22,8 @@ from argparse import ArgumentParser
 #######
 # global variables
 
-args = None
-screen = None
-telex = None
-i_telex = None
+ARGS = None
+DEVICES = []
 
 #######
 # -----
@@ -33,57 +32,46 @@ i_telex = None
 # =====
 
 def init():
-    global args, screen, telex
+    global ARGS, DEVICES
 
-    #PI.set_mode(GPIO_BUTTON, pigpio.INPUT)
-    #PI.set_pull_up_down(GPIO_BUTTON, pigpio.PUD_UP)
+    ctrl = txController.TelexController(ARGS.id.strip())
+    DEVICES.append(ctrl)
 
-    screen = Screen.Screen()
+    screen = txScreen.TelexScreen()
+    DEVICES.append(screen)
 
-    telex = TelexSerial.TelexSerial(args.id.strip(), args.tty.strip())
+    serial = txSerial.TelexSerial(ARGS.tty.strip())
+    DEVICES.append(serial)
 
 # =====
 
 def exit():
-    global args, screen, telex
+    global ARGS
 
     pass
 
 # =====
 
 def loop():
-    global args, screen, telex, i_telex
+    global ARGS
 
-    if screen:
-        c = screen.read()
+    for in_device in DEVICES:
+        c = in_device.read()
         if c:
-            if telex:
-                telex.write(c)
-            if i_telex:
-                i_telex.write(c)
+            for out_device in DEVICES:
+                if out_device != in_device:
+                    if out_device.write(c, in_device.id):
+                        break
     
-    if telex:
-        c = telex.read()
-        if c:
-            if screen:
-                screen.write(c)
-            if i_telex:
-                i_telex.write(c)
-    
-    if i_telex:
-        c = i_telex.read()
-        if c:
-            if telex:
-                telex.write(c)
-            if screen:
-                screen.write(c)
+    for device in DEVICES:
+        device.idle()
 
     return
 
 # =====
 
 def main():
-    global args
+    global ARGS
 
     parser = ArgumentParser(prog='-=TEST-TELEX=-', conflict_handler='resolve')
 
@@ -131,7 +119,7 @@ def main():
                         dest="verbose", default=True, action="store_false", 
                         help="don't print status messages to stdout")
     '''
-    args = parser.parse_args()
+    ARGS = parser.parse_args()
 
     init()
 

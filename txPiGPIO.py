@@ -11,18 +11,22 @@ __version__     = "0.0.1"
 #https://www.programcreek.com/python/example/93338/pigpio.pi
 
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html
-import TelexCode
+import txCode
+import txBase
 import time
 
 pi = pigpio.pi()
 
 #######
 
-class TelexPiGPIO:
-    def __init__(self, id:str, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int, invert:bool=False):
-        self._id = id
+class TelexPiGPIO(txBase.TelexBase):
+    def __init__(self, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int, invert:bool=False):
 
-        self._mc = TelexCode.BaudotMurrayCode()
+        super().__init__()
+
+        self.id = '#'
+
+        self._mc = txCode.BaudotMurrayCode()
         self._pin_rxd = pin_rxd
         self._pin_txd = pin_txd
         self._pin_rts = pin_rts
@@ -63,7 +67,9 @@ class TelexPiGPIO:
     def __del__(self):
         status = pi.bb_serial_read_close(self._pin_rxd)
         pi.wave_clear()
+        super().__del__()
     
+    # =====
 
     def read(self) -> str:
         #if not self._tty.in_waiting:
@@ -73,29 +79,30 @@ class TelexPiGPIO:
         if count:
             m = data
             a = self._mc.decode(m)
-            ret += a
+            if a:
+                self._rx_buffer += a
         
-        if self._tx_buffer:
-            self._write_wave()
-
         if self._rx_buffer:
-            ret += self._rx_buffer
-            self._rx_buffer = ''
+            ret = self._rx_buffer[0]
+            self._rx_buffer = self._rx_buffer[1:]
 
         return ret
 
 
-    def write(self, a:str):
-        if self._id and a.find('@') >= 0:   # found 'Wer da?'
-            a = a.replace('@', '')
-            self._rx_buffer += self._id
-
+    def write(self, a:str, source:str):
         m = self._mc.encode(a)
     
         if m:
             self._tx_buffer += m
             self._write_wave()
 
+
+    def idle(self):
+        if self._tx_buffer:
+            self._write_wave()
+
+
+    # =====
 
     def _write_wave(self):
         if not self._tx_buffer:

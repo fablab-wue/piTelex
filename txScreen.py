@@ -10,6 +10,7 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import os
+import txBase
 
 # Windows
 if os.name == 'nt':
@@ -24,12 +25,11 @@ else:
 
 #######
 
-valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=()$.,:!?\'%@'
+valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=()$.,:!?\'%@#>'
 replace_char = {
-    '#': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
+    '*': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
     '&': '(AND)',
     '€': '($)',
-    '*': '(X)',
     'Ä': 'AE',
     'Ö': 'OE',
     'Ü': 'UE',
@@ -37,26 +37,29 @@ replace_char = {
     '\r': '\r\n',
     '\t': '(TAB)',
     '~': '\a',
-    '<': '\r',
     '>': '\r',
     '|': '\n',
     '_': '...',
-    ';': ',.',
+    ';': ',',
     '[': '((',
     ']': '))',
     '{': '(((',
     '}': ')))',
-    '"': "''",
+    '"': "'",
     '\x1B': '(ESC)',
     '\x08': '(BACK)',
     }
 
 #######
 
-class Screen:
+class TelexScreen(txBase.TelexBase):
 
     def __init__(self):
         '''Creates a Screen object that you can call to do various keyboard things. '''
+
+        super().__init__()
+
+        self.id = '_'
 
         if os.name == 'nt':
             pass
@@ -84,6 +87,7 @@ class Screen:
 
         else:
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
+        super().__del__()
 
     # =====
 
@@ -98,7 +102,7 @@ class Screen:
         return c
 
 
-    def write(self, c:str):
+    def write(self, c:str, source:str):
         if c == '\r' or c == '\n':
             print(c, end='')
         else:
