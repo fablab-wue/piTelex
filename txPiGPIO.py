@@ -20,7 +20,7 @@ pi = pigpio.pi()
 #######
 
 class TelexPiGPIO(txBase.TelexBase):
-    def __init__(self, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int, invert:bool=False):
+    def __init__(self, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int):   #, invert:bool=False
 
         super().__init__()
 
@@ -31,17 +31,19 @@ class TelexPiGPIO(txBase.TelexBase):
         self._pin_txd = pin_txd
         self._pin_rts = pin_rts
         self._pin_dtr = pin_dtr
-        self._invert = invert
-        self._tx_buffer = ''
-        self._rx_buffer = ''
+        #self._invert = invert
+        self._tx_buffer = []
+        self._rx_buffer = []
         self._cb = None
         self._is_pulse_dial = False
         self._pulse_dial_count = 0
 
         # init GPIOs
         pi.set_pad_strength(0, 8)
+
         pi.set_mode(self._pin_rxd, pigpio.INPUT)
         pi.set_pull_up_down(self._pin_rxd, pigpio.PUD_UP)
+        
         pi.set_mode(self._pin_txd, pigpio.OUTPUT)
         pi.write(self._pin_txd, 1)
         pi.set_mode(self._pin_rts, pigpio.OUTPUT)
@@ -51,7 +53,7 @@ class TelexPiGPIO(txBase.TelexBase):
 
         # init bit bongo serial read
         pi.set_glitch_filter(self._pin_rxd, 1000)   # 1ms
-        pi.bb_serial_invert(self._pin_rxd, self._invert)
+        #pi.bb_serial_invert(self._pin_rxd, self._invert)
         status = pi.bb_serial_read_open(self._pin_rxd, 50)   # 50 baud
 
         # init bit bongo serial write
@@ -77,23 +79,23 @@ class TelexPiGPIO(txBase.TelexBase):
 
         count, data = pi.bb_serial_read(self._pin_rxd)
         if count:
-            m = data
-            a = self._mc.decode(m)
+            bb = data
+            a = self._mc.decodeB2A(bb)
             if a:
-                self._rx_buffer += a
+                self._rx_buffer.append(a)
         
         if self._rx_buffer:
-            ret = self._rx_buffer[0]
-            self._rx_buffer = self._rx_buffer[1:]
+            ret = self._rx_buffer.pop(0)
 
         return ret
 
 
     def write(self, a:str, source:str):
-        m = self._mc.encode(a)
+        bb = self._mc.encodeA2B(a)
     
-        if m:
-            self._tx_buffer += m
+        if bb:
+            for b in bb:
+                self._tx_buffer.append(b)
             self._write_wave()
 
 
@@ -115,8 +117,7 @@ class TelexPiGPIO(txBase.TelexBase):
 
         pi.wave_add_generic([pigpio.pulse(1<<self._pin_rts, 0, 10)]) # add dir/rts pulse to waveform
 
-        #                                     self._tx_buffer
-        pi.wave_add_serial(self._pin_txd, 50, [0, 0x1F, 0x15], 0, 5, 3)
+        pi.wave_add_serial(self._pin_txd, 50, self._tx_buffer, 0, 5, 3)
 
         pi.wave_add_generic([pigpio.pulse(0, 1<<self._pin_rts, 10)]) # add dir/rts pulse to waveform
 
@@ -126,11 +127,11 @@ class TelexPiGPIO(txBase.TelexBase):
         if self.last_wid is not None:
             pi.wave_delete(self.last_wid) # delete no longer used waveform
 
-        print("wid", self.last_wid, "new_wid", new_wid)
+        print("wid", self.last_wid, "new_wid", new_wid) # debug
 
         self.last_wid = new_wid
 
-        self._tx_buffer = ''
+        self._tx_buffer = []
 
 
     def enable_pulse_dial(self, enable:bool):

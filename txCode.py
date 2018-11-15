@@ -34,11 +34,11 @@ CCITT-2:
 110.00	    O   	9
 110.01	    B   	?
 110.10	    G   	undef, &, Ö, @
-110.11	    FIGS    FIGS	
+110.11	    FIGS    FIGS -> #
 111.00	    M   	.
 111.01	    X   	/
 111.10	    V   	=
-111.11	    LTRS    LTRS	
+111.11	    LTRS    LTRS -> $
 
 http://rabbit.eng.miami.edu/info/baudot.html   <<< wrong figs order!
 http://www.baudot.net/docs/smith--teletype-codes.pdf
@@ -52,55 +52,60 @@ __version__     = "0.0.1"
 #######
 
 class BaudotMurrayCode:
-    _MurrayLUT = ['\x80E\nA SIU\rDRJNFCKTZLWHYPQOBG\x82MXV\x81', '\x803\n- \'87\r@4%,$:(5+)2#6019?&\x82./=\x81']
-    _MurraySwitchLUT = [0x1F, 0x1B]
+    # Baudot-Murray-Code to ASCII table
+    _baLUT = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG#MXV$", "~3\n- '87\r@4%,~:(5+)2~6019?~#./=$"]
+    # Baudot-Murray-Code mode switch codes
+    _bSwLUT = [0x1F, 0x1B]
 
-    def __init__(self):
-        self._ModeA2M = None   # 0=LTRS 1=FIGS
-        self._ModeM2A = 0   # 0=LTRS 1=FIGS
+    def __init__(self, loopback_mode:bool=True):
+        self._ModeA2B = None   # 0=LTRS 1=FIGS
+        self._ModeB2A = 0   # 0=LTRS 1=FIGS
+        self._loopback_mode = loopback_mode
         
-    def encode(self, ansi:str) -> list:
-        ''' convert an ansi string to a list of baudot-murray-coded bytes '''
+    def encodeA2B(self, ansi:str) -> list:
+        ''' convert an ASCII string to a list of baudot-murray-coded bytes '''
         ret = []
 
         ansi = ansi.upper()
 
-        if self._ModeA2M == None:
-            self._ModeA2M = 0   # letters
-            ret.append(self._MurraySwitchLUT[self._ModeA2M])
+        if self._ModeA2B == None:
+            self._ModeA2B = 0   # letters
+            ret.append(self._bSwLUT[self._ModeA2B])
 
         for a in ansi:
-            try:
-                m = self._MurrayLUT[self._ModeA2M].index(a)
-                ret.append(m)
+            try: # symbol in current layer?
+                b = self._baLUT[self._ModeA2B].index(a)
+                if b in self._bSwLUT:
+                    self._ModeA2B = self._bSwLUT.index(b)
+                ret.append(b)
             except:
-                try:
-                    m = self._MurrayLUT[1-self._ModeA2M].index(a)
-                    self._ModeA2M = 1 - self._ModeA2M
-                    ret.append(self._MurraySwitchLUT[self._ModeA2M])
-                    ret.append(m)
-                except:
+                try: # symbol in other layer?
+                    b = self._baLUT[1-self._ModeA2B].index(a)
+                    self._ModeA2B = 1 - self._ModeA2B
+                    ret.append(self._bSwLUT[self._ModeA2B])
+                    ret.append(b)
+                except: # symbol not found -> ignore
                     pass
 
         return ret
 
 
-    def decode(self, murray:list) -> str:
-        ''' convert a list/bytearray of baudot-murray-coded bytes to an ansi string '''
+    def decodeB2A(self, murray:list) -> str:
+        ''' convert a list/bytearray of baudot-murray-coded bytes to an ASCII string '''
         ret = ''
 
-        for m in murray:
+        for b in murray:
             try:
-                a = self._MurrayLUT[self._ModeM2A][m]
-                if ord(a) >= 0x80:
-                    if ord(a) == 0x81:
-                        self._ModeM2A = 0   # letters
-                    if ord(a) == 0x82:
-                        self._ModeM2A = 1   # numbers
+                if b in self._bSwLUT:
+                    self._ModeB2A = self._bSwLUT.index(b)
                 else:
+                    a = self._baLUT[self._ModeB2A][b]
                     ret += a
             except:
                 pass
+
+        if self._loopback_mode:
+            self._ModeA2B = self._ModeB2A # on sending a sysmbol the machine switches itself to other symbol layer
 
         return ret
 

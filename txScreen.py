@@ -94,8 +94,14 @@ class TelexScreen(txBase.TelexBase):
     def read(self) -> str:
         if not self.kbhit():
             return ''
-        c = self.getch() #'à'
-        if c:
+        k = self.getch()
+        if k:
+            if k == b'\xe0':
+                k = self.getch()
+                return '' # eat cursor and control keys
+            if k == b'\x1b':
+                return '' # eat escape
+            c = k.decode('latin-1', errors='ignore')
             c = c.upper()
             if c not in valid_char:
                 c = replace_char.get(c, '?')
@@ -114,10 +120,10 @@ class TelexScreen(txBase.TelexBase):
         ''' Returns a keyboard character after kbhit() has been called. '''
 
         if os.name == 'nt':
-            return msvcrt.getch().decode('latin-1', errors='ignore')
+            return msvcrt.getch()
             #return msvcrt.getch().decode('iso_8859_1', errors='ignore')
             #return msvcrt.getch().decode('utf-8', errors='ignore')
-            #return msvcrt.getch()
+            #return msvcrt.getch().decode('latin-1', errors='ignore')
 
         else:
             return sys.stdin.read(1)

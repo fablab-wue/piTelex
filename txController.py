@@ -17,7 +17,7 @@ class TelexController(txBase.TelexBase):
         self.device_id = device_id
 
         self.id = '§'
-        self._rx_buffer = ''
+        self._rx_buffer = []
 
     def __del__(self):
         pass
@@ -27,21 +27,20 @@ class TelexController(txBase.TelexBase):
         ret = ''
 
         if self._rx_buffer:
-            ret += self._rx_buffer[0]
-            self._rx_buffer = self._rx_buffer[1:]
+            ret = self._rx_buffer.pop(0)
 
         return ret
 
 
     def write(self, a:str, source:str):
         if self.device_id and a == '@':   # found 'Wer da?'
-            self._rx_buffer += self.device_id   # send back device id
+            self._rx_buffer.extend(list(self.device_id))   # send back device id
             return True
 
-        if a == '#':   # set to dial mode
+        if a == '\x1b#':   # set to dial mode
             return True
 
-        if a == '>':   # set to connect mode
+        if a == '\x1b$':   # set to connect mode
             return True
 
 #######
