@@ -9,7 +9,7 @@ The other part is the Python software to send and receive the serial data (50 ba
 
 With the characters arrived in the PC/RPi the data can be routed to i-Telex, eMail or IRC. The telex can also be (miss-) used as printer or keyboard.
 
-## Electronic
+## Electronic for Current-Loop Interface
 
 ### Overview of Modules
 
@@ -19,7 +19,7 @@ The current loop is specified in "TW39".
 
 <img src="img/TelexOverview.png" width="373px">
 
-To use a Telex as an USB-device you can use an USB-serial-converter based on a CH340 chip (other chips from FTDI and Prolofic don't work at 50 baud, 5 data-bits, 1.5 stop-bits).
+To use a Telex as an USB-device you can use an USB-to-serial-TTL converter based on a CH340 chip (other chips from FTDI and Prolofic don't work at 50 baud, 5 data-bits, 1.5 stop-bits).
 
 The commutate circuit (drawn in cyan) is optional and only needed when the telex is using a FSG. Without a FSG the cyan area can be removed.
 
@@ -65,13 +65,25 @@ To signal the FSG a connection the voltage is pole changed with a relais.
 
 <img src="img/TelexCommutate.png" width="197px">
 
+## Electronic for V.10 Interface
+
+Some typewriters have an optional V.10 interface like the TeKaDe FS200Z / FS220Z. The V.10 definition is near to V.24 (RS-232) with a voltage limit of -6...6V.
+
+Most modern UARTs and serial-adapters do not support 50 baud and/or 5 bits. **BUT!** The USB-to-serial-chip CH340 does support it!
+
+In online stores you find an adapter cable USB to RS-232 (not TTL) with a 9-pin Sub-D connector with this CH340 chip (not FTDI or Prolific or CP210x). With this adapter you only have to solder an adapter to connect your typewriter to your PC.
+
+<img src="img/V10Adapter.png" width="250px">
+
+Note: the gray cables are optional and for future features.
+
 ## Software
 
 TODO...
 
 ### USB-Serial-Adapter
 
-Using an adapter board based on the chip CH340 the device is detected as normal (virtual) serial interface.
+Using an adapter board (or adapter cable - for V.10) based on the chip CH340 the device is detected as normal (virtual) serial interface. In Windows the device is shown as 'COMx'. In Linux it is shown as '/dev/ttyUSBx'.
 
 With the Python library "PySerial" all necessary settings can be done to handle 50 baud, 5 data-bits and 1.5 stop-bits. Also, the handshake pins RTS and DTR can be set by this library.
 

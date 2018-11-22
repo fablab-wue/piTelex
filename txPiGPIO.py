@@ -91,6 +91,9 @@ class TelexPiGPIO(txBase.TelexBase):
 
 
     def write(self, a:str, source:str):
+        if len(a) != 1:
+            return
+
         bb = self._mc.encodeA2B(a)
     
         if bb:

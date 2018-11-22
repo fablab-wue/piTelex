@@ -11,6 +11,7 @@ __version__     = "0.0.1"
 
 import os
 import txBase
+import txCode
 
 # Windows
 if os.name == 'nt':
@@ -25,34 +26,18 @@ else:
 
 #######
 
-valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=()$.,:!?\'%@#>'
-replace_char = {
-    '*': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
-    '&': '(AND)',
-    '€': '($)',
-    'Ä': 'AE',
-    'Ö': 'OE',
-    'Ü': 'UE',
-    'ß': 'SS',
-    '\r': '\r\n',
-    '\t': '(TAB)',
-    '~': '\a',
-    '>': '\r',
-    '|': '\n',
-    '_': '...',
-    ';': ',',
-    '[': '((',
-    ']': '))',
-    '{': '(((',
-    '}': ')))',
-    '"': "'",
-    '\x1B': '(ESC)',
-    '\x08': '(BACK)',
-    }
 
 #######
 
 class TelexScreen(txBase.TelexBase):
+    _replace_char = {
+        '~': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
+        '\r': '\r\n',
+        '<': '\r',
+        '|': '\n',
+        '\x1B': '(ESC)',
+        '\x08': '(BACK)',
+        }
 
     def __init__(self):
         '''Creates a Screen object that you can call to do various keyboard things. '''
@@ -60,6 +45,8 @@ class TelexScreen(txBase.TelexBase):
         super().__init__()
 
         self.id = '_'
+
+        self._rx_buffer = []
 
         if os.name == 'nt':
             pass
@@ -92,27 +79,38 @@ class TelexScreen(txBase.TelexBase):
     # =====
 
     def read(self) -> str:
-        if not self.kbhit():
-            return ''
-        k = self.getch()
-        if k:
-            if k == b'\xe0':
-                k = self.getch()
-                return '' # eat cursor and control keys
-            if k == b'\x1b':
-                return '' # eat escape
-            c = k.decode('latin-1', errors='ignore')
-            c = c.upper()
-            if c not in valid_char:
-                c = replace_char.get(c, '?')
-        return c
+        ret = ''
+        
+        if self.kbhit():
+            k = self.getch()
+            if k:
+                if k == b'\xe0':
+                    k = self.getch()
+                    return '' # eat cursor and control keys
+                if k == b'\x1b':
+                    return '' # eat escape
+
+                c = k.decode('latin-1', errors='ignore')
+                c = self._replace_char.get(c, c)
+                c = txCode.BaudotMurrayCode.translate(c)
+
+                for a in c:
+                    self._rx_buffer.append(a)
+
+        if self._rx_buffer:
+            ret = self._rx_buffer.pop(0)
+
+        return ret
 
 
-    def write(self, c:str, source:str):
-        if c == '\r' or c == '\n':
-            print(c, end='')
+    def write(self, a:str, source:str):
+        if len(a) != 1:
+            return
+
+        if a == '\r' or a == '\n':
+            print(a, end='')
         else:
-            print(c, end='', flush=True)
+            print(a, end='', flush=True)
 
     # =====
 

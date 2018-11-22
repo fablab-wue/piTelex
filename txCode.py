@@ -57,11 +57,47 @@ class BaudotMurrayCode:
     # Baudot-Murray-Code mode switch codes
     _bSwLUT = [0x1F, 0x1B]
 
+    _valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=().,:?\'~%@*$#\r\n'
+    _replace_char = {
+        '&': '(AND)',
+        '€': '(EUR)',
+        'Ä': 'AE',
+        'Ö': 'OE',
+        'Ü': 'UE',
+        'ß': 'SS',
+        '_': '...',
+        ';': ',',
+        '<': '-(',
+        '>': ')-',
+        '[': '((',
+        ']': '))',
+        '{': '(((',
+        '}': ')))',
+        '"': "'",
+        '\t': '(TAB)',
+        '\x1B': '(ESC)',
+        '\x08': '(BACK)',
+        }
+
     def __init__(self, loopback_mode:bool=True):
         self._ModeA2B = None   # 0=LTRS 1=FIGS
         self._ModeB2A = 0   # 0=LTRS 1=FIGS
         self._loopback_mode = loopback_mode
         
+
+    @staticmethod
+    def translate(ansi:str) -> str:
+        ret = ''
+        ansi = ansi.upper()
+
+        for a in ansi:
+            if a not in BaudotMurrayCode._valid_char:
+                a = BaudotMurrayCode._replace_char.get(a, '?')
+            ret += a
+        
+        return ret
+
+
     def encodeA2B(self, ansi:str) -> list:
         ''' convert an ASCII string to a list of baudot-murray-coded bytes '''
         ret = []

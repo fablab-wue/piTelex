@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-testTelex for RPi Zero W
+testTelex for RPi Zero W or PC
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -9,8 +9,9 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import txController
-import txSerial
 import txScreen
+import txSerial
+import txEliza
 
 import time
 from argparse import ArgumentParser
@@ -40,8 +41,13 @@ def init():
     screen = txScreen.TelexScreen()
     DEVICES.append(screen)
 
-    serial = txSerial.TelexSerial(ARGS.tty.strip())
-    DEVICES.append(serial)
+    if ARGS.tty:
+        serial = txSerial.TelexSerial(ARGS.tty.strip())
+        DEVICES.append(serial)
+
+    if ARGS.eliza:
+        eliza = txEliza.TelexEliza()
+        DEVICES.append(eliza)
 
 # =====
 
@@ -76,49 +82,32 @@ def main():
     parser = ArgumentParser(prog='-=TEST-TELEX=-', conflict_handler='resolve')
 
     parser.add_argument("-t", "--tty", 
-                        dest="tty", default='COM4', metavar="TTY",   # '/dev/ttyS0'   '/dev/ttyAMA0'
-                        help="Set serial port name communicating with Telex")
+        dest="tty", default='', metavar="TTY",   # '/dev/ttyS0'   '/dev/ttyAMA0'
+        help="Set serial port name communicating with Telex")
 
     parser.add_argument("-d", "--id", 
-                        dest="id", default='<test>', metavar="ID",
-                        help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
+        dest="id", default='', metavar="ID",
+        help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
-    '''
-    parser.add_argument("-u", "--nopentulum",
-        dest="pentulum", default=True, action="store_false", 
-        help="No Pentulum")
-    parser.add_argument("-U", "--pentulum",
-        dest="pentulum", default=True, action="store_true", 
-        help="Use Pentulum")
+    parser.add_argument("-E", "--eliza",
+        dest="eliza", default=False, action="store_true", 
+        help="Use Eliza Chat Bot")
+
+    parser.add_argument("-l", "--noloop",
+        dest="loop", default=True, action="store_false", 
+        help="No Loop-Back")
+    parser.add_argument("-L", "--loop",
+        dest="loop", default=True, action="store_true", 
+        help="Use Loop-Back")
 
     parser.add_argument("-p", "--pin", 
-        dest="pin", default=LED_PIN, metavar='GPIO', type=int,
+        dest="pin", default=-1, metavar='GPIO', type=int,
         help="GPIO Number")
 
-    parser.add_argument("-i", "--invert",
-        dest="invert", default=LED_INVERT, action="store_true", 
-        help="Invert GPIO pin")
-
-    parser.add_argument("-l", "--leds", 
-        dest="leds", default=LED_COUNT, metavar='LEDS', type=int,
-        help="Number of LEDs")
-
-    parser.add_argument("-m", "--meridiem", 
-        dest="meridiem", default=LED_MER, metavar='LED', type=int,
-        help="Index of meridiem LED")
-
-    parser.add_argument("-a", "--loglevel", 
-                        dest="logLevel", default=0, type=int, metavar="LEVEL",
-                        help="Set the maximum logging level - 0=no output, 1=error, 2=warning, 3=info, 4=debug, 5=ext.debug")
-
-    parser.add_argument("-L", "--logfile", 
-                        dest="logFile", default='Test', metavar="FILE",
-                        help="Set FILE name for logging output")
-
     parser.add_argument("-q", "--quiet",
-                        dest="verbose", default=True, action="store_false", 
-                        help="don't print status messages to stdout")
-    '''
+        dest="verbose", default=True, action="store_false", 
+        help="don't print status messages to stdout")
+
     ARGS = parser.parse_args()
 
     init()

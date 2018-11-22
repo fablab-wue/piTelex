@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/testTelex.py",
             "console": "integratedTerminal",
             "args": [
-                "-t COM5",
+                "-E",
                 "-d LOREMIPSUM"
             ]
         },
