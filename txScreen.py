@@ -31,7 +31,7 @@ else:
 
 class TelexScreen(txBase.TelexBase):
     _replace_char = {
-        '~': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
+        #'~': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
         '\r': '\r\n',
         '<': '\r',
         '|': '\n',

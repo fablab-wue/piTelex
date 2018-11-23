@@ -77,6 +77,10 @@ In online stores you find an adapter cable USB to RS-232 (not TTL) with a 9-pin 
 
 Note: the gray cables are optional and for future features.
 
+If Telex is powered up, the "Beriebsbereit" is set to 5V.
+S2 is set to 5V if LIN-button is pressed and line communication is active.
+A rising edge (to 5V) on M2 make a beep sound.
+
 ## Software
 
 TODO...

@@ -9,11 +9,9 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import txController
-import txScreen
-import txSerial
-import txEliza
 
 import time
+import threading
 from argparse import ArgumentParser
 
 #######
@@ -38,14 +36,28 @@ def init():
     ctrl = txController.TelexController(ARGS.id.strip())
     DEVICES.append(ctrl)
 
-    screen = txScreen.TelexScreen()
-    DEVICES.append(screen)
+    if ARGS.screen:
+        import txScreen
+        screen = txScreen.TelexScreen()
+        DEVICES.append(screen)
 
     if ARGS.tty:
-        serial = txSerial.TelexSerial(ARGS.tty.strip())
+        import txSerial
+        serial = txSerial.TelexSerial(ARGS.tty.strip(), ARGS.loop)
         DEVICES.append(serial)
 
+    if ARGS.pin:
+        import txPiGPIO
+        serial = txPiGPIO.TelexPiGPIO(17, 27, 22, 10)
+        DEVICES.append(serial)
+
+    if ARGS.port:
+        import txWebSrv
+        srv = txWebSrv.TelexWebSrv(ARGS.port)
+        DEVICES.append(srv)
+
     if ARGS.eliza:
+        import txEliza
         eliza = txEliza.TelexEliza()
         DEVICES.append(eliza)
 
@@ -82,8 +94,8 @@ def main():
     parser = ArgumentParser(prog='-=TEST-TELEX=-', conflict_handler='resolve')
 
     parser.add_argument("-t", "--tty", 
-        dest="tty", default='', metavar="TTY",   # '/dev/ttyS0'   '/dev/ttyAMA0'
-        help="Set serial port name communicating with Telex")
+        dest="tty", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
+        help="Set serial port name communicating with Teletype")
 
     parser.add_argument("-d", "--id", 
         dest="id", default='', metavar="ID",
@@ -100,9 +112,17 @@ def main():
         dest="loop", default=True, action="store_true", 
         help="Use Loop-Back")
 
+    parser.add_argument("-s", "--noscreen",
+        dest="screen", default=True, action="store_false", 
+        help="No Screen in/out")
+
     parser.add_argument("-p", "--pin", 
-        dest="pin", default=-1, metavar='GPIO', type=int,
+        dest="pin", default=0, metavar='GPIO', type=int,
         help="GPIO Number")
+
+    parser.add_argument("-P", "--port", 
+        dest="port", default=0, metavar='PORT', type=int,
+        help="Port Number for Socket Server")
 
     parser.add_argument("-q", "--quiet",
         dest="verbose", default=True, action="store_false", 

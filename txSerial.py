@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex Serial Communication over CH340-Chip
+Telex Serial Communication over CH340-Chip (not FTDI or Prolific)
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -15,7 +15,7 @@ import txBase
 #######
 
 class TelexSerial(txBase.TelexBase):
-    def __init__(self, tty_name:str):
+    def __init__(self, tty_name:str, loopback:bool=True):
 
         super().__init__()
 
@@ -39,6 +39,7 @@ class TelexSerial(txBase.TelexBase):
         self._tty.bytesize = 5
         self._tty.stopbits = serial.STOPBITS_ONE_POINT_FIVE
 
+        self._loopback = loopback
         self._rx_buffer = []
         self._tx_eat_bytes = 0
         self._counter_LTRS = 0
@@ -92,7 +93,7 @@ class TelexSerial(txBase.TelexBase):
         bb = self._mc.encodeA2B(a)
 
         n = self._tty.write(bb)
-        if not self.loopback:
+        if not self._loopback:
             self._tx_eat_bytes += n
         #print('-', n, '-')
 

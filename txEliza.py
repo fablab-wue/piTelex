@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex Eliza Small Talk
+Telex Small Talk with Eliza
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"

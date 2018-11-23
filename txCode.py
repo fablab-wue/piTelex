@@ -57,6 +57,7 @@ class BaudotMurrayCode:
     # Baudot-Murray-Code mode switch codes
     _bSwLUT = [0x1F, 0x1B]
 
+    # Baudot-Murray-Code valic ASCII table
     _valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=().,:?\'~%@*$#\r\n'
     _replace_char = {
         '&': '(AND)',

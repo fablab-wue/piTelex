@@ -20,7 +20,7 @@ pi = pigpio.pi()
 #######
 
 class TelexPiGPIO(txBase.TelexBase):
-    def __init__(self, pin_rxd:int, pin_txd:int, pin_rts:int, pin_dtr:int):   #, invert:bool=False
+    def __init__(self, pin_txd:int, pin_rxd:int, pin_dtr:int, pin_rts:int):
 
         super().__init__()
 
@@ -31,7 +31,6 @@ class TelexPiGPIO(txBase.TelexBase):
         self._pin_txd = pin_txd
         self._pin_rts = pin_rts
         self._pin_dtr = pin_dtr
-        #self._invert = invert
         self._tx_buffer = []
         self._rx_buffer = []
         self._cb = None
@@ -53,7 +52,6 @@ class TelexPiGPIO(txBase.TelexBase):
 
         # init bit bongo serial read
         pi.set_glitch_filter(self._pin_rxd, 1000)   # 1ms
-        #pi.bb_serial_invert(self._pin_rxd, self._invert)
         status = pi.bb_serial_read_open(self._pin_rxd, 50)   # 50 baud
 
         # init bit bongo serial write

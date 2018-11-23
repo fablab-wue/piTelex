@@ -12,7 +12,8 @@
             "console": "integratedTerminal",
             "args": [
                 "-E",
-                "-d LOREMIPSUM"
+                "-d LOREMIPSUM",
+                "-P 6666"
             ]
         },
         {
