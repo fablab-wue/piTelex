@@ -97,9 +97,103 @@ The build in UART of the RPi can’t handle 50 baud.
 
 The correct timing can be formed jitter-free with the library “PiGPIO”. Receiving can be handled by asynchronous callbacks implemented in this library. With this also a Linux based computer like the RPi can handle precise and reliable timings.
 
+## TW39 Transmission
+
+### Coding
+
+Baudot-Murray-Code = CCITT-2 = ITA2
+
+| 543.21 | LTRS | FIGS | ASCII |
+| --- | --- | --- | --- |
+| 000.00 |    undef | undef | ~
+| 000.01 |    E     | 3
+| 000.10 |    ZL    | ZL | LF
+| 000.11 |    A     | -
+| 001.00 |    SPACE | SPACE
+| 001.01 |    S     | '
+| 001.10 |    I     | 8
+| 001.11 |    U     | 7
+| 010.00 |    WR    | WR | CR
+| 010.01 |    D     | WRU | @
+| 010.10 |    R     | 4
+| 010.11 |    J     | BELL | %
+| 011.00 |    N     | ,
+| 011.01 |    F     | undef
+| 011.10 |    C     | :
+| 011.11 |    K     | (
+| 100.00 |    T     | 5
+| 100.01 |    Z     | +
+| 100.10 |    L     | )
+| 100.11 |    W     | 2
+| 101.00 |    H     | undef
+| 101.01 |    Y     | 6
+| 101.10 |    P     | 0
+| 101.11 |    Q     | 1
+| 110.00 |    O     | 9
+| 110.01 |    B     | ?
+| 110.10 |    G     | undef
+| 110.11 |    FIGS Zi | FIGS Zi | #
+| 111.00 |    M     | .
+| 111.01 |    X     | /
+| 111.10 |    V     | =
+| 111.11 |    LTRS Bu | LTRS Bu | $
+
+### Timing
+
+<img src="img/TW39Timing.png" width="561px">
+
+Example:
+
+<img src="img/TW39Example.png" width="559px">
+
+### Outgoing Call
+
+Idle mode ... +5mA ...
+
+
+<img src="img/TW39Call1.png" width="244px">
+
+Pressing button AT...
+
+<img src="img/TW39Call2TW39.png" width="554px">
+
+Dialing with number switch...
+
+<img src="img/TW39Call2TWM.png" width="244px">
+
+TWM: Dialing with keyboard...
+
+<img src="img/TW39Call3.png" width="244px">
+
+On fail...
+
+<img src="img/TW39Call4.png" width="244px">
+
+On success...
+
+<img src="img/TW39Call5.png" width="554px">
+
+Typing characters...
+
+<img src="img/TW39Call6.png" width="554px">
+
+Transmitting without pause...
+
+<img src="img/TW39Call7.png" width="244px">
+
+Pressing button ST...
+
+### Incoming Call
+
+<img src="img/TW39Incomming.png" width="554px">
+
+### WRU (Wer da?)
+
+<img src="img/TW39WRU.png" width="554px">
+
+
 ## Additional Information
 
 BC337: <img src="img/BC337.png" width="30px">
 
 TIP41: <img src="img/TIP41.png" width="30px">
-
