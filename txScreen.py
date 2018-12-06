@@ -76,6 +76,17 @@ class TelexScreen(txBase.TelexBase):
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
         super().__del__()
 
+
+    def set_normal_term(self):
+        ''' Resets to normal terminal.  On Windows this is a no-op.
+        '''
+        
+        if os.name == 'nt':
+            pass
+        
+        else:
+            termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
+
     # =====
 
     def read(self) -> str:
@@ -90,7 +101,10 @@ class TelexScreen(txBase.TelexBase):
                 if k == b'\x1b':
                     return '' # eat escape
 
-                c = k.decode('latin-1', errors='ignore')
+                if os.name == 'nt':
+                    c = k.decode('latin-1', errors='ignore')
+                else:
+                    c = k
                 c = self._replace_char.get(c, c)
                 c = txCode.BaudotMurrayCode.translate(c)
 
