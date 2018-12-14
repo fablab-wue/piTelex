@@ -39,12 +39,13 @@ class TelexScreen(txBase.TelexBase):
         '\x08': '(BACK)',
         }
 
-    def __init__(self):
+    def __init__(self, **params):
         '''Creates a Screen object that you can call to do various keyboard things. '''
 
         super().__init__()
 
         self.id = '_'
+        self.params = params
 
         self._rx_buffer = []
 

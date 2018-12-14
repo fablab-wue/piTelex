@@ -17,6 +17,7 @@ class TelexController(txBase.TelexBase):
         self.device_id = device_id
 
         self.id = '§'
+        self.params = {}
         self._rx_buffer = []
 
     def __del__(self):

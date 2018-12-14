@@ -20,17 +20,21 @@ pi = pigpio.pi()
 #######
 
 class TelexPiGPIO(txBase.TelexBase):
-    def __init__(self, pin_txd:int, pin_rxd:int, pin_dtr:int, pin_rts:int):
+    def __init__(self, **params):
+        #pin_txd:int, pin_rxd:int, pin_dtr:int, pin_rts:int, inv_txd:bool=False, inv_rxd:bool=False
 
         super().__init__()
 
         self.id = '#'
+        self.params = params
 
-        self._mc = txCode.BaudotMurrayCode()
-        self._pin_rxd = pin_rxd
-        self._pin_txd = pin_txd
-        self._pin_rts = pin_rts
-        self._pin_dtr = pin_dtr
+        self._baudrate = params.get('baudrate', 50)
+        self._pin_txd = params.get('pin_txd', 17)
+        self._pin_rxd = params.get('pin_rxd', 27)
+        self._pin_dtr = params.get('pin_dtr', 22)
+        self._pin_rts = params.get('pin_rts', 10)
+        self._inv_rxd = params.get('pin_rxd', False)
+        self._inv_txd = params.get('pin_txd', False)
         self._tx_buffer = []
         self._rx_buffer = []
         self._cb = None
@@ -44,18 +48,21 @@ class TelexPiGPIO(txBase.TelexBase):
         pi.set_pull_up_down(self._pin_rxd, pigpio.PUD_UP)
         
         pi.set_mode(self._pin_txd, pigpio.OUTPUT)
-        pi.write(self._pin_txd, 1)
+        pi.write(self._pin_txd, not self._inv_txd)
         pi.set_mode(self._pin_rts, pigpio.OUTPUT)
         pi.write(self._pin_rts, 0)
         pi.set_mode(self._pin_dtr, pigpio.OUTPUT)
-        pi.write(self._pin_dtr, 1)
+        pi.write(self._pin_dtr, 0)   # pos polarity
 
         # init bit bongo serial read
         pi.set_glitch_filter(self._pin_rxd, 1000)   # 1ms
-        status = pi.bb_serial_read_open(self._pin_rxd, 50)   # 50 baud
+        status = pi.bb_serial_read_open(self._pin_rxd, self._baudrate, 5)   # 50 baud
+        pi.bb_serial_invert(self._pin_rxd, self._inv_rxd)
 
         # init bit bongo serial write
         self.last_wid = None
+
+        self._mc = txCode.BaudotMurrayCode()
 
         # debug
         cbs = pi.wave_get_max_cbs()
@@ -118,7 +125,7 @@ class TelexPiGPIO(txBase.TelexBase):
 
         pi.wave_add_generic([pigpio.pulse(1<<self._pin_rts, 0, 10)]) # add dir/rts pulse to waveform
 
-        pi.wave_add_serial(self._pin_txd, 50, self._tx_buffer, 0, 5, 3)
+        pi.wave_add_serial(self._pin_txd, self._baudrate, self._tx_buffer, 0, 5, 3,)
 
         pi.wave_add_generic([pigpio.pulse(0, 1<<self._pin_rts, 10)]) # add dir/rts pulse to waveform
 

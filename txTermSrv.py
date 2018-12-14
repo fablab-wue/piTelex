@@ -15,12 +15,16 @@ from threading import Thread
 
 #######
 
-class TelexWebSrv(txBase.TelexBase):
-    def __init__(self, port:int):
+class TelexTermSrv(txBase.TelexBase):
+    def __init__(self, **params):
+        #, port:int
 
         super().__init__()
 
         self.id = '>'
+        self.params = params
+
+        self._port = params.get('port', 6666)
 
         self._rx_buffer = []
 
@@ -30,7 +34,7 @@ class TelexWebSrv(txBase.TelexBase):
         self.BUFSIZ = 1024
 
         self.SERVER = socket(AF_INET, SOCK_STREAM)
-        self.SERVER.bind(('', port))
+        self.SERVER.bind(('', self._port))
 
         self.SERVER.listen(2)
         #print("Waiting for connection...")

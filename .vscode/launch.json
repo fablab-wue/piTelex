@@ -8,12 +8,12 @@
             "name": "testTelex",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/testTelex.py",
+            "program": "${workspaceFolder}/telex.py",
             "console": "integratedTerminal",
             "args": [
-                "-E",
                 "-d LOREMIPSUM",
-                "-P 6666"
+                "-E",
+                "-T 6666"
             ]
         },
         {

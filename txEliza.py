@@ -259,11 +259,12 @@ class Eliza:
 #######
 
 class TelexEliza(txBase.TelexBase):
-    def __init__(self):
+    def __init__(self, **params):
 
         super().__init__()
 
         self.id = '"'
+        self.params = params
 
         # init Eliza
         self._eliza = Eliza()

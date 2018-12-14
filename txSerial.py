@@ -15,29 +15,36 @@ import txBase
 #######
 
 class TelexSerial(txBase.TelexBase):
-    def __init__(self, tty_name:str, loopback:bool=True):
+    def __init__(self, **params):
 
         super().__init__()
 
         self._mc = txCode.BaudotMurrayCode()
 
         self.id = '~'
+        self.params = params
+
+        portname = params.get('portname', '/dev/ttyUSB0')
+        baudrate = params.get('baudrate', 50)
+        bytesize = params.get('bytesize', 5)
+        stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
+        loopback = params.get('loopback', True)
 
         # init serial
-        self._tty = serial.Serial(tty_name, write_timeout=0)
+        self._tty = serial.Serial(portname, write_timeout=0)
         self._tty.rts = True    # RTS -> Low
         self._tty.dtr = True    # DTR -> Low
 
-        if 50 not in self._tty.BAUDRATES:
+        if baudrate not in self._tty.BAUDRATES:
             raise Exception('Baudrate not supported')
-        if 5 not in self._tty.BYTESIZES:
+        if bytesize not in self._tty.BYTESIZES:
             raise Exception('Databits not supported')
-        if 1.5 not in self._tty.STOPBITS:
+        if stopbits not in self._tty.STOPBITS:
             raise Exception('Stopbits not supported')
 
-        self._tty.baudrate = 50
-        self._tty.bytesize = 5
-        self._tty.stopbits = serial.STOPBITS_ONE_POINT_FIVE
+        self._tty.baudrate = baudrate
+        self._tty.bytesize = bytesize
+        self._tty.stopbits = stopbits
 
         self._loopback = loopback
         self._rx_buffer = []
