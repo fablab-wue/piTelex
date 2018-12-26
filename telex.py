@@ -47,7 +47,7 @@ def init():
         if dev_param['type'] == 'tty':
             import txSerial
             serial = txSerial.TelexSerial(**dev_param)
-            DEVICES.append(screen)
+            DEVICES.append(serial)
 
         if dev_param['type'] == 'gpio':
             import txPiGPIO
