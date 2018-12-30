@@ -21,7 +21,7 @@ With the characters arrived in the PC/RPi the data can be routed to i-Telex, eMa
 ## Protocol / Coding
 
  * [Baudot-Murray-Code = CCITT-2 = ITA2](/README_P_BMC.md)
- * [TW39 Transmission](/README_P_TW39.md)
+ * [TW39 / TWM Transmission](/README_P_TW39.md)
 
 ## Additional Information
 
