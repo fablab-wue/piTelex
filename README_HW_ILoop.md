@@ -6,7 +6,7 @@ The Telex adapter hardware have to source a constant (regulated) current of 40mA
 
 The current loop is specified in "TW39".
 
-<img src="img/TelexOverview.png" width="373px">
+<img src="img/TelexOverview.png" width="466px">
 
 To use a Telex as an USB-device you can use an USB-to-serial-TTL converter based on a CH340 chip (other chips from FTDI and Prolofic don't work at 50 baud, 5 data-bits, 1.5 stop-bits).
 
@@ -20,9 +20,15 @@ To use router and FSG functionality the adapter hardware can be connected direct
 
 ## Current Source and Regulator
 
-To simplify the device an adjustable DC/DC boost converter board (from China) is used to get a voltage of 20...30V. The voltage regulator LM317 is used as a fixed current source to get the 40mA. The LM317 works as a linear regulator and must be mounted on a heat sink.
+To simplify the device an adjustable DC/DC boost converter board (from China) is used to get a voltage of 20...35V. The voltage regulator LM317 is used as a fixed current source to get the 40mA. The LM317 works as a linear regulator and must be mounted on a heat sink.
 
 <img src="img/TelexCurrent.png" width="432px">
+
+## Alternative Regulator
+
+With 2 Transistors a current regulatir is implemented with a voltage tolerance of 120 volt. The TIP47 works as a linear regulator and must be mounted on a heat sink.
+
+<img src="img/TelexCurrent2.png" width="195px">
 
 ## Telex Transmitter with Bipolar Transistor
 
@@ -54,3 +60,12 @@ To signal the FSG a connection the voltage is pole changed with a relais.
 
 <img src="img/TelexCommutate.png" width="197px">
 
+# Complete Examples
+
+## Compact USB Interface
+
+<img src="img/TelexUSB3.png" width="518px">
+
+## High Voltage Interface
+
+<img src="img/TelexCurrentTXD2.png" width="343px">
