@@ -97,6 +97,9 @@ class TelexSerial(txBase.TelexBase):
         if len(a) != 1:
             return
             
+        if a == '#':
+            a = '@'   # ask teletype for hardware ID
+
         bb = self._mc.encodeA2B(a)
 
         n = self._tty.write(bb)

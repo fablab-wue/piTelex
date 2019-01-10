@@ -32,10 +32,10 @@ else:
 class TelexScreen(txBase.TelexBase):
     _replace_char = {
         #'~': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
+        '*': 'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
         '\r': '\r\n',
         '<': '\r',
         '|': '\n',
-        '\x1B': '(ESC)',
         '\x08': '(BACK)',
         }
 
@@ -48,6 +48,7 @@ class TelexScreen(txBase.TelexBase):
         self.params = params
 
         self._rx_buffer = []
+        self._escape = ''
 
         if os.name == 'nt':
             pass
@@ -100,17 +101,26 @@ class TelexScreen(txBase.TelexBase):
                     k = self.getch()
                     return '' # eat cursor and control keys
                 if k == b'\x1b':
-                    return '' # eat escape
+                    self._escape = '\x1b'
+                    return ''
 
                 if os.name == 'nt':
                     c = k.decode('latin-1', errors='ignore')
                 else:
                     c = k
-                c = self._replace_char.get(c, c)
-                c = txCode.BaudotMurrayCode.translate(c)
 
-                for a in c:
-                    self._rx_buffer.append(a)
+                if self._escape:
+                    if c == '\r':
+                        self._rx_buffer.append(self._escape.upper())
+                        self._escape = ''
+                    else:
+                        self._escape += c
+                else:
+                    c = self._replace_char.get(c, c)
+                    c = txCode.BaudotMurrayCode.translate(c)
+
+                    for a in c:
+                        self._rx_buffer.append(a)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
@@ -120,6 +130,8 @@ class TelexScreen(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
+            if a[0] == '\x1b':
+                print('<ESC {}>'.format(a[1:]), end='', flush=True)
             return
 
         if a == '\r' or a == '\n':

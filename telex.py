@@ -54,6 +54,11 @@ def init():
             serial = txPiGPIO.TelexPiGPIO(**dev_param)
             DEVICES.append(serial)
 
+        if dev_param['type'] == 'ed1000':
+            import txED1000TxOnly
+            serial = txED1000TxOnly.TelexED1000TxOnly(**dev_param)
+            DEVICES.append(serial)
+
         if dev_param['type'] == 'term':
             import txTermSrv
             srv = txTermSrv.TelexTermSrv(**dev_param)

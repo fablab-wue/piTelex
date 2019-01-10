@@ -7,7 +7,7 @@ Baudot-Murray-Code = CCITT-2
 CCITT-2:
 543.21      LTRS    FIGS
 ======      ==========================
-000.00	    undef	
+000.00	    undef	undef -> ~
 000.01	    E   	3
 000.10	    <LF>    <LF>
 000.11	    A   	-
@@ -34,11 +34,11 @@ CCITT-2:
 110.00	    O   	9
 110.01	    B   	?
 110.10	    G   	undef, &, Ö, @
-110.11	    FIGS    FIGS -> #
+110.11	    FIGS    FIGS -> ]
 111.00	    M   	.
 111.01	    X   	/
 111.10	    V   	=
-111.11	    LTRS    LTRS -> $
+111.11	    LTRS    LTRS -> [
 
 http://rabbit.eng.miami.edu/info/baudot.html   <<< wrong figs order!
 http://www.baudot.net/docs/smith--teletype-codes.pdf
@@ -53,27 +53,24 @@ __version__     = "0.0.1"
 
 class BaudotMurrayCode:
     # Baudot-Murray-Code to ASCII table
-    _baLUT = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG#MXV$", "~3\n- '87\r@4%,~:(5+)2~6019?~#./=$"]
+    _baLUT    = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- '87\r@4%,~:(5+)2~6019?~]./=["]
+    _baLUT_US = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- %87\r$4',!:(5\")2@6019?&]./;["]
     # Baudot-Murray-Code mode switch codes
     _bSwLUT = [0x1F, 0x1B]
 
-    # Baudot-Murray-Code valic ASCII table
-    _valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=().,:?\'~%@*$#\r\n'
+    # Baudot-Murray-Code valid ASCII table
+    _valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=().,:?\'~%@#_*<|>[]{}\r\n'
     _replace_char = {
         '&': '(AND)',
         '€': '(EUR)',
+        '$': '(USD)',
+        '#': '(HASH)',
+        '!': '(./)',
         'Ä': 'AE',
         'Ö': 'OE',
         'Ü': 'UE',
         'ß': 'SS',
-        '_': '...',
-        ';': ',',
-        '<': '-(',
-        '>': ')-',
-        '[': '((',
-        ']': '))',
-        '{': '(((',
-        '}': ')))',
+        ';': '.,',
         '"': "'",
         '\t': '(TAB)',
         '\x1B': '(ESC)',

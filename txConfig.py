@@ -68,6 +68,10 @@ def load():
         dest="gpio", default=False, action="store_true", 
         help="Device: Use GPIO (pigpio) on RPi")
 
+    parser.add_argument("-D", "--ed1000",
+        dest="ed1000", default=False, action="store_true", 
+        help="Device: Use ED1000 (Tx only) on Sound Card")
+
     parser.add_argument("-T", "--term", 
         dest="port", default=0, metavar='PORT', type=int,
         help="Device: Use Terminal Socket Server at Port Number")
