@@ -93,6 +93,9 @@ def load():
     if 'gpio' not in devices and ARGS.gpio:
         devices['gpio'] = {'type': 'gpio', 'pin_txd': 17, 'pin_rxd': 27, 'pin_dtr': 22, 'pin_rts': 10, 'inv_txd': False, 'inv_rxd': False}
 
+    if 'ed1000' not in devices and ARGS.ed1000:
+        devices['ed1000'] = {'type': 'ed1000', 'f0': 500, 'f1': 700, 'baudrate': 50}
+
     if 'term' not in devices and ARGS.port:
         devices['term'] = {'type': 'term', 'port': ARGS.port}
 
