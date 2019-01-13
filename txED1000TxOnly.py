@@ -8,12 +8,14 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
-#import serial
 import txCode
 import txBase
 
 import time
 from threading import Thread
+import pyaudio
+import math
+import struct
 
 #######
 
@@ -27,20 +29,16 @@ class TelexED1000TxOnly(txBase.TelexBase):
         self.id = '"'
         self.params = params
 
-        baudrate = params.get('baudrate', 50)
-        f0 = params.get('f0', 500)
-        f1 = params.get('f1', 700)
-
         self._tx_buffer = []
 
-        self._tx_thread = Thread(target=self.thread_tx)
         self.run = True
+        self._tx_thread = Thread(target=self.thread_tx)
         self._tx_thread.start()
-        pass
+
 
     def __del__(self):
         self.run = False
-        #print('__del__ in TelexSerial')
+
         super().__del__()
     
     # =====
@@ -54,18 +52,41 @@ class TelexED1000TxOnly(txBase.TelexBase):
             return
             
         bb = self._mc.encodeA2B(a)
-
         if bb:
             for b in bb:
                 self._tx_buffer.append(b)
-
-        #n = self._tty.write(bb)
-        #print('-', n, '-')
 
     # =====
 
     def thread_tx(self):
         """Handler for sending tones."""
+        baudrate = self.params.get('baudrate', 50)
+        f0 = self.params.get('f0', 500)
+        f1 = self.params.get('f1', 700)
+        freq = [f0, f1]
+
+        fs = 44100       # sampling rate, Hz, must be integer
+        Fpb = int(fs / baudrate + 0.5)   # Frames per bit
+
+        audio = pyaudio.PyAudio()
+        #stream = audio.open(format=pyaudio.paInt8, channels=1, rate=fs, output=True)
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=fs, output=True)
+        #stream = audio.open(format=pyaudio.paFloat32, channels=1, rate=fs, output=True)
+
+        a = stream.get_write_available()
+
+        waves = []
+        for i in range(2):
+            samples=[]
+            for n in range(Fpb):
+                t = n / fs
+                s = math.sin(t * 2 * math.pi * freq[i])
+                samples.append(int(s*32000+0.5))   # 16 bit
+                #samples.append(int(s*127+128.5))   # 8 bit
+                #samples.append(s)   # float
+            waves.append(struct.pack('%sh' % Fpb, *samples))   # 16 bit
+            #waves.append(struct.pack('%sf' % Fpb, *samples))   # float
+
 
         while self.run:
             if self._tx_buffer:
@@ -75,12 +96,25 @@ class TelexED1000TxOnly(txBase.TelexBase):
                 d3 = 1 if b & 4 else 0
                 d4 = 1 if b & 8 else 0
                 d5 = 1 if b & 16 else 0
-                print (b, d1, d2, d3, d4, d5)
+                #print (b, d1, d2, d3, d4, d5)
+                stream.write(waves[0], Fpb)
+                stream.write(waves[d1], Fpb)
+                stream.write(waves[d2], Fpb)
+                stream.write(waves[d3], Fpb)
+                stream.write(waves[d4], Fpb)
+                stream.write(waves[d5], Fpb)
+                stream.write(waves[1], Fpb)
+                stream.write(waves[1], int(Fpb/2))
 
             else:   # nothing to send
-                pass
+                stream.write(waves[1], Fpb)
         
-            time.sleep(0.5)
+            time.sleep(0.001)
+
+
+        stream.stop_stream()  
+        stream.close()
+
 
 #######
 

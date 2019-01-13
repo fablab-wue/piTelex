@@ -76,14 +76,14 @@ class TelexSerial(txBase.TelexBase):
             if b == 0x1F:
                 self._counter_LTRS += 1
                 if self._counter_LTRS == 5:
-                    self._rx_buffer.append('\x1b$')
+                    self._rx_buffer.append('\x1bST')
             else:
                 self._counter_LTRS = 0
 
             if b == 0x1B:
                 self._counter_FIGS += 1
                 if self._counter_FIGS == 5:
-                    self._rx_buffer.append('\x1b#')
+                    self._rx_buffer.append('\x1bAT')
             else:
                 self._counter_FIGS = 0
 
@@ -95,6 +95,10 @@ class TelexSerial(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
+            if a == '\x1bA':
+                self._tty.dtr = False   # DTR -> High
+            if a == '\x1bZ':
+                self._tty.dtr = True    # DTR -> Low
             return
             
         if a == '#':
