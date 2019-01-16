@@ -68,7 +68,7 @@ def load():
         dest="gpio", default=False, action="store_true", 
         help="Device: Use GPIO (pigpio) on RPi")
 
-    parser.add_argument("-D", "--ed1000",
+    parser.add_argument("-E", "--ed1000",
         dest="ed1000", default=False, action="store_true", 
         help="Device: Use ED1000 (Tx only) on Sound Card")
 
@@ -76,7 +76,11 @@ def load():
         dest="port", default=0, metavar='PORT', type=int,
         help="Device: Use Terminal Socket Server at Port Number")
 
-    parser.add_argument("-E", "--eliza",
+    parser.add_argument("-I", "--itelex", 
+        dest="itelex", default=0, metavar='PORT', type=int,
+        help="Device: i-Telex")
+
+    parser.add_argument("-Z", "--eliza",
         dest="eliza", default=False, action="store_true", 
         help="Device: Use Eliza Chat Bot")
 
@@ -98,6 +102,9 @@ def load():
 
     if 'term' not in devices and ARGS.port:
         devices['term'] = {'type': 'term', 'port': ARGS.port}
+
+    if 'itelex' not in devices and ARGS.itelex:
+        devices['itelex'] = {'type': 'itelex', 'port': ARGS.itelex}
 
     if 'eliza' not in devices and ARGS.eliza:
         devices['eliza'] = {'type': 'eliza'}

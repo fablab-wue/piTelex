@@ -67,6 +67,7 @@ class TelexED1000TxOnly(txBase.TelexBase):
 
         fs = 44100       # sampling rate, Hz, must be integer
         Fpb = int(fs / baudrate + 0.5)   # Frames per bit
+        Fpw = int(Fpb*7.5 + 0.5)   # Frames per wave
 
         audio = pyaudio.PyAudio()
         #stream = audio.open(format=pyaudio.paInt8, channels=1, rate=fs, output=True)
@@ -97,17 +98,19 @@ class TelexED1000TxOnly(txBase.TelexBase):
                 d4 = 1 if b & 8 else 0
                 d5 = 1 if b & 16 else 0
                 #print (b, d1, d2, d3, d4, d5)
-                stream.write(waves[0], Fpb)
-                stream.write(waves[d1], Fpb)
-                stream.write(waves[d2], Fpb)
-                stream.write(waves[d3], Fpb)
-                stream.write(waves[d4], Fpb)
-                stream.write(waves[d5], Fpb)
-                stream.write(waves[1], Fpb)
-                stream.write(waves[1], int(Fpb/2))
+                wavecomp = bytearray()
+                wavecomp.extend(waves[0])
+                wavecomp.extend(waves[d1])
+                wavecomp.extend(waves[d2])
+                wavecomp.extend(waves[d3])
+                wavecomp.extend(waves[d4])
+                wavecomp.extend(waves[d5])
+                wavecomp.extend(waves[1])
+                wavecomp.extend(waves[1])
+                stream.write(bytes(wavecomp), Fpw)   # blocking
 
             else:   # nothing to send
-                stream.write(waves[1], Fpb)
+                stream.write(waves[1], Fpb)   # blocking
         
             time.sleep(0.001)
 

@@ -9,7 +9,10 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
+from colorama import init, Fore, Back, Style   # https://pypi.org/project/colorama/
+init()
 import os
+
 import txBase
 import txCode
 
@@ -111,7 +114,9 @@ class TelexScreen(txBase.TelexBase):
 
                 if self._escape:
                     if c == '\r':
-                        self._rx_buffer.append(self._escape.upper())
+                        self._escape = self._escape.upper()
+                        self._rx_buffer.append(self._escape)
+                        print('\033[6;30;42m'+self._escape[1:]+'\033[0m', end='', flush=True)
                         self._escape = ''
                     else:
                         self._escape += c
@@ -121,6 +126,12 @@ class TelexScreen(txBase.TelexBase):
 
                     for a in c:
                         self._rx_buffer.append(a)
+
+                        # local echo
+                        if a == '\r' or a == '\n':
+                            print(a, end='')
+                        else:
+                            print('\033[31m'+a+'\033[0m', end='', flush=True)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)

@@ -81,7 +81,8 @@ class BaudotMurrayCode:
         self._ModeA2B = None   # 0=LTRS 1=FIGS
         self._ModeB2A = 0   # 0=LTRS 1=FIGS
         self._loopback_mode = loopback_mode
-        
+        self.flip_bits = False
+
 
     @staticmethod
     def translate(ansi:str) -> str:
@@ -94,6 +95,28 @@ class BaudotMurrayCode:
             ret += a
         
         return ret
+
+
+    @staticmethod
+    def do_flip_bits(val:int) -> int:
+        ret = 0
+
+        if val & 1:
+            ret |= 16
+        if val & 2:
+            ret |= 8
+        if val & 4:
+            ret |= 4
+        if val & 8:
+            ret |= 2
+        if val & 16:
+            ret |= 1
+
+        return ret
+
+
+    def reset(self):
+        self._ModeA2B = None   # 0=LTRS 1=FIGS
 
 
     def encodeA2B(self, ansi:str) -> list:
@@ -109,7 +132,7 @@ class BaudotMurrayCode:
         for a in ansi:
             try: # symbol in current layer?
                 b = self._baLUT[self._ModeA2B].index(a)
-                if b in self._bSwLUT:
+                if b in self._bSwLUT:   # explicit Bu or Zi
                     self._ModeA2B = self._bSwLUT.index(b)
                 ret.append(b)
             except:
@@ -121,6 +144,10 @@ class BaudotMurrayCode:
                 except: # symbol not found -> ignore
                     pass
 
+        if ret and self.flip_bits:
+            for i, b in enumerate(ret):
+                ret[i] = self.do_flip_bits(b)
+
         return ret
 
 
@@ -129,6 +156,8 @@ class BaudotMurrayCode:
         ret = ''
 
         for b in murray:
+            if self.flip_bits:
+                b = self.do_flip_bits(b)
             try:
                 if b in self._bSwLUT:
                     self._ModeB2A = self._bSwLUT.index(b)

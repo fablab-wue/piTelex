@@ -41,8 +41,8 @@ class TelexController(txBase.TelexBase):
 
 
     def write(self, a:str, source:str):
-        if self.device_id and a == '#':   # found 'Wer da?'
-            self._rx_buffer.extend(list(self.device_id))   # send back device id
+        if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
+            self._rx_buffer.extend(list('\r\n' + self.device_id))   # send back device id
             return True
 
 

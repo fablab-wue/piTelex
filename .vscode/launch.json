@@ -11,8 +11,8 @@
             "program": "${workspaceFolder}/telex.py",
             "console": "integratedTerminal",
             "args": [
-                "-d [LOREMIPSUM",
-                "-E"
+                "-d [234200 FABLABWUE D",
+                "-I 1"
             ]
         },
         {
