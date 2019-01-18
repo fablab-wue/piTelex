@@ -1,6 +1,11 @@
 #!/usr/bin/python
 """
 Telex for connecting to i-Telex
+
+    number = '97475'   # Werner
+    number = '727272'   # DWD
+    number = '234200'   # FabLabWue
+    number = '91113'   #  www.fax-tester.de
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -21,6 +26,10 @@ TNS_PORT = 11811        # The port used by the server
 
 #######
 
+def LOG(text:str):
+    print('\033[5;30;46m<'+text+'>\033[0m', end='', flush=True)
+
+
 class TelexITelexClient(txBase.TelexBase):
     def __init__(self, **params):
 
@@ -40,14 +49,6 @@ class TelexITelexClient(txBase.TelexBase):
         self._rx_buffer = []
         self._connected = False
         self._received = 0
-
-        self._mc = txCode.BaudotMurrayCode()
-        self._mc.flip_bits = True
-
-        number = '97475'   # Werner
-        number = '727272'   # DWD
-        #number = '234200'   # FabLabWue
-        number = '91113'   #  www.fax-tester.de
 
         #self.connect(number)
         
@@ -71,10 +72,14 @@ class TelexITelexClient(txBase.TelexBase):
     def write(self, a:str, source:str):
         if len(a) != 1:
             if a == '\x1bZ':   # end session
-                self.disconnect()
+                self.disconnect_client()
 
             if a[:2] == '\x1b#':   # dial
-                self.connect(a[2:])
+                self.connect_client(a[2:])
+
+            if a[:2] == '\x1b?':   # ask TNS
+                tns = self.TNS(a[2:])
+                print(tns)
             return
 
         if not self._connected:
@@ -88,113 +93,116 @@ class TelexITelexClient(txBase.TelexBase):
 
     # =====
 
-    def connect(self, number:str):
-        self._number = number.strip()
-        self._connected = True
-        self._tx_thread = Thread(target=self.thread_client)
-        self._tx_thread.start()
+    def connect_client(self, number:str):
+        Thread(target=self.thread_connect_as_client, args=(number.strip(),)).start()
 
 
-    def disconnect(self):
+    def disconnect_client(self):
         self._tx_buffer = []
         self._connected = False
 
+    # =====
 
-    def thread_client(self):
+    def thread_connect_as_client(self, number):
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(3.0)
-                s.connect((TNS_HOST, TNS_PORT))
-                qry = bytearray('q{}\r\n'.format(self._number), "ASCII")
-                s.sendall(qry)
-                data = s.recv(1024)
+            # get IP of given number from Telex-Number-Server (TNS)
 
-            data = data.decode('ASCII', errors='ignore')
-            lines = data.split('\r\n')
+            if number:
+                lines = self.TNS(number)
 
-            if len(lines) < 7 or lines[0] != 'ok':
-                print('fail', repr(data))
-                raise Exception('No valid number')
+                if len(lines) < 7 or lines[0] != 'ok':
+                    self._rx_buffer.append('\x1bN')
+                    raise Exception('No valid number')
 
-            type = int(lines[3])
-            host = lines[4]
-            port = int(lines[5])
-            dial = lines[6]
+                type = int(lines[3])
+                host = lines[4]
+                port = int(lines[5])
+                dial = lines[6]
+                is_ascii = (3 <= type <= 4)
+            else:
+                host = 'localhost'
+                port = 2342
+                dial = '-'
+                is_ascii = False
 
-            is_ascii = (3 <= type <= 4)
+            # connect to destination Telex
 
-            print('Received', repr(data))
-
-
-
-            #raise Exception('xxx')
-
-            self._mc.reset()
+            mc = txCode.BaudotMurrayCode()
+            mc.flip_bits = True
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                LOG('connected to '+lines[2])
                 s.connect((host, port))
-                s.settimeout(0.5)
+                s.settimeout(0.2)
+
+                self._rx_buffer.append('\x1bA')
+                self._connected = True
 
                 if not is_ascii:
-                    qry = bytearray([7, 1, 1])
-                    s.sendall(qry)
+                    self.send_version(s)
+
+                    if dial.isnumeric():
+                        self.send_direct_dial(s, dial)
 
                 while self._connected:
                     try:
-                        data = s.recv(1024)
+                        data = s.recv(1)
                         
                         if not data:   # lost connection
-                            print('Error no data')
-                            break
-                        
-                        elif data[0] == 0:   # Heartbeat
-                            print('Heartbeat', repr(data))
-                            pass
-
-                        elif data[0] == 1:   # Direct Dial
-                            print('Direct Dial', repr(data))
-                            pass
-
-                        elif data[0] == 2:   # Baudot data
-                            print('Baudot data', repr(data))
-                            l = len(data[2:])
-                            aa = self._mc.decodeB2A(data[2:])
-                            for a in aa:
-                                if a == '@':
-                                    a = '#'
-                                self._rx_buffer.append(a)
-                            self._received += l
-                            send = bytearray([6, 1, self._received & 0xff])
-                            s.sendall(send)
-
-                        elif data[0] == 3:   # End
-                            print('End', repr(data))
                             break
 
-                        elif data[0] == 4:   # Reject
-                            print('Reject', repr(data))
-                            break
+                        elif data[0] <= 9:   # i-Telex packet
+                            d = s.recv(1)
+                            data += d
+                            plen = d[0]
+                            data += s.recv(plen)
 
-                        elif data[0] == 6:   # Acknowledge
-                            print('Acknowledge', repr(data))
-                            pass
+                            if data[0] == 0:   # Heartbeat
+                                #LOG('Heartbeat '+repr(data))
+                                pass
 
-                        elif data[0] == 7:   # Version
-                            print('Version', repr(data))
-                            if data[2] != 1:
-                                send = bytearray([7, 1, 1])
-                                s.sendall(send)
+                            elif data[0] == 1:   # Direct Dial
+                                LOG('Direct Dial '+repr(data))
+                                pass
 
-                        elif data[0] == 8:   # Self test
-                            print('Self test', repr(data))
-                            pass
+                            elif data[0] == 2 and plen > 0:   # Baudot data
+                                #LOG('Baudot data '+repr(data))
+                                aa = mc.decodeB2A(data[2:])
+                                for a in aa:
+                                    if a == '@':
+                                        a = '#'
+                                    self._rx_buffer.append(a)
+                                self._received += len(data[2:])
+                                self.send_ack(s)
 
-                        elif data[0] == 9:   # Remote config
-                            print('Remote config', repr(data))
-                            pass
+                            elif data[0] == 3:   # End
+                                LOG('End '+repr(data))
+                                break
 
-                        else:
-                            #print('Other', repr(data))
+                            elif data[0] == 4:   # Reject
+                                LOG('Reject '+repr(data))
+                                break
+
+                            elif data[0] == 6 and plen == 1:   # Acknowledge
+                                #LOG('Acknowledge '+repr(data))
+                                LOG(str(data[2]))
+                                pass
+
+                            elif data[0] == 7 and plen >= 1:   # Version
+                                #LOG('Version '+repr(data))
+                                if data[2] != 1:
+                                    self.send_version(s)
+
+                            elif data[0] == 8:   # Self test
+                                LOG('Self test '+repr(data))
+                                pass
+
+                            elif data[0] == 9:   # Remote config
+                                LOG('Remote config '+repr(data))
+                                pass
+
+                        else:   # ASCII character(s)
+                            #LOG('Other', repr(data))
                             data = data.decode('ASCII', errors='ignore')
                             for a in data:
                                 if a == '@':
@@ -202,42 +210,102 @@ class TelexITelexClient(txBase.TelexBase):
                                 self._rx_buffer.append(a)
 
                     except socket.timeout:
-                        #print('Timeout')
-                        #self.send_tx_buffer()
+                        #LOG('.')
                         if self._tx_buffer:
                             if is_ascii:
-                                a = self._tx_buffer.pop(0)
-                                data = a.encode('ASCII')
+                                self.send_data_ascii(s)
                             else:
-                                data = bytearray([2, 0])
-                                while self._tx_buffer and len(data) < 100:
-                                    a = self._tx_buffer.pop(0)
-                                    bb = self._mc.encodeA2B(a)
-                                    if bb:
-                                        for b in bb:
-                                            data.append(b)
-                                l = len(data) - 2
-                                data[1] = l
-                            s.sendall(data)
+                                self.send_data_baudot(s, mc)
 
 
                     except socket.error:
-                        print('Error socket')
+                        LOG('Error socket')
                         break
 
                 if not is_ascii:
-                    send = bytearray([3, 0])
-                    s.sendall(send)
-                print('end connection')
+                    self.send_end(s)
+                LOG('end connection')
 
         except Exception as e:
-            print(e)
+            LOG(str(e))
             pass
         
         self._connected = False
+        self._rx_buffer.append('\x1bZ')
+
+    # =====
+
+    def send_ack(self, s):
+        data = bytearray([6, 1, self._received & 0xff])
+        s.sendall(data)
 
 
-    def send_tx_buffer(self):
-        pass
+    def send_version(self, s):
+        send = bytearray([7, 1, 1])
+        s.sendall(send)
+
+
+    def send_direct_dial(self, s, dial):
+        data = bytearray([1, 1])   # Direct Dial
+        if len(dial) == 2:
+            number = int(dial)
+            if number == 0:
+                number = 100
+        elif len(dial) == 1:
+            number = int(dial) + 100
+            if number == 100:
+                number = 110
+        else:
+            number = 0
+        data.append(number)
+        s.sendall(data)
+
+
+    def send_data_ascii(self, s):
+        a = self._tx_buffer.pop(0)
+        data = a.encode('ASCII')
+        s.sendall(data)
+
+
+    def send_data_baudot(self, s, mc):
+        data = bytearray([2, 0])
+        while self._tx_buffer and len(data) < 100:
+            a = self._tx_buffer.pop(0)
+            bb = mc.encodeA2B(a)
+            if bb:
+                for b in bb:
+                    data.append(b)
+        l = len(data) - 2
+        data[1] = l
+        s.sendall(data)
+
+
+    def send_end(self, s):
+        send = bytearray([3, 0])   # End
+        s.sendall(send)
+
+    # =====
+
+    @staticmethod
+    def TNS(number):
+        # get IP of given number from Telex-Number-Server (TNS)
+        # typical answer: 'ok\r\n234200\r\nFabLab, Wuerzburg\r\n1\r\nfablab.dyn.nerd2nerd.org\r\n2342\r\n-\r\n+++\r\n'
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(3.0)
+                s.connect((TNS_HOST, TNS_PORT))
+                qry = bytearray('q{}\r\n'.format(number), "ASCII")
+                s.sendall(qry)
+                data = s.recv(1024)
+
+            data = data.decode('ASCII', errors='ignore')
+            lines = data.split('\r\n')
+
+            #LOG('Received from TNS '+repr(data))
+            return lines
+
+        except:
+            return None
+
 #######
 

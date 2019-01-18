@@ -68,6 +68,9 @@ def init():
             import txITelexClient
             srv = txITelexClient.TelexITelexClient(**dev_param)
             DEVICES.append(srv)
+            import txITelexSrv
+            srv = txITelexSrv.TelexITelexSrv(**dev_param)
+            DEVICES.append(srv)
 
         if dev_param['type'] == 'eliza':
             import txEliza

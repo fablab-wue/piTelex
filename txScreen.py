@@ -116,7 +116,7 @@ class TelexScreen(txBase.TelexBase):
                     if c == '\r':
                         self._escape = self._escape.upper()
                         self._rx_buffer.append(self._escape)
-                        print('\033[6;30;42m'+self._escape[1:]+'\033[0m', end='', flush=True)
+                        print('\033[1;37;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
                         self._escape = ''
                     else:
                         self._escape += c
@@ -142,7 +142,7 @@ class TelexScreen(txBase.TelexBase):
     def write(self, a:str, source:str):
         if len(a) != 1:
             if a[0] == '\x1b':
-                print('<ESC {}>'.format(a[1:]), end='', flush=True)
+                print('\033[0;30;47m<'+a[1:]+'>\033[0m', end='', flush=True)
             return
 
         if a == '\r' or a == '\n':

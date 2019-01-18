@@ -8,6 +8,9 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
+import time
+from threading import Thread
+
 import txBase
 
 #######
@@ -23,11 +26,17 @@ class TelexController(txBase.TelexBase):
         self.id = '§'
         self.params = {}
         self._rx_buffer = []
+        self._mx_buffer = []
 
         self._font_mode = False
 
+        self._run = True
+        self._tx_thread = Thread(target=self.thread_memory)
+        self._tx_thread.start()
+
 
     def __del__(self):
+        self._run = False
         pass
     
 
@@ -47,15 +56,15 @@ class TelexController(txBase.TelexBase):
 
 
         if a == '\x1bAT':   # AT
-            self._rx_buffer.extend(list('\x1bA'))   # send text
+            self._rx_buffer.append('\x1bD')   # send text
             return True
 
         if a == '\x1bST':   # ST
-            self._rx_buffer.extend(list('\x1bZ'))   # send text
+            self._rx_buffer.append('\x1bZ')   # send text
             return True
 
         if a == '\x1bLT':   # LT
-            self._rx_buffer.extend(list('\x1bA'))   # send text
+            self._rx_buffer.append('\x1bA')   # send text
             return True
 
 
@@ -84,6 +93,23 @@ class TelexController(txBase.TelexBase):
         if a == '\x1bABC':   # print ABC pattern
             self._rx_buffer.extend(list('ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 .,-+=/()?\'%'))   # send text
             return True
+
+        if a[:3] == '\x1bM=':   # set memory text
+            self._mx_buffer.extend(list(a[3:]))   # send text
+            return True
+
+        if a == '\x1bMC':   # clear memory text
+            self._mx_buffer = []
+            return True
+
+
+    def thread_memory(self):
+        while self._run:
+            #LOG('.')
+            if self._mx_buffer:
+                a = self._mx_buffer.pop(0)
+                self._rx_buffer.append(a)
+            time.sleep(0.15)
 
 
 #######
