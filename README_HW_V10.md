@@ -1,6 +1,6 @@
 # Electronic for V.10 Interface
 
-<img src="img/V.10.jpg" width="320px">
+<img src="img/V.10.JPG" width="320px">
 
 Some typewriters have an optional V.10 interface like the TeKaDe FS200Z / FS220Z. The V.10 definition is near to V.24 (RS-232) with a voltage limit of -6...6V.
 
