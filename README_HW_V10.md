@@ -1,5 +1,7 @@
 # Electronic for V.10 Interface
 
+<img src="img/V.10.jpg" width="320px">
+
 Some typewriters have an optional V.10 interface like the TeKaDe FS200Z / FS220Z. The V.10 definition is near to V.24 (RS-232) with a voltage limit of -6...6V.
 
 Most modern UARTs and serial-adapters do not support 50 baud and/or 5 bits. **BUT!** The USB-to-serial-chip CH340 does support it!

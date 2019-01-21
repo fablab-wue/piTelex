@@ -1,3 +1,5 @@
+<img src="img/Header.jpg" width="1024px">
+
 # piTelex
 Control a historic Telex device with a Raspberry Pi in Python 3.
 

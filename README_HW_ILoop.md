@@ -64,6 +64,8 @@ To signal the FSG a connection the voltage is pole changed with a relais.
 
 ## Compact USB Interface
 
+<img src="img/USB.jpg" width="320px">
+
 <img src="img/TelexUSB3.png" width="518px">
 
 ## High Voltage Interface
