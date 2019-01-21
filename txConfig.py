@@ -40,16 +40,9 @@ def load():
 
     parser = ArgumentParser(prog='-=TEST-TELEX=-', conflict_handler='resolve')
 
-    parser.add_argument("-d", "--id", 
+    parser.add_argument("-k", "--id", 
         dest="wru_id", default='', metavar="ID",
         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
-
-    parser.add_argument("-l", "--noloop",
-        dest="loop", default=True, action="store_false", 
-        help="No Loop-Back")
-    parser.add_argument("-L", "--loop",
-        dest="loop", default=True, action="store_true", 
-        help="Use Loop-Back")
 
     parser.add_argument("-q", "--quiet",
         dest="verbose", default=True, action="store_false", 
@@ -84,6 +77,10 @@ def load():
         dest="eliza", default=False, action="store_true", 
         help="Device: Use Eliza Chat Bot")
 
+    parser.add_argument("-L", "--log", 
+        dest="log", default='', metavar="NAME",
+        help="Device: Log to File")
+
     ARGS = parser.parse_args()
 
     devices = CFG['devices']
@@ -92,10 +89,10 @@ def load():
         devices['screen'] = {'type': 'screen'}
 
     if 'tty' not in devices and ARGS.tty:
-        devices['tty'] = {'type': 'tty', 'portname': ARGS.tty.strip(), 'loopback': ARGS.loop}
+        devices['tty'] = {'type': 'tty', 'portname': ARGS.tty.strip(), 'baudrate': 50, 'loopback': True}
 
     if 'gpio' not in devices and ARGS.gpio:
-        devices['gpio'] = {'type': 'gpio', 'pin_txd': 17, 'pin_rxd': 27, 'pin_dtr': 22, 'pin_rts': 10, 'inv_txd': False, 'inv_rxd': False}
+        devices['gpio'] = {'type': 'gpio', 'pin_txd': 17, 'pin_rxd': 27, 'pin_dtr': 22, 'pin_rts': 10, 'baudrate': 50, 'inv_txd': False, 'inv_rxd': False, 'loopback': True}
 
     if 'ed1000' not in devices and ARGS.ed1000:
         devices['ed1000'] = {'type': 'ed1000', 'f0': 500, 'f1': 700, 'baudrate': 50}
@@ -108,6 +105,9 @@ def load():
 
     if 'eliza' not in devices and ARGS.eliza:
         devices['eliza'] = {'type': 'eliza'}
+
+    if 'log' not in devices and ARGS.log:
+        devices['log'] = {'type': 'log', 'filename': ARGS.log.strip()}
 
 
     CFG['verbose'] = ARGS.verbose

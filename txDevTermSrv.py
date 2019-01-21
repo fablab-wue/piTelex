@@ -10,7 +10,7 @@ __version__     = "0.0.1"
 
 import txCode
 import txBase
-from socket import AF_INET, socket, SOCK_STREAM
+from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 
 #######

@@ -84,8 +84,7 @@ class TelexITelexSrv(txBase.TelexBase):
 
     def thread_handle_client(self, client):  # Takes client socket as argument.
         """Handles a single client connection."""
-        mc = txCode.BaudotMurrayCode()
-        mc.flip_bits = True
+        bmc = txCode.BaudotMurrayCode(False, False, True)
         is_ascii = False
 
         client.settimeout(0.2)
@@ -114,7 +113,7 @@ class TelexITelexSrv(txBase.TelexBase):
 
                     elif data[0] == 2 and plen > 0:   # Baudot data
                         #LOG('Baudot data '+repr(data))
-                        aa = mc.decodeB2A(data[2:])
+                        aa = bmc.decodeBM2A(data[2:])
                         for a in aa:
                             if a == '@':
                                 a = '#'
@@ -164,7 +163,7 @@ class TelexITelexSrv(txBase.TelexBase):
                     if is_ascii:
                         self.send_data_ascii(client)
                     else:
-                        self.send_data_baudot(client, mc)
+                        self.send_data_baudot(client, bmc)
                 else:
                     if not is_ascii:
                         self.send_heartbeat(client)
@@ -201,11 +200,11 @@ class TelexITelexSrv(txBase.TelexBase):
         s.sendall(data)
 
 
-    def send_data_baudot(self, s, mc):
+    def send_data_baudot(self, s, bmc):
         data = bytearray([2, 0])
         while self._tx_buffer and len(data) < 100:
             a = self._tx_buffer.pop(0)
-            bb = mc.encodeA2B(a)
+            bb = bmc.encodeA2BM(a)
             if bb:
                 for b in bb:
                     data.append(b)

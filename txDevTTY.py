@@ -19,8 +19,6 @@ class TelexSerial(txBase.TelexBase):
 
         super().__init__()
 
-        self._mc = txCode.BaudotMurrayCode()
-
         self.id = '~'
         self.params = params
 
@@ -29,6 +27,9 @@ class TelexSerial(txBase.TelexBase):
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
         loopback = params.get('loopback', True)
+        uscoding = params.get('uscoding', True)
+
+        self._mc = txCode.BaudotMurrayCode(loopback, uscoding)
 
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
@@ -48,7 +49,6 @@ class TelexSerial(txBase.TelexBase):
 
         self._loopback = loopback
         self._rx_buffer = []
-        self._tx_eat_bytes = 0
         self._counter_LTRS = 0
         self._counter_FIGS = 0
 
@@ -64,23 +64,20 @@ class TelexSerial(txBase.TelexBase):
         ret = ''
 
         if self._tty.in_waiting:
-            b = self._tty.read(1)
-            a = self._mc.decodeB2A(b)
-            if self._tx_eat_bytes:
-                self._tx_eat_bytes -= 1
-                return ''
+            bb = self._tty.read(1)
+            a = self._mc.decodeBM2A(bb)
             
             if a:
                 self._rx_buffer.append(a)
 
-            if b == 0x1F:
+            if bb[0] == 0x1F:
                 self._counter_LTRS += 1
                 if self._counter_LTRS == 5:
                     self._rx_buffer.append('\x1bST')
             else:
                 self._counter_LTRS = 0
 
-            if b == 0x1B:
+            if bb[0] == 0x1B:
                 self._counter_FIGS += 1
                 if self._counter_FIGS == 5:
                     self._rx_buffer.append('\x1bAT')
@@ -104,11 +101,9 @@ class TelexSerial(txBase.TelexBase):
         if a == '#':
             a = '@'   # ask teletype for hardware ID
 
-        bb = self._mc.encodeA2B(a)
+        bb = self._mc.encodeA2BM(a)
 
         n = self._tty.write(bb)
-        if not self._loopback:
-            self._tx_eat_bytes += n
         #print('-', n, '-')
 
 #######

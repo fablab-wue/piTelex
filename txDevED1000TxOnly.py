@@ -51,7 +51,7 @@ class TelexED1000TxOnly(txBase.TelexBase):
         if len(a) != 1:
             return
             
-        bb = self._mc.encodeA2B(a)
+        bb = self._mc.encodeA2BM(a)
         if bb:
             for b in bb:
                 self._tx_buffer.append(b)

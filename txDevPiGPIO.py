@@ -35,6 +35,11 @@ class TelexPiGPIO(txBase.TelexBase):
         self._pin_rts = params.get('pin_rts', 10)
         self._inv_rxd = params.get('pin_rxd', False)
         self._inv_txd = params.get('pin_txd', False)
+        loopback = params.get('loopback', True)
+        uscoding = params.get('uscoding', True)
+
+        self._mc = txCode.BaudotMurrayCode(loopback, uscoding)
+        
         self._tx_buffer = []
         self._rx_buffer = []
         self._cb = None
@@ -62,8 +67,6 @@ class TelexPiGPIO(txBase.TelexBase):
         # init bit bongo serial write
         self.last_wid = None
 
-        self._mc = txCode.BaudotMurrayCode()
-
         # debug
         cbs = pi.wave_get_max_cbs()
         micros = pi.wave_get_max_micros()
@@ -85,7 +88,7 @@ class TelexPiGPIO(txBase.TelexBase):
         count, data = pi.bb_serial_read(self._pin_rxd)
         if count:
             bb = data
-            a = self._mc.decodeB2A(bb)
+            a = self._mc.decodeBM2A(bb)
             if a:
                 self._rx_buffer.append(a)
         
@@ -99,7 +102,7 @@ class TelexPiGPIO(txBase.TelexBase):
         if len(a) != 1:
             return
 
-        bb = self._mc.encodeA2B(a)
+        bb = self._mc.encodeA2BM(a)
     
         if bb:
             for b in bb:

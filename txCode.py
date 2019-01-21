@@ -49,17 +49,19 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
+import time
+
 #######
 
 class BaudotMurrayCode:
     # Baudot-Murray-Code to ASCII table
-    _baLUT    = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- '87\r@4%,~:(5+)2~6019?~]./=["]
-    _baLUT_US = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- %87\r$4',!:(5\")2@6019?&]./;["]
+    _LUT_BM2A_STD = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- '87\r@4%,~:(5+)2~6019?~]./=["]
+    _LUT_BM2A_US  = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- %87\r$4',!:(5\")2@6019?&]./;["]
     # Baudot-Murray-Code mode switch codes
-    _bSwLUT = [0x1F, 0x1B]
+    _LUT_BMsw = [0x1F, 0x1B]
 
     # Baudot-Murray-Code valid ASCII table
-    _valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=().,:?\'~%@#_*<|>[]{}\r\n'
+    _valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=().,:?\'~%$"!&;@#_*<|>[]{}\r\n'
     _replace_char = {
         '&': '(AND)',
         '€': '(EUR)',
@@ -76,13 +78,6 @@ class BaudotMurrayCode:
         '\x1B': '(ESC)',
         '\x08': '(BACK)',
         }
-
-    def __init__(self, loopback_mode:bool=True):
-        self._ModeA2B = None   # 0=LTRS 1=FIGS
-        self._ModeB2A = 0   # 0=LTRS 1=FIGS
-        self._loopback_mode = loopback_mode
-        self.flip_bits = False
-
 
     @staticmethod
     def translate(ansi:str) -> str:
@@ -115,60 +110,88 @@ class BaudotMurrayCode:
         return ret
 
 
+    def __init__(self, loop_back:bool=False, us_coding=False, flip_bits=False):
+        self._ModeA2BM = None   # 0=LTRS 1=FIGS
+        self._ModeBM2A = 0   # 0=LTRS 1=FIGS
+        self._flip_bits = flip_bits
+        self._loop_back = loop_back
+        self._loop_back_eat_bytes = 0
+        self._loop_back_time = 0
+        if us_coding:
+            self._LUT_BM2A = self._LUT_BM2A_US
+        else:
+            self._LUT_BM2A = self._LUT_BM2A_STD
+
+
     def reset(self):
-        self._ModeA2B = None   # 0=LTRS 1=FIGS
+        self._ModeA2BM = None   # 0=LTRS 1=FIGS
 
 
-    def encodeA2B(self, ansi:str) -> list:
+    def encodeA2BM(self, ascii:str) -> list:
         ''' convert an ASCII string to a list of baudot-murray-coded bytes '''
         ret = []
 
-        ansi = ansi.upper()
+        ascii = ascii.upper()
 
-        if self._ModeA2B == None:
-            self._ModeA2B = 0   # letters
-            ret.append(self._bSwLUT[self._ModeA2B])
+        if self._ModeA2BM == None:
+            self._ModeA2BM = 0   # letters
+            ret.append(self._LUT_BMsw[self._ModeA2BM])
 
-        for a in ansi:
+        for a in ascii:
             try: # symbol in current layer?
-                b = self._baLUT[self._ModeA2B].index(a)
+                b = self._baLUT[self._ModeA2BM].index(a)
                 if b in self._bSwLUT:   # explicit Bu or Zi
-                    self._ModeA2B = self._bSwLUT.index(b)
+                    self._ModeA2BM = self._LUT_BMsw.index(b)
                 ret.append(b)
             except:
                 try: # symbol in other layer?
-                    b = self._baLUT[1-self._ModeA2B].index(a)
-                    self._ModeA2B = 1 - self._ModeA2B
-                    ret.append(self._bSwLUT[self._ModeA2B])
+                    b = self._baLUT[1-self._ModeA2BM].index(a)
+                    self._ModeA2BM = 1 - self._ModeA2BM
+                    ret.append(self._LUT_BMsw[self._ModeA2BM])
                     ret.append(b)
                 except: # symbol not found -> ignore
                     pass
 
-        if ret and self.flip_bits:
+        if ret and self._flip_bits:
             for i, b in enumerate(ret):
                 ret[i] = self.do_flip_bits(b)
+
+        if self._loop_back:
+            self._loop_back_eat_bytes += len(ret)
+            self._loop_back_time = time.time()
 
         return ret
 
 
-    def decodeB2A(self, murray:list) -> str:
+    def decodeBM2A(self, code:list) -> str:
         ''' convert a list/bytearray of baudot-murray-coded bytes to an ASCII string '''
         ret = ''
 
-        for b in murray:
-            if self.flip_bits:
-                b = self.do_flip_bits(b)
-            try:
-                if b in self._bSwLUT:
-                    self._ModeB2A = self._bSwLUT.index(b)
+        for b in code:
+            if self._loop_back and self._loop_back_eat_bytes:
+                if time.time()-self._loop_back_time > 3:
+                    self._loop_back_eat_bytes = 0
                 else:
-                    a = self._baLUT[self._ModeB2A][b]
-                    ret += a
+                    self._loop_back_eat_bytes -= 1
+                    continue
+
+            if self._flip_bits:
+                b = self.do_flip_bits(b)
+
+            try:
+                if b in self._LUT_BMsw:
+                    mode = self._LUT_BMsw.index(b)
+                    if self._ModeBM2A != mode:
+                        self._ModeBM2A = mode
+                        continue
+
+                a = self._LUT_BM2A[self._ModeBM2A][b]
+                ret += a
             except:
                 pass
 
-        if self._loopback_mode:
-            self._ModeA2B = self._ModeB2A # on sending a sysmbol the machine switches itself to other symbol layer
+        if self._loop_back:
+            self._ModeA2BM = self._ModeBM2A # on sending a sysmbol the machine switches itself to other symbol layer
 
         return ret
 
