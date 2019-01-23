@@ -49,6 +49,7 @@ class TelexITelexClient(txBase.TelexBase):
         self._rx_buffer = []
         self._connected = False
         self._received = 0
+        self._sent = 0
 
         #self.connect(number)
         
@@ -80,6 +81,9 @@ class TelexITelexClient(txBase.TelexBase):
             if a[:2] == '\x1b?':   # ask TNS
                 tns = self.TNS(a[2:])
                 print(tns)
+            return
+
+        if source == '<' or source == '>':
             return
 
         if not self._connected:
@@ -114,12 +118,14 @@ class TelexITelexClient(txBase.TelexBase):
                     self._rx_buffer.append('\x1bN')
                     raise Exception('No valid number')
 
+                name = lines[2]
                 type = int(lines[3])
                 host = lines[4]
                 port = int(lines[5])
                 dial = lines[6]
                 is_ascii = (3 <= type <= 4)
             else:
+                name = 'local'
                 host = 'localhost'
                 port = 2342
                 dial = '-'
@@ -130,7 +136,7 @@ class TelexITelexClient(txBase.TelexBase):
             bmc = txCode.BaudotMurrayCode(False, False, True)
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                LOG('connected to '+lines[2])
+                LOG('connected to '+name)
                 s.connect((host, port))
                 s.settimeout(0.2)
 
@@ -184,7 +190,7 @@ class TelexITelexClient(txBase.TelexBase):
 
                             elif data[0] == 6 and plen == 1:   # Acknowledge
                                 #LOG('Acknowledge '+repr(data))
-                                LOG(str(data[2]))
+                                LOG(str(data[2])+'/'+str(self._sent))
                                 pass
 
                             elif data[0] == 7 and plen >= 1:   # Version
@@ -202,7 +208,7 @@ class TelexITelexClient(txBase.TelexBase):
 
                         else:   # ASCII character(s)
                             #LOG('Other', repr(data))
-                            data = data.decode('ASCII', errors='ignore')
+                            data = data.decode('ASCII', errors='ignore').upper()
                             for a in data:
                                 if a == '@':
                                     a = '#'
@@ -276,6 +282,7 @@ class TelexITelexClient(txBase.TelexBase):
                     data.append(b)
         l = len(data) - 2
         data[1] = l
+        self._sent += l
         s.sendall(data)
 
 

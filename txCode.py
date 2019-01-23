@@ -139,13 +139,13 @@ class BaudotMurrayCode:
 
         for a in ascii:
             try: # symbol in current layer?
-                b = self._baLUT[self._ModeA2BM].index(a)
-                if b in self._bSwLUT:   # explicit Bu or Zi
+                b = self._LUT_BM2A[self._ModeA2BM].index(a)
+                if b in self._LUT_BMsw:   # explicit Bu or Zi
                     self._ModeA2BM = self._LUT_BMsw.index(b)
                 ret.append(b)
             except:
                 try: # symbol in other layer?
-                    b = self._baLUT[1-self._ModeA2BM].index(a)
+                    b = self._LUT_BM2A[1-self._ModeA2BM].index(a)
                     self._ModeA2BM = 1 - self._ModeA2BM
                     ret.append(self._LUT_BMsw[self._ModeA2BM])
                     ret.append(b)

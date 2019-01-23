@@ -2,6 +2,8 @@
 
 TODO...
 
+<img src="img/SW_Modules.png" width="1330px">
+
 ## State Machine
 
 The internal states are controlled by escape sequences. 
@@ -9,12 +11,12 @@ The internal states are controlled by escape sequences.
 | ESC | Description |
 | --- | --- |
 | AT | User start outgoing call
-| WB | Begin dialing
-| C&lt;number&gt; | Dialing is finished, request IP-address, connecting
-| A | Connected
 | ST | User stop outgoing call
-| Z | Disconnected
 | LT | Locale
+| A | Connected
+| Z | Disconnected
+| WB | Begin dialing
+| #&lt;number&gt; | Dialing is finished, request IP-address, connecting
 
 
 ## USB-Serial-Adapter

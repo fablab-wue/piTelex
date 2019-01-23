@@ -37,14 +37,12 @@ class TelexITelexSrv(txBase.TelexBase):
         self.run = True
         self.clients = {}
 
-        self.BUFSIZ = 1024
-
         self.SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.SERVER.bind(('', self._port))
 
         self.SERVER.listen(2)
         #print("Waiting for connection...")
-        Thread(target=self.thread_accept_incoming_connections).start()
+        Thread(target=self.thread_srv_accept_incoming_connections).start()
 
 
     def __del__(self):
@@ -67,22 +65,25 @@ class TelexITelexSrv(txBase.TelexBase):
     def write(self, a:str, source:str):
         if len(a) != 1:
             return
-            
+
+        if source == '<' or source == '>':
+            return
+
         self._tx_buffer.append(a)
 
     # =====
 
-    def thread_accept_incoming_connections(self):
+    def thread_srv_accept_incoming_connections(self):
         """Sets up handling for incoming clients."""
         while self.run:
             client, client_address = self.SERVER.accept()
             LOG("%s:%s has connected" % client_address)
             self.clients[client] = client_address
             self._tx_buffer = []
-            Thread(target=self.thread_handle_client, args=(client,)).start()
+            Thread(target=self.thread_srv_handle_client, args=(client,)).start()
 
 
-    def thread_handle_client(self, client):  # Takes client socket as argument.
+    def thread_srv_handle_client(self, client):  # Takes client socket as argument.
         """Handles a single client connection."""
         bmc = txCode.BaudotMurrayCode(False, False, True)
         is_ascii = False
@@ -149,7 +150,7 @@ class TelexITelexSrv(txBase.TelexBase):
                 else:   # ASCII character(s)
                     #LOG('Other', repr(data))
                     is_ascii = True
-                    data = data.decode('ASCII', errors='ignore')
+                    data = data.decode('ASCII', errors='ignore').upper()
                     data = txCode.BaudotMurrayCode.translate(data)
                     for a in data:
                         if a == '@':
@@ -177,6 +178,7 @@ class TelexITelexSrv(txBase.TelexBase):
         LOG('end connection')
         client.close()
         del self.clients[client]
+        pass
 
 
     def send_heartbeat(self, s):

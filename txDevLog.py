@@ -26,7 +26,7 @@ class TelexLog(txBase.TelexBase):
 
         self._last_time = self._last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self._last_source = ' '
-        self._line = '================================================================='
+        self._line = '================================================================================'
 
 
     def __del__(self):
@@ -54,7 +54,7 @@ class TelexLog(txBase.TelexBase):
             add = '|'
             a = ''
 
-        elif source == self._last_source and len(self._line) >= 70:
+        elif source == self._last_source and len(self._line) >= 80:
             out = True
             add = ' \\'
 
@@ -69,8 +69,8 @@ class TelexLog(txBase.TelexBase):
             line += self._line
             line += add
 
-            print()
-            print(line)
+            #print()
+            #print(line)
             
             with open(self._filename, 'a') as fp:
                 line += '\n'

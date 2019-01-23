@@ -70,14 +70,14 @@ class TelexSerial(txBase.TelexBase):
             if a:
                 self._rx_buffer.append(a)
 
-            if bb[0] == 0x1F:
+            if a == '[':
                 self._counter_LTRS += 1
                 if self._counter_LTRS == 5:
                     self._rx_buffer.append('\x1bST')
             else:
                 self._counter_LTRS = 0
 
-            if bb[0] == 0x1B:
+            if a == ']':
                 self._counter_FIGS += 1
                 if self._counter_FIGS == 5:
                     self._rx_buffer.append('\x1bAT')
