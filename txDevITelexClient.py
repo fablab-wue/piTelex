@@ -39,20 +39,12 @@ class TelexITelexClient(txBase.TelexBase):
         self.params = params
 
         #self._baudrate = params.get('baudrate', 50)
-        #self._pin_txd = params.get('pin_txd', 17)
-        #self._pin_rxd = params.get('pin_rxd', 27)
-        #self._pin_dtr = params.get('pin_dtr', 22)
-        #self._pin_rts = params.get('pin_rts', 10)
-        #self._inv_rxd = params.get('pin_rxd', False)
-        #self._inv_txd = params.get('pin_txd', False)
         self._tx_buffer = []
         self._rx_buffer = []
         self._connected = False
         self._received = 0
         self._sent = 0
 
-        #self.connect(number)
-        
 
     def __del__(self):
         self._connected = False
@@ -79,7 +71,7 @@ class TelexITelexClient(txBase.TelexBase):
                 self.connect_client(a[2:])
 
             if a[:2] == '\x1b?':   # ask TNS
-                tns = self.TNS(a[2:])
+                tns = self.query_TNS(a[2:])
                 print(tns)
             return
 
@@ -111,43 +103,37 @@ class TelexITelexClient(txBase.TelexBase):
         try:
             # get IP of given number from Telex-Number-Server (TNS)
 
-            if number:
-                lines = self.TNS(number)
+            user = self.query_userlist(number)
+            if not user:
+                user = self.query_TNS(number)
 
-                if len(lines) < 7 or lines[0] != 'ok':
-                    self._rx_buffer.append('\x1bN')
-                    raise Exception('No valid number')
+            if not user and number[0] == '0':
+                user = self.query_TNS(number[1:])
 
-                name = lines[2]
-                type = int(lines[3])
-                host = lines[4]
-                port = int(lines[5])
-                dial = lines[6]
-                is_ascii = (3 <= type <= 4)
-            else:
-                name = 'local'
-                host = 'localhost'
-                port = 2342
-                dial = '-'
-                is_ascii = False
+            if not user:
+                return
+                
+            #self._rx_buffer.append('\x1bN')
+            self._rx_buffer.append('\x1bA')
+
+            is_ascii = user['type'] == 'A'
 
             # connect to destination Telex
 
             bmc = txCode.BaudotMurrayCode(False, False, True)
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                LOG('connected to '+name)
-                s.connect((host, port))
+                LOG('connected to '+user['name'])
+                s.connect((user['host'], user['port']))
                 s.settimeout(0.2)
 
-                self._rx_buffer.append('\x1bA')
                 self._connected = True
 
                 if not is_ascii:
                     self.send_version(s)
 
-                    if dial.isnumeric():
-                        self.send_direct_dial(s, dial)
+                    if user['dial'].isnumeric():
+                        self.send_direct_dial(s, user['dial'])
 
                 while self._connected:
                     try:
@@ -293,9 +279,9 @@ class TelexITelexClient(txBase.TelexBase):
     # =====
 
     @staticmethod
-    def TNS(number):
+    def query_TNS(number):
         # get IP of given number from Telex-Number-Server (TNS)
-        # typical answer: 'ok\r\n234200\r\nFabLab, Wuerzburg\r\n1\r\nfablab.dyn.nerd2nerd.org\r\n2342\r\n-\r\n+++\r\n'
+        # typical answer from TNS: 'ok\r\n234200\r\nFabLab, Wuerzburg\r\n1\r\nfablab.dyn.nerd2nerd.org\r\n2342\r\n-\r\n+++\r\n'
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
@@ -305,13 +291,58 @@ class TelexITelexClient(txBase.TelexBase):
                 data = s.recv(1024)
 
             data = data.decode('ASCII', errors='ignore')
-            lines = data.split('\r\n')
+            items = data.split('\r\n')
 
-            #LOG('Received from TNS '+repr(data))
-            return lines
+            if len(items) >= 7 and items[0] == 'ok':
+                if 3 <= int(items[3]) <= 4:
+                    type = 'A'
+                else:
+                    type = 'I'
+                user = {
+                    'name': items[2],
+                    'type': type,
+                    'host': items[4],
+                    'port': int(items[5]),
+                    'dial': items[6],
+                }
+
+                LOG('Found user in TNS '+str(user))
+                return user
 
         except:
-            return None
+            pass
+            
+        return None
+
+
+    @staticmethod
+    def query_userlist(number):
+        # get IP of given number from Telex-Number-Server (TNS)
+        # typical line in file: 'FABLAB;234200;FabLab, Wuerzburg;1;fablab.dyn.nerd2nerd.org;2342;-;'
+        try:
+            with open('userlist.csv', 'r') as f:
+                for line in f:
+                    if line:
+                        items = line.split(';')
+                        if len(items) >= 7:
+                            for i, item in enumerate(items):
+                                items[i] = item.strip()
+                            if number == items[0] or number == items[1]:
+                                user = {
+                                    'name': items[2],
+                                    'type': items[3],
+                                    'host': items[4],
+                                    'port': int(items[5]),
+                                    'dial': items[6],
+                                }
+                                LOG('Found user '+str(user))
+
+                                return user
+
+        except:
+            pass
+
+        return None
 
 #######
 

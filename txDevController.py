@@ -103,6 +103,12 @@ class TelexController(txBase.TelexBase):
             return True
 
 
+        if a == '\x1bT':   # actual time
+            text = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + '\r\n'
+            self._mx_buffer.extend(list(text))   # send text
+            return True
+
+
     def thread_memory(self):
         while self._run:
             #LOG('.')

@@ -90,6 +90,8 @@ class TelexITelexSrv(txBase.TelexBase):
 
         client.settimeout(0.2)
 
+        self._rx_buffer.append('\x1bT')
+
         while self.run:
             try:
                 data = client.recv(1)
