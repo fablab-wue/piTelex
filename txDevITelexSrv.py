@@ -8,16 +8,17 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
+from threading import Thread
+import socket
+
 import txCode
 import txBase
-#from socket import AF_INET, socket, SOCK_STREAM
-import socket
-from threading import Thread
+import log
 
 #######
 
-def LOG(text:str):
-    print('\033[5;30;44m<'+text+'>\033[0m', end='', flush=True)
+def LOG(text:str, level:int=3):
+    log.LOG('\033[5;30;44m<'+text+'>\033[0m', level)
 
 class TelexITelexSrv(txBase.TelexBase):
     def __init__(self, **params):
@@ -77,7 +78,7 @@ class TelexITelexSrv(txBase.TelexBase):
         """Sets up handling for incoming clients."""
         while self.run:
             client, client_address = self.SERVER.accept()
-            LOG("%s:%s has connected" % client_address)
+            LOG("%s:%s has connected" % client_address, 3)
             self.clients[client] = client_address
             self._tx_buffer = []
             Thread(target=self.thread_srv_handle_client, args=(client,)).start()
@@ -107,15 +108,15 @@ class TelexITelexSrv(txBase.TelexBase):
                     data += client.recv(plen)
 
                     if data[0] == 0:   # Heartbeat
-                        #LOG('Heartbeat '+repr(data))
+                        #LOG('Heartbeat '+repr(data), 4)
                         pass
 
                     elif data[0] == 1:   # Direct Dial
-                        LOG('Direct Dial '+repr(data))
+                        LOG('Direct Dial '+repr(data), 4)
                         pass
 
                     elif data[0] == 2 and plen > 0:   # Baudot data
-                        #LOG('Baudot data '+repr(data))
+                        #LOG('Baudot data '+repr(data), 4)
                         aa = bmc.decodeBM2A(data[2:])
                         for a in aa:
                             if a == '@':
@@ -125,32 +126,32 @@ class TelexITelexSrv(txBase.TelexBase):
                         self.send_ack(client)
 
                     elif data[0] == 3:   # End
-                        LOG('End '+repr(data))
+                        LOG('End '+repr(data), 4)
                         break
 
                     elif data[0] == 4:   # Reject
-                        LOG('Reject '+repr(data))
+                        LOG('Reject '+repr(data), 4)
                         break
 
                     elif data[0] == 6 and plen == 1:   # Acknowledge
-                        #LOG('Acknowledge '+repr(data))
+                        #LOG('Acknowledge '+repr(data), 4)
                         LOG(str(data[2]))
                         pass
 
                     elif data[0] == 7 and plen >= 1:   # Version
-                        #LOG('Version '+repr(data))
+                        #LOG('Version '+repr(data), 4)
                         self.send_version(client)
 
                     elif data[0] == 8:   # Self test
-                        LOG('Self test '+repr(data))
+                        LOG('Self test '+repr(data), 4)
                         pass
 
                     elif data[0] == 9:   # Remote config
-                        LOG('Remote config '+repr(data))
+                        LOG('Remote config '+repr(data), 4)
                         pass
 
                 else:   # ASCII character(s)
-                    #LOG('Other', repr(data))
+                    #LOG('Other', repr(data), 4)
                     is_ascii = True
                     data = data.decode('ASCII', errors='ignore').upper()
                     data = txCode.BaudotMurrayCode.translate(data)
@@ -161,7 +162,7 @@ class TelexITelexSrv(txBase.TelexBase):
 
 
             except socket.timeout:
-                #LOG('.')
+                #LOG('.', 4)
                 if self._tx_buffer:
                     if is_ascii:
                         self.send_data_ascii(client)
@@ -173,11 +174,11 @@ class TelexITelexSrv(txBase.TelexBase):
 
 
             except socket.error:
-                LOG('Error socket')
+                LOG('Error socket', 2)
                 break
 
 
-        LOG('end connection')
+        LOG('end connection', 3)
         client.close()
         del self.clients[client]
         pass

@@ -1,3 +1,4 @@
-FABLAB; 234200; FabLab, Wuerzburg; I; fablab.dyn.nerd2nerd.org; 2342; -;
-LOCAL; 000; localhost; I;127.0.0.1; 2342; -;
-DWD; 727272; Wettervorhersage DWD; A; 149.28.100.80; 133; -;
+Nick,TNum,ENum,Type,Host,Port,Name
+FABLAB, 234200, -, I, fablab.dyn.nerd2nerd.org, 2342, "FabLab, Wuerzburg"
+LOCAL, 000, -, I,127.0.0.1, 2342, localhost
+DWD, 727272, -, A, 149.28.100.80, 133, Wettervorhersage DWD

@@ -9,6 +9,7 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import serial
+
 import txCode
 import txBase
 

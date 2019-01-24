@@ -8,14 +8,14 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
-import txCode
-import txBase
-
-import time
 from threading import Thread
+import time
 import pyaudio
 import math
 import struct
+
+import txCode
+import txBase
 
 #######
 

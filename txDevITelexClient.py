@@ -13,24 +13,27 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
+from threading import Thread
 import socket
 import time
-from threading import Thread
+import csv
 
 import txCode
 import txBase
-import time
+import log
 
 TNS_HOST = 'sonnibs.no-ip.org'  # The server's hostname or IP address    or itelex.teleprinter.net or 176.52.197.242
 TNS_PORT = 11811        # The port used by the server
 
 #######
 
-def LOG(text:str):
-    print('\033[5;30;46m<'+text+'>\033[0m', end='', flush=True)
+def LOG(text:str, level:int=3):
+    log.LOG('\033[5;30;46m<'+text+'>\033[0m', level)
 
 
 class TelexITelexClient(txBase.TelexBase):
+    USERLIST = []   # cached list of user dicts of file 'userlist.csv'
+
     def __init__(self, **params):
 
         super().__init__()
@@ -71,8 +74,13 @@ class TelexITelexClient(txBase.TelexBase):
                 self.connect_client(a[2:])
 
             if a[:2] == '\x1b?':   # ask TNS
-                tns = self.query_TNS(a[2:])
-                print(tns)
+                number = a[2:]
+                user = self.query_userlist(number)
+                if not user:
+                    user = self.query_TNS(number)
+                if not user and number[0] == '0':
+                    user = self.query_TNS(number[1:])
+                print(user)
             return
 
         if source == '<' or source == '>':
@@ -116,15 +124,15 @@ class TelexITelexClient(txBase.TelexBase):
             #self._rx_buffer.append('\x1bN')
             self._rx_buffer.append('\x1bA')
 
-            is_ascii = user['type'] == 'A'
+            is_ascii = user['Type'] == 'A'
 
             # connect to destination Telex
 
             bmc = txCode.BaudotMurrayCode(False, False, True)
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                LOG('connected to '+user['name'])
-                s.connect((user['host'], user['port']))
+                LOG('connected to '+user['Name'], 3)
+                s.connect((user['Host'], user['Port']))
                 s.settimeout(0.2)
 
                 self._connected = True
@@ -132,8 +140,8 @@ class TelexITelexClient(txBase.TelexBase):
                 if not is_ascii:
                     self.send_version(s)
 
-                    if user['dial'].isnumeric():
-                        self.send_direct_dial(s, user['dial'])
+                    if user['ENum'].isnumeric():
+                        self.send_direct_dial(s, user['ENum'])
 
                 while self._connected:
                     try:
@@ -149,15 +157,15 @@ class TelexITelexClient(txBase.TelexBase):
                             data += s.recv(plen)
 
                             if data[0] == 0:   # Heartbeat
-                                #LOG('Heartbeat '+repr(data))
+                                #LOG('Heartbeat '+repr(data), 4)
                                 pass
 
                             elif data[0] == 1:   # Direct Dial
-                                LOG('Direct Dial '+repr(data))
+                                LOG('Direct Dial '+repr(data), 4)
                                 pass
 
                             elif data[0] == 2 and plen > 0:   # Baudot data
-                                #LOG('Baudot data '+repr(data))
+                                #LOG('Baudot data '+repr(data), 4)
                                 aa = bmc.decodeBM2A(data[2:])
                                 for a in aa:
                                     if a == '@':
@@ -167,33 +175,33 @@ class TelexITelexClient(txBase.TelexBase):
                                 self.send_ack(s)
 
                             elif data[0] == 3:   # End
-                                LOG('End '+repr(data))
+                                LOG('End '+repr(data), 4)
                                 break
 
                             elif data[0] == 4:   # Reject
-                                LOG('Reject '+repr(data))
+                                LOG('Reject '+repr(data), 4)
                                 break
 
                             elif data[0] == 6 and plen == 1:   # Acknowledge
-                                #LOG('Acknowledge '+repr(data))
-                                LOG(str(data[2])+'/'+str(self._sent))
+                                #LOG('Acknowledge '+repr(data), 4)
+                                LOG(str(data[2])+'/'+str(self._sent), 4)
                                 pass
 
                             elif data[0] == 7 and plen >= 1:   # Version
-                                #LOG('Version '+repr(data))
+                                #LOG('Version '+repr(data), 4)
                                 if data[2] != 1:
                                     self.send_version(s)
 
                             elif data[0] == 8:   # Self test
-                                LOG('Self test '+repr(data))
+                                LOG('Self test '+repr(data), 4)
                                 pass
 
                             elif data[0] == 9:   # Remote config
-                                LOG('Remote config '+repr(data))
+                                LOG('Remote config '+repr(data), 4)
                                 pass
 
                         else:   # ASCII character(s)
-                            #LOG('Other', repr(data))
+                            #LOG('Other', repr(data), 4)
                             data = data.decode('ASCII', errors='ignore').upper()
                             for a in data:
                                 if a == '@':
@@ -201,7 +209,7 @@ class TelexITelexClient(txBase.TelexBase):
                                 self._rx_buffer.append(a)
 
                     except socket.timeout:
-                        #LOG('.')
+                        #LOG('.', 4)
                         if self._tx_buffer:
                             if is_ascii:
                                 self.send_data_ascii(s)
@@ -210,12 +218,12 @@ class TelexITelexClient(txBase.TelexBase):
 
 
                     except socket.error:
-                        LOG('Error socket')
+                        LOG('Error socket', 2)
                         break
 
                 if not is_ascii:
                     self.send_end(s)
-                LOG('end connection')
+                LOG('end connection', 3)
 
         except Exception as e:
             LOG(str(e))
@@ -299,14 +307,14 @@ class TelexITelexClient(txBase.TelexBase):
                 else:
                     type = 'I'
                 user = {
-                    'name': items[2],
-                    'type': type,
-                    'host': items[4],
-                    'port': int(items[5]),
-                    'dial': items[6],
+                    'TNum': items[1],
+                    'ENum': items[6],
+                    'Name': items[2],
+                    'Type': type,
+                    'Host': items[4],
+                    'Port': int(items[5]),
                 }
-
-                LOG('Found user in TNS '+str(user))
+                LOG('Found user in TNS '+str(user), 4)
                 return user
 
         except:
@@ -317,27 +325,22 @@ class TelexITelexClient(txBase.TelexBase):
 
     @staticmethod
     def query_userlist(number):
-        # get IP of given number from Telex-Number-Server (TNS)
-        # typical line in file: 'FABLAB;234200;FabLab, Wuerzburg;1;fablab.dyn.nerd2nerd.org;2342;-;'
+        # get IP of given number from CSV file
+        # the header items must be: 'nick,tnum,extn,type,host,port,name' (can be in any order)
+        # typical rows in csv-file: 'FABLAB, 234200, -, I, fablab.dyn.nerd2nerd.org, 2342, "FabLab, Wuerzburg"'
         try:
-            with open('userlist.csv', 'r') as f:
-                for line in f:
-                    if line:
-                        items = line.split(';')
-                        if len(items) >= 7:
-                            for i, item in enumerate(items):
-                                items[i] = item.strip()
-                            if number == items[0] or number == items[1]:
-                                user = {
-                                    'name': items[2],
-                                    'type': items[3],
-                                    'host': items[4],
-                                    'port': int(items[5]),
-                                    'dial': items[6],
-                                }
-                                LOG('Found user '+str(user))
+            if not TelexITelexClient.USERLIST:
+                with open('userlist.csv', 'r') as f:
+                    dialect = csv.Sniffer().sniff(f.read(1024))
+                    f.seek(0)
+                    csv_reader = csv.DictReader(f, dialect=dialect, skipinitialspace=True)
+                    for user in csv_reader:
+                        TelexITelexClient.USERLIST.append(dict(user))
 
-                                return user
+            for user in TelexITelexClient.USERLIST:
+                if number == user['Nick'] or number == user['TNum']:
+                    LOG('Found user '+repr(user), 4)
+                    return user
 
         except:
             pass

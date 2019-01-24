@@ -10,10 +10,11 @@ __version__     = "0.0.1"
 
 #https://www.programcreek.com/python/example/93338/pigpio.pi
 
+import time
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html
+
 import txCode
 import txBase
-import time
 
 pi = pigpio.pi()
 

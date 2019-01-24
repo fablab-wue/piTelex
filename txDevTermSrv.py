@@ -8,10 +8,11 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
+from threading import Thread
+from socket import socket, AF_INET, SOCK_STREAM
+
 import txCode
 import txBase
-from socket import socket, AF_INET, SOCK_STREAM
-from threading import Thread
 
 #######
 
