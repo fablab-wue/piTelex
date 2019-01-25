@@ -56,7 +56,7 @@ class TelexController(txBase.TelexBase):
 
 
         if a == '\x1bAT':   # AT
-            self._rx_buffer.append('\x1bD')   # send text
+            self._rx_buffer.append('\x1bWB')   # send text
             return True
 
         if a == '\x1bST':   # ST
@@ -104,8 +104,8 @@ class TelexController(txBase.TelexBase):
 
 
         if a == '\x1bT':   # actual time
-            text = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + '\r\n'
-            self._mx_buffer.extend(list(text))   # send text
+            text = time.strftime("%Y-%m-%d  %H:%M", time.localtime()) + '\r\n'
+            self._rx_buffer.extend(list(text))   # send text
             return True
 
 

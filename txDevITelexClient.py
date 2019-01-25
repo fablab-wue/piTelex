@@ -132,7 +132,7 @@ class TelexITelexClient(txBase.TelexBase):
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 LOG('connected to '+user['Name'], 3)
-                s.connect((user['Host'], user['Port']))
+                s.connect((user['Host'], int(user['Port'])))
                 s.settimeout(0.2)
 
                 self._connected = True
@@ -150,7 +150,7 @@ class TelexITelexClient(txBase.TelexBase):
                         if not data:   # lost connection
                             break
 
-                        elif data[0] <= 9:   # i-Telex packet
+                        elif data[0] < 0x10:   # i-Telex packet
                             d = s.recv(1)
                             data += d
                             plen = d[0]
@@ -207,9 +207,13 @@ class TelexITelexClient(txBase.TelexBase):
                                 if a == '@':
                                     a = '#'
                                 self._rx_buffer.append(a)
+                                self._received += 1
 
                     except socket.timeout:
                         #LOG('.', 4)
+                        if not self._received:
+                            self._tx_buffer.append('[')
+
                         if self._tx_buffer:
                             if is_ascii:
                                 self.send_data_ascii(s)
