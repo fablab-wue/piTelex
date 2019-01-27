@@ -183,15 +183,14 @@ class BaudotMurrayCode:
                     mode = self._LUT_BMsw.index(b)
                     if self._ModeBM2A != mode:
                         self._ModeBM2A = mode
+                        if self._loop_back:
+                            self._ModeA2BM = self._ModeBM2A # on sending a sysmbol the machine switches itself to other symbol layer
                         continue
 
                 a = self._LUT_BM2A[self._ModeBM2A][b]
                 ret += a
             except:
                 pass
-
-        if self._loop_back:
-            self._ModeA2BM = self._ModeBM2A # on sending a sysmbol the machine switches itself to other symbol layer
 
         return ret
 

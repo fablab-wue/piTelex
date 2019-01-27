@@ -28,7 +28,7 @@ class TelexSerial(txBase.TelexBase):
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
         loopback = params.get('loopback', True)
-        uscoding = params.get('uscoding', True)
+        uscoding = params.get('uscoding', False)
 
         self._mc = txCode.BaudotMurrayCode(loopback, uscoding)
 
