@@ -70,4 +70,11 @@ To signal the FSG a connection the voltage is pole changed with a relais.
 
 ## High Voltage Interface
 
+<img src="img/pyTelexPCBt.png" width="314px">
+<img src="img/pyTelexPCBb.png" width="314px">
+
+The PCBs are ordered and will be assembled and tested in Feb. 2019
+
 <img src="img/TelexCurrentTXD2.png" width="343px">
+
+Note: If using a CH340-board with a RXD-LED, the LED have to be removed!
