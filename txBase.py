@@ -33,5 +33,8 @@ class TelexBase:
     def idle(self):
         pass
 
+    def idle10Hz(self):
+        pass
+
 #######
 
