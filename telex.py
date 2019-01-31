@@ -23,7 +23,7 @@ from argparse import ArgumentParser
 # global variables
 
 DEVICES = []
-TIME_10HZ = time.time()
+TIME_20HZ = time.time()
 
 #######
 # -----
@@ -91,7 +91,7 @@ def exit():
 # =====
 
 def loop():
-    global TIME_10HZ
+    global TIME_20HZ
 
     for in_device in DEVICES:
         c = in_device.read()
@@ -105,10 +105,10 @@ def loop():
         device.idle()
 
     time_act = time.time()
-    if (time_act - TIME_10HZ) >= 0.1:
-        TIME_10HZ = time_act
+    if (time_act - TIME_20HZ) >= 0.05:
+        TIME_20HZ = time_act
         for device in DEVICES:
-            device.idle10Hz()
+            device.idle20Hz()
 
     return
 

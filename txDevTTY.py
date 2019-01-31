@@ -25,7 +25,7 @@ class TelexSerial(txBase.TelexBase):
         self.params = params
 
         portname = params.get('portname', '/dev/ttyUSB0')
-        baudrate = params.get('baudrate', 50)
+        self._baudrate = params.get('baudrate', 50)
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
         loopback = params.get('loopback', True)
@@ -38,14 +38,14 @@ class TelexSerial(txBase.TelexBase):
         self._tty.dtr = False   # DTR -> High
         self._tty.rts = False   # RTS -> High
 
-        if baudrate not in self._tty.BAUDRATES:
+        if self._baudrate not in self._tty.BAUDRATES:
             raise Exception('Baudrate not supported')
         if bytesize not in self._tty.BYTESIZES:
             raise Exception('Databits not supported')
         if stopbits not in self._tty.STOPBITS:
             raise Exception('Stopbits not supported')
 
-        self._tty.baudrate = 75 #jkjkjk baudrate
+        self._tty.baudrate = self._baudrate
         self._tty.bytesize = bytesize
         self._tty.stopbits = stopbits
 
@@ -59,7 +59,7 @@ class TelexSerial(txBase.TelexBase):
         self._is_FS_enable = (self._TW_mode == 0)
         self._cts_stable = False   # High 
         self._cts_counter = 0
-        self._ignore_timer = 5
+        self._ignore_til_time = time.time() + 0.5
 
 
     def __del__(self):
@@ -70,32 +70,17 @@ class TelexSerial(txBase.TelexBase):
     # =====
 
     def read(self) -> str:
-        ret = ''
-
         if self._tty.in_waiting:
             a = ''
 
             bb = self._tty.read(1)
-            if self._ignore_timer:
-                return ''
+            if time.time() < self._ignore_til_time:
+                return
 
             if self._is_FS_enable:
                 a = self._mc.decodeBM2A(bb)
 
-                if self._TW_mode == 0:
-                    if a == '[':
-                        self._counter_LTRS += 1
-                        if self._counter_LTRS == 5:
-                            self._rx_buffer.append('\x1bST')
-                    else:
-                        self._counter_LTRS = 0
-
-                    if a == ']':
-                        self._counter_FIGS += 1
-                        if self._counter_FIGS == 5:
-                            self._rx_buffer.append('\x1bAT')
-                    else:
-                        self._counter_FIGS = 0
+                self._check_special_sequences(a)
 
             else:
                 b = bb[0]
@@ -109,36 +94,17 @@ class TelexSerial(txBase.TelexBase):
             
             if a:
                 self._rx_buffer.append(a)
+            
+            self._cts_counter = 0
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
-
-        return ret
+            return ret
 
 
     def write(self, a:str, source:str):
         if len(a) != 1:
-            enable = None
-            if a == '\x1bA':
-                self._enable_pulse_dial(False)
-                enable = True
-                self._ignore_timer = 5
-            if a == '\x1bZ':
-                self._enable_pulse_dial(False)
-                enable = (self._TW_mode == 0)
-                self._ignore_timer = 10
-            if a == '\x1bWB':
-                if self._TW_mode == 39:
-                    self._enable_pulse_dial(True)
-                    self._tty.write(b'\x01')
-                    enable = False
-                    self._ignore_timer = 3
-                else:
-                    enable = True
-                    self._ignore_timer = 5
-
-            if enable is not None:
-                self._enable_FS(enable)
+            self._check_commands(a)
             return
             
         if a == '#':
@@ -146,11 +112,10 @@ class TelexSerial(txBase.TelexBase):
 
         bb = self._mc.encodeA2BM(a)
 
-        n = self._tty.write(bb)
-        #print('-', n, '-')
+        self._tty.write(bb)
 
 
-    def idle10Hz(self):
+    def idle20Hz(self):
         if 1:
             time_act = time.time()
 
@@ -165,7 +130,7 @@ class TelexSerial(txBase.TelexBase):
             cts = self._tty.cts
             if cts != self._cts_stable:
                 self._cts_counter += 1
-                if self._cts_counter == 10:
+                if self._cts_counter == 20:
                     self._cts_stable = cts
                     print(cts)
                     if cts:   # Low
@@ -178,22 +143,67 @@ class TelexSerial(txBase.TelexBase):
             else:
                 self._cts_counter = 0
 
-        if self._ignore_timer:
-            self._ignore_timer -= 1
 
-
-    def _enable_FS(self, enable):
+    def _enable_FS(self, enable:bool):
         self._tty.dtr = enable    # DTR -> True=Low=motor_on
         self._tty.rts = enable    # RTS
         self._is_FS_enable = enable
         self._mc.reset()
+        self._set_ignore_time(0.5)
 
 
-    def _enable_pulse_dial(self, enable):
+    def _enable_pulse_dial(self, enable:bool):
         if enable:
             self._tty.baudrate = 75
         else:
-            self._tty.baudrate = 50
+            self._tty.baudrate = self._baudrate
+
+
+    def _check_special_sequences(self, a:str):
+        if self._TW_mode == 0:
+            if a == '[':
+                self._counter_LTRS += 1
+                if self._counter_LTRS == 5:
+                    self._rx_buffer.append('\x1bST')
+            else:
+                self._counter_LTRS = 0
+
+            if a == ']':
+                self._counter_FIGS += 1
+                if self._counter_FIGS == 5:
+                    self._rx_buffer.append('\x1bAT')
+            else:
+                self._counter_FIGS = 0
+
+
+    def _check_commands(self, a:str):
+        enable = None
+
+        if a == '\x1bA':
+            self._enable_pulse_dial(False)
+            enable = True
+
+        if a == '\x1bZ':
+            self._enable_pulse_dial(False)
+            enable = (self._TW_mode == 0)
+            self._set_ignore_time(1.5)
+
+        if a == '\x1bWB':
+            if self._TW_mode == 39:   # TW39
+                self._enable_pulse_dial(True)
+                self._tty.write(b'\x01')   # send pulse with 25ms low to signal 'ready for dialing' ('Wahlbereitschaft')
+                enable = False
+            else:   # dedicated line, TWM
+                enable = True
+
+        if enable is not None:
+            self._enable_FS(enable)
+
+
+    def _set_ignore_time(self, t_diff):
+        t = time.time() + t_diff
+        if self._ignore_til_time < t:
+            self._ignore_til_time = t
 
 #######
 

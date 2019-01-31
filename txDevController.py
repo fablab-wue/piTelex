@@ -29,6 +29,7 @@ class TelexController(txBase.TelexBase):
         self._mx_buffer = []
 
         self._font_mode = False
+        self._dial_mode = False
 
         self._run = True
         self._tx_thread = Thread(target=self.thread_memory)
@@ -57,15 +58,21 @@ class TelexController(txBase.TelexBase):
 
         if a == '\x1bAT':   # AT
             self._rx_buffer.append('\x1bWB')   # send text
+            self._dial_mode = True
             return True
 
         if a == '\x1bST':   # ST
             self._rx_buffer.append('\x1bZ')   # send text
+            self._dial_mode = False
             return True
 
         if a == '\x1bLT':   # LT
             self._rx_buffer.append('\x1bA')   # send text
+            self._dial_mode = False
             return True
+
+        if a == '\x1bZ':   # stop motor
+            self._dial_mode = False
 
 
         if a == '\x1bFONT':   # set to font mode
@@ -107,6 +114,11 @@ class TelexController(txBase.TelexBase):
             text = time.strftime("%Y-%m-%d  %H:%M", time.localtime()) + '\r\n'
             self._rx_buffer.extend(list(text))   # send text
             return True
+
+
+        if self._dial_mode:
+            if a == '0':   # hack!!!! to test the pulse dial
+                self._rx_buffer.append('\x1bA')   # send text
 
 
     def thread_memory(self):
