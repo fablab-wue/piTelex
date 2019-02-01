@@ -169,7 +169,7 @@ class BaudotMurrayCode:
 
         for b in code:
             if self._loop_back and self._loop_back_eat_bytes:
-                if time.time()-self._loop_back_time > 3:
+                if time.time()-self._loop_back_time > 20:
                     self._loop_back_eat_bytes = 0
                 else:
                     self._loop_back_eat_bytes -= 1

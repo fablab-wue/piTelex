@@ -73,6 +73,8 @@ class TelexController(txBase.TelexBase):
 
         if a == '\x1bZ':   # stop motor
             self._dial_mode = False
+        if a == '\x1bA':   # start motor
+            self._dial_mode = False
 
 
         if a == '\x1bFONT':   # set to font mode

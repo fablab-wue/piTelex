@@ -150,7 +150,7 @@ class TelexITelexClient(txBase.TelexBase):
                         if not data:   # lost connection
                             break
 
-                        elif data[0] < 0x10:   # i-Telex packet
+                        elif data[0] < 10:   # i-Telex packet
                             d = s.recv(1)
                             data += d
                             plen = d[0]
@@ -211,7 +211,7 @@ class TelexITelexClient(txBase.TelexBase):
 
                     except socket.timeout:
                         #LOG('.', 4)
-                        if not self._received:
+                        if not self._received and not is_ascii:
                             self._tx_buffer.append('[')
 
                         if self._tx_buffer:

@@ -30,6 +30,7 @@ class TelexSerial(txBase.TelexBase):
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
         loopback = params.get('loopback', True)
         uscoding = params.get('uscoding', False)
+        self._TW_mode = params.get('tw_mode', 39)
 
         self._mc = txCode.BaudotMurrayCode(loopback, uscoding)
 
@@ -55,7 +56,6 @@ class TelexSerial(txBase.TelexBase):
         self._counter_FIGS = 0
         self._counter_dial = 0
         self._time_last_dial = 0
-        self._TW_mode = 39
         self._is_FS_enable = (self._TW_mode == 0)
         self._cts_stable = False   # High 
         self._cts_counter = 0
@@ -147,9 +147,9 @@ class TelexSerial(txBase.TelexBase):
     def _enable_FS(self, enable:bool):
         self._tty.dtr = enable    # DTR -> True=Low=motor_on
         self._tty.rts = enable    # RTS
-        self._is_FS_enable = enable
         self._mc.reset()
         self._set_ignore_time(0.5)
+        self._is_FS_enable = enable
 
 
     def _enable_pulse_dial(self, enable:bool):
