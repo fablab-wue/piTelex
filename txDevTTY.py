@@ -28,11 +28,11 @@ class TelexSerial(txBase.TelexBase):
         self._baudrate = params.get('baudrate', 50)
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
-        loopback = params.get('loopback', True)
+        self._loopback = params.get('loopback', True)
         uscoding = params.get('uscoding', False)
         self._TW_mode = params.get('tw_mode', 39)
 
-        self._mc = txCode.BaudotMurrayCode(loopback, uscoding)
+        self._mc = txCode.BaudotMurrayCode(self._loopback, uscoding)
 
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
@@ -50,7 +50,6 @@ class TelexSerial(txBase.TelexBase):
         self._tty.bytesize = bytesize
         self._tty.stopbits = stopbits
 
-        self._loopback = loopback
         self._rx_buffer = []
         self._counter_LTRS = 0
         self._counter_FIGS = 0
@@ -112,7 +111,9 @@ class TelexSerial(txBase.TelexBase):
 
         bb = self._mc.encodeA2BM(a)
 
-        self._tty.write(bb)
+        n = self._tty.write(bb)
+        if self._loopback:
+            self._set_ignore_time(0.5, 0.15*n)
 
 
     def idle20Hz(self):
@@ -200,10 +201,11 @@ class TelexSerial(txBase.TelexBase):
             self._enable_FS(enable)
 
 
-    def _set_ignore_time(self, t_diff):
+    def _set_ignore_time(self, t_diff, t_add=0):
         t = time.time() + t_diff
         if self._ignore_til_time < t:
             self._ignore_til_time = t
+        self._ignore_til_time += t_add
 
 #######
 
