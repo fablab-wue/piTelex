@@ -44,6 +44,10 @@ def load():
         dest="wru_id", default='', metavar="ID",
         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
+    parser.add_argument("-m", "--mode", 
+        dest="mode", default='', metavar="MODE",
+        help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
+
     parser.add_argument("-q", "--quiet",
         dest="verbose", default=True, action="store_false", 
         help="don't print status messages to stdout")
@@ -112,6 +116,7 @@ def load():
 
     CFG['verbose'] = ARGS.verbose
     CFG['wru_id'] = ARGS.wru_id
+    CFG['mode'] = ARGS.mode
 
 #######
 

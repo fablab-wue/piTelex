@@ -20,7 +20,7 @@ class TelexController(txBase.TelexBase):
     _fontsep = '~'
 
 
-    def __init__(self, device_id:str):
+    def __init__(self, mode:str, device_id:str):
         self.device_id = device_id
 
         self.id = '§'

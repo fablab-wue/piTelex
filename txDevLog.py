@@ -15,7 +15,7 @@ import txBase
 #######
 
 class TelexLog(txBase.TelexBase):
-    def __init__(self, **params):
+    def __init__(self, mode:str, **params):
 
         super().__init__()
 

@@ -110,13 +110,14 @@ class BaudotMurrayCode:
         return ret
 
 
-    def __init__(self, loop_back:bool=False, us_coding=False, flip_bits=False):
+    def __init__(self, loop_back:bool=False, us_coding=False, flip_bits=False, character_duration=0.15):
         self._ModeA2BM = None   # 0=LTRS 1=FIGS
         self._ModeBM2A = 0   # 0=LTRS 1=FIGS
         self._flip_bits = flip_bits
         self._loop_back = loop_back
         self._loop_back_eat_bytes = 0
-        self._loop_back_time = 0
+        self._loop_back_expire_time = 0
+        self._character_duration = character_duration
         if us_coding:
             self._LUT_BM2A = self._LUT_BM2A_US
         else:
@@ -157,8 +158,12 @@ class BaudotMurrayCode:
                 ret[i] = self.do_flip_bits(b)
 
         if self._loop_back:
-            self._loop_back_eat_bytes += len(ret)
-            self._loop_back_time = time.time()
+            l = len(ret)
+            self._loop_back_eat_bytes += l
+            time_act = time.time()
+            if self._loop_back_expire_time < time_act:
+                self._loop_back_expire_time = time_act
+            self._loop_back_expire_time += l * self._character_duration
 
         return ret
 
@@ -169,10 +174,12 @@ class BaudotMurrayCode:
 
         for b in code:
             if self._loop_back and self._loop_back_eat_bytes:
-                if time.time()-self._loop_back_time > 12:
+                if time.time()-self._loop_back_expire_time > 6:   # about 40 characters
                     self._loop_back_eat_bytes = 0
                 else:
                     self._loop_back_eat_bytes -= 1
+                    if b == 2:
+                        print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
                     continue
 
             if self._flip_bits:
@@ -188,6 +195,8 @@ class BaudotMurrayCode:
                         continue
 
                 a = self._LUT_BM2A[self._ModeBM2A][b]
+                if a == '\n':
+                    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
                 ret += a
             except:
                 pass

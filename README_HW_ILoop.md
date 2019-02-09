@@ -66,6 +66,8 @@ To signal the FSG a connection the voltage is pole changed with a relais.
 
 <img src="img/USB.JPG" width="320px">
 
+This is the first approach with a USB to TTL adapter (middle), a DC/DC converter (bottom) and a self-made-board (top) for current regulator, reading and contolling the loop.
+
 <img src="img/TelexUSB3.png" width="518px">
 
 ## High Voltage Interface

@@ -34,7 +34,7 @@ def LOG(text:str, level:int=3):
 class TelexITelexClient(txBase.TelexBase):
     USERLIST = []   # cached list of user dicts of file 'userlist.csv'
 
-    def __init__(self, **params):
+    def __init__(self, mode:str, **params):
 
         super().__init__()
 

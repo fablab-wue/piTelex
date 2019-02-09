@@ -54,7 +54,7 @@ class TelexScreen(txBase.TelexBase):
         b'Q': '\x1bZ',   # Page down
         }
 
-    def __init__(self, **params):
+    def __init__(self, mode:str, **params):
         '''Creates a Screen object that you can call to do various keyboard things. '''
 
         super().__init__()

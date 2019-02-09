@@ -21,7 +21,7 @@ pi = pigpio.pi()
 #######
 
 class TelexPiGPIO(txBase.TelexBase):
-    def __init__(self, **params):
+    def __init__(self, mode:str, **params):
         #pin_txd:int, pin_rxd:int, pin_dtr:int, pin_rts:int, inv_txd:bool=False, inv_rxd:bool=False
 
         super().__init__()

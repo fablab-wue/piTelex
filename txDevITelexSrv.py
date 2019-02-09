@@ -21,7 +21,7 @@ def LOG(text:str, level:int=3):
     log.LOG('\033[5;30;44m<'+text+'>\033[0m', level)
 
 class TelexITelexSrv(txBase.TelexBase):
-    def __init__(self, **params):
+    def __init__(self, mode:str, **params):
         #, port:int
 
         super().__init__()
