@@ -68,15 +68,38 @@ To signal the FSG a connection the voltage is pole changed with a relais.
 
 This is the first approach with a USB to TTL adapter (middle), a DC/DC converter (bottom) and a self-made-board (top) for current regulator, reading and contolling the loop.
 
+
 <img src="img/TelexUSB3.png" width="518px">
 
-## High Voltage Interface
+This can be used with a Windows-PC, Linux-PC, Mac (not tested) and RPi.
+
+## TW39 High Voltage RPi Interface
 
 <img src="img/pyTelexPCBt.png" width="314px">
 <img src="img/pyTelexPCBb.png" width="314px">
 
 The PCBs are ordered and will be assembled and tested in Feb. 2019
 
-<img src="img/TelexCurrentTXD2.png" width="343px">
+Design files can be found in project folder /PCB/
 
-Note: If using a CH340-board with a RXD-LED, the LED have to be removed!
+<img src="img/TelexCurrentTXD3.png" width="376px">
+
+This is designed for Raspberry Pi but with a CH340-serial-adapter this can be also used with a Windows-PC, Linux-PC, and Mac (not tested).
+
+# Power supply
+
+Alle teletypes (with current loop interface) are designed for a current of 40mA. The receive unit (magnet coil) has a typical voltage drop of 15V. With the voltage drops in the interface circuits a power supply voltage of about 20V should do - in theory.
+
+**BUT!** The switching speed of a magnet coil depends directly on intermediate circuit voltage - in this case the power supply voltage. On practical experience a intermediate circuit voltage should be at least 2x of the magnet coil voltage.
+
+**ADDITIONAL BUT!** Most teletypes are used with a FSG (dialing device). This has als relais in the current loop with an additional voltage drop. Some relais circuits (especially for "Wahlbereitschaft" = ready for dial) needs a very voltage for work as expected.
+
+### Hands-on tests
+
+Working supply voltages with interfaces above:
+
+Lo15, T37, T68 without FSG: 24V
+
+T100S with integrated FSG: 60V
+
+**TODO** more details...
