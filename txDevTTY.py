@@ -35,7 +35,7 @@ class TelexSerial(txBase.TelexBase):
         self._counter_FIGS = 0
         self._counter_dial = 0
         self._time_last_dial = 0
-        self._cts_stable = False   # rxd=High 
+        self._cts_stable = True   # rxd=Low 
         self._cts_counter = 0
         self._time_squelch = 0
         self._is_enabled = False
@@ -96,8 +96,8 @@ class TelexSerial(txBase.TelexBase):
 
         if mode == 'V.10' or mode == 'V10':
             self._use_cts = True
-            self._inverse_cts = False
-            self._inverse_dtr = True
+            self._inverse_cts = True
+            #self._inverse_dtr = True
 
 
     def __del__(self):
@@ -112,6 +112,7 @@ class TelexSerial(txBase.TelexBase):
             a = ''
 
             bb = self._tty.read(1)
+            #self._tty.write(bb)
 
             if bb and (not self._use_squelch or time.time() >= self._time_squelch):
                 if self._is_enabled or self._use_dedicated_line:
@@ -193,6 +194,7 @@ class TelexSerial(txBase.TelexBase):
         self._mc.reset()
         if self._use_squelch:
             self._set_time_squelch(0.5)
+        #self._tty.send_break(1.0)
 
 
     def _set_pulse_dial(self, enable:bool):
@@ -234,7 +236,7 @@ class TelexSerial(txBase.TelexBase):
             #self._tty.    # TODO empty write buffer...
             self._set_pulse_dial(False)
             self._set_online(False)
-            enable = self._use_dedicated_line
+            enable = False   #self._use_dedicated_line
             if not enable and self._use_squelch:
                 self._set_time_squelch(1.5)
 

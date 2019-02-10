@@ -178,8 +178,8 @@ class BaudotMurrayCode:
                     self._loop_back_eat_bytes = 0
                 else:
                     self._loop_back_eat_bytes -= 1
-                    if b == 2:
-                        print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
+                    #if b == 2:
+                    #    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
                     continue
 
             if self._flip_bits:
@@ -195,8 +195,8 @@ class BaudotMurrayCode:
                         continue
 
                 a = self._LUT_BM2A[self._ModeBM2A][b]
-                if a == '\n':
-                    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
+                #if a == '\n':
+                #    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
                 ret += a
             except:
                 pass
