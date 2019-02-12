@@ -1,7 +1,6 @@
 #!/usr/bin/python
 """
-Screen.py
-Nonblocking read single character from screen/keyboard
+Telex Device - Keyboard input and Screen output
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex Web Server
+Telex Device - Telnet Server
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -16,9 +16,8 @@ import txBase
 
 #######
 
-class TelexTermSrv(txBase.TelexBase):
+class TelexTelnetSrv(txBase.TelexBase):
     def __init__(self, mode:str, **params):
-        #, port:int
 
         super().__init__()
 

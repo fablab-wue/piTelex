@@ -12,8 +12,10 @@
             "console": "integratedTerminal",
             "args": [
                 "-k 234200 FABLABWUE D",
-                "-I 2342",
-                "-L test.txt"
+                "-Y COM7",
+                "-I 0",
+                "-L test.log",
+                "-s"
             ]
         },
         {

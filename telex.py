@@ -47,33 +47,35 @@ def init():
             screen = txDevScreen.TelexScreen(mode, **dev_param)
             DEVICES.append(screen)
 
-        if dev_param['type'] == 'tty':
-            import txDevTTY
-            serial = txDevTTY.TelexSerial(mode, **dev_param)
+        if dev_param['type'] == 'CH340TTY':
+            import txDevCH340TTY
+            serial = txDevCH340TTY.TelexCH340TTY(mode, **dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'gpio':
-            import txDevPiGPIO
-            serial = txDevPiGPIO.TelexPiGPIO(mode, **dev_param)
+        if dev_param['type'] == 'RPiTTY':
+            import txDevRPiTTY
+            serial = txDevRPiTTY.TelexRPiTTY(mode, **dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'ed1000':
+        if dev_param['type'] == 'ED1000':
             import txDevED1000TxOnly
             serial = txDevED1000TxOnly.TelexED1000TxOnly(mode, **dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'term':
-            import txDevTermSrv
-            srv = txDevTermSrv.TelexTermSrv(mode, **dev_param)
+        if dev_param['type'] == 'telnet':
+            import txDevTelnetSrv
+            srv = txDevTelnetSrv.TelexTelnetSrv(mode, **dev_param)
             DEVICES.append(srv)
 
-        if dev_param['type'] == 'itelex':
+        if dev_param['type'] == 'i-telex':
             import txDevITelexClient
             srv = txDevITelexClient.TelexITelexClient(mode, **dev_param)
             DEVICES.append(srv)
-            import txDevITelexSrv
-            srv = txDevITelexSrv.TelexITelexSrv(mode, **dev_param)
-            DEVICES.append(srv)
+
+            if dev_param['port'] > 0:
+                import txDevITelexSrv
+                srv = txDevITelexSrv.TelexITelexSrv(mode, **dev_param)
+                DEVICES.append(srv)
 
         if dev_param['type'] == 'eliza':
             import txDevEliza

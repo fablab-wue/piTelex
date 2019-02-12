@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex Serial Communication over CH340-Chip
+Telex Device - System-Controller
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -16,14 +16,14 @@ import txBase
 #######
 
 class TelexController(txBase.TelexBase):
-    _fontstr = {'A': 'VSSV', 'B': '[YYR', 'C': 'CZZZ', 'D': '[ZZC', 'E': '[YYZ', 'F': '[SSE', 'G': 'CZYX', 'H': '[  [', 'I': 'Z[Z', 'J': '<TZK', 'K': '[ RZ', 'L': '[TTT', 'M': '[|M|[', 'N': '[| [', 'O': 'CZZZC', 'P': '[SS|', 'Q': 'CZBV', 'R': '[SFL', 'S': 'LYYD', 'T': 'EE[EE', 'U': 'KTTK', 'V': 'U<T<U', 'W': '[<I<[', 'X': 'ZR RZ', 'Y': 'E|M|E', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L[T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  [  ', '-': '    ', '*': 'YC CY', '/': 'T< |E', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY|', "'": 'AA', ' ': '~~', '': '~', '\r': '  RZZ', '<': '  RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
+    _fontstr = {'A': 'VSSV', 'B': '[YYR', 'C': 'CZZZ', 'D': '[ZZC', 'E': '[YYZ', 'F': '[SSE', 'G': 'CZYX', 'H': '[  [', 'I': 'Z[Z', 'J': '<TZK', 'K': '[ RZ', 'L': '[TTT', 'M': '[|M|[', 'N': '[| [', 'O': 'CZZZC', 'P': '[SS|', 'Q': 'CZBV', 'R': '[SFL', 'S': 'LYYD', 'T': 'EE[EE', 'U': 'KTTK', 'V': 'U<T<U', 'W': '[<I<[', 'X': 'ZR RZ', 'Y': 'E|M|E', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L[T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  [  ', '-': '    ', '*': 'YC CY', '/': 'T< |E', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY|', "'": 'AA', ' ': '~~', '': '~', '\r': ' RZZ', '<': ' RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
     _fontsep = '~'
 
 
     def __init__(self, mode:str, device_id:str):
         self.device_id = device_id
 
-        self.id = '§'
+        self.id = '^'
         self.params = {}
         self._rx_buffer = []
         self._mx_buffer = []
@@ -90,7 +90,7 @@ class TelexController(txBase.TelexBase):
 
 
         if a == '\x1bLOREM':   # print LOREM IPSUM
-            self._rx_buffer.extend(list('LOREM IPSUM DOLOR SIT AMET, CONSETETUR SADIPSCING ELITR, SED DIAM'))   # send text
+            self._rx_buffer.extend(list('LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISICI ELIT,\r\nSED EIUSMOD TEMPOR INCIDUNT UT LABORE ET DOLORE MAGNA ALIQUA.\r\nUT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO\r\nLABORIS NISI UT ALIQUID EX EA COMMODI CONSEQUAT. QUIS AUTE IURE\r\nREPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT\r\nNULLA PARIATUR. EXCEPTEUR SINT OBCAECAT CUPIDITAT NON PROIDENT,\r\nSUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.\r\n'))   # send text
             return True
 
 

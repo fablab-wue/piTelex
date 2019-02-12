@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex Serial Communication over CH340-Chip (not FTDI or Prolific)
+Telex Device - Serial Communication over CH340-Chip (not FTDI, not Prolific, not CP213x)
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -16,7 +16,7 @@ import txBase
 
 #######
 
-class TelexSerial(txBase.TelexBase):
+class TelexCH340TTY(txBase.TelexBase):
     def __init__(self, mode:str, **params):
 
         super().__init__()
@@ -29,8 +29,11 @@ class TelexSerial(txBase.TelexBase):
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
         uscoding = params.get('uscoding', False)
+        loopback = params.get('loopback', None)
+        self._local_echo = params.get('loc_echo', False)
 
         self._rx_buffer = []
+        self._tx_buffer = []
         self._counter_LTRS = 0
         self._counter_FIGS = 0
         self._counter_dial = 0
@@ -42,6 +45,8 @@ class TelexSerial(txBase.TelexBase):
         self._is_online = False
 
         self._set_mode(mode)
+        if loopback is not None:
+            self._loopback = loopback
 
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
@@ -66,6 +71,7 @@ class TelexSerial(txBase.TelexBase):
         self._set_enable(False)
         self._set_online(False)
 
+    # -----
 
     def _set_mode(self, mode:str):
         self._loopback = False
@@ -80,25 +86,26 @@ class TelexSerial(txBase.TelexBase):
 
         mode = mode.upper()
 
-        if mode == 'TW39':
+        if mode.find('TW39') >= 0:
             self._loopback = True
             self._use_cts = True
             self._use_pulse_dial = True
             self._use_squelch = True
             self._use_dedicated_line = False
 
-        if mode == 'TWM':
+        if mode.find('TWM') >= 0:
             self._loopback = True
             self._use_cts = True
             self._use_pulse_dial = True
             self._use_squelch = True
             self._use_dedicated_line = False
 
-        if mode == 'V.10' or mode == 'V10':
+        if mode.find('V.10') >= 0 or mode.find('V10') >= 0:
             self._use_cts = True
             self._inverse_cts = True
             #self._inverse_dtr = True
 
+    # -----
 
     def __del__(self):
         #print('__del__ in TelexSerial')
@@ -134,12 +141,14 @@ class TelexSerial(txBase.TelexBase):
 
                 if a:
                     self._rx_buffer.append(a)
-            
+                    if self._local_echo:
+                        self._tx_buffer.append(a)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
             return ret
 
+    # -----
 
     def write(self, a:str, source:str):
         if len(a) != 1:
@@ -149,10 +158,10 @@ class TelexSerial(txBase.TelexBase):
         if a == '#':
             a = '@'   # ask teletype for hardware ID
 
-        if not self._use_squelch or time.time() >= self._time_squelch:
-            bb = self._mc.encodeA2BM(a)
-            self._tty.write(bb)
+        if a:
+            self._tx_buffer.append(a)
 
+    # =====
 
     def idle20Hz(self):
         time_act = time.time()
@@ -182,11 +191,22 @@ class TelexSerial(txBase.TelexBase):
             else:
                 self._cts_counter = 0
 
+    # -----
+
+    def idle(self):
+        if not self._use_squelch or time.time() >= self._time_squelch:
+            if self._tx_buffer:
+                a = self._tx_buffer.pop(0)
+                bb = self._mc.encodeA2BM(a)
+                self._tty.write(bb)
+
+    # -----
 
     def _set_online(self, online:bool):
         self._is_online = online
         self._tty.rts = online != self._inverse_rts    # RTS
 
+    # -----
 
     def _set_enable(self, enable:bool):
         self._is_enabled = enable
@@ -196,6 +216,7 @@ class TelexSerial(txBase.TelexBase):
             self._set_time_squelch(0.5)
         #self._tty.send_break(1.0)
 
+    # -----
 
     def _set_pulse_dial(self, enable:bool):
         if not self._use_pulse_dial:
@@ -206,6 +227,7 @@ class TelexSerial(txBase.TelexBase):
         else:
             self._tty.baudrate = self._baudrate
 
+    # -----
 
     def _check_special_sequences(self, a:str):
         if not self._use_cts:
@@ -223,6 +245,7 @@ class TelexSerial(txBase.TelexBase):
             else:
                 self._counter_FIGS = 0
 
+    # -----
 
     def _check_commands(self, a:str):
         enable = None
@@ -252,6 +275,7 @@ class TelexSerial(txBase.TelexBase):
         if enable is not None:
             self._set_enable(enable)
 
+    # -----
 
     def _set_time_squelch(self, t_diff):
         t = time.time() + t_diff

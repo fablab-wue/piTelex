@@ -52,29 +52,33 @@ def load():
         dest="verbose", default=True, action="store_false", 
         help="don't print status messages to stdout")
 
+    parser.add_argument("-s", "--save",
+        dest="save", default=False, action="store_true", 
+        help="Save command line args to config file")
+
 
     parser.add_argument("-S", "--noscreen",
         dest="screen", default=True, action="store_false", 
         help="Device: No Screen in/out")
 
-    parser.add_argument("-Y", "--tty", 
-        dest="tty", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
+    parser.add_argument("-Y", "--CH340TTY", 
+        dest="CH340TTY", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="Device: Use Virtual Serial Line (CH340) to communicate with Teletype")
 
-    parser.add_argument("-G", "--gpio",
-        dest="gpio", default=False, action="store_true", 
+    parser.add_argument("-G", "--RPiTTY",
+        dest="RPiTTY", default=False, action="store_true", 
         help="Device: Use GPIO (pigpio) on RPi")
 
-    parser.add_argument("-E", "--ed1000",
-        dest="ed1000", default=False, action="store_true", 
+    parser.add_argument("-E", "--ED1000",
+        dest="ED1000", default=False, action="store_true", 
         help="Device: Use ED1000 (Tx only) on Sound Card")
 
-    parser.add_argument("-T", "--term", 
-        dest="port", default=0, metavar='PORT', type=int,
+    parser.add_argument("-T", "--telnet", 
+        dest="telnet", default=0, metavar='PORT', type=int,
         help="Device: Use Terminal Socket Server at Port Number")
 
     parser.add_argument("-I", "--itelex", 
-        dest="itelex", default=0, metavar='PORT', type=int,
+        dest="itelex", default=-1, metavar='PORT', type=int,
         help="Device: i-Telex")
 
     parser.add_argument("-Z", "--eliza",
@@ -89,34 +93,38 @@ def load():
 
     devices = CFG['devices']
     
-    if 'screen' not in devices and ARGS.screen:
+    if ARGS.screen:
         devices['screen'] = {'type': 'screen'}
 
-    if 'tty' not in devices and ARGS.tty:
-        devices['tty'] = {'type': 'tty', 'portname': ARGS.tty.strip(), 'baudrate': 50, 'loopback': True}
+    if ARGS.CH340TTY:
+        devices['CH340TTY'] = {'type': 'CH340TTY', 'portname': ARGS.CH340TTY.strip(), 'baudrate': 50, 'loopback': True}
 
-    if 'gpio' not in devices and ARGS.gpio:
-        devices['gpio'] = {'type': 'gpio', 'pin_txd': 17, 'pin_rxd': 27, 'pin_dtr': 22, 'pin_rts': 10, 'baudrate': 50, 'inv_txd': False, 'inv_rxd': False, 'loopback': True}
+    if ARGS.RPiTTY:
+        devices['RPiTTY'] = {'type': 'RPiTTY', 'pin_txd': 17, 'pin_rxd': 27, 'pin_rel': 22, 'pin_oin': 10, 'pin_opt': 9, 'pin_dir': 11, 'baudrate': 50, 'inv_txd': False, 'inv_rxd': False, 'loopback': True}
 
-    if 'ed1000' not in devices and ARGS.ed1000:
-        devices['ed1000'] = {'type': 'ed1000', 'f0': 500, 'f1': 700, 'baudrate': 50}
+    if ARGS.ED1000:
+        devices['ED1000'] = {'type': 'ED1000', 'f0': 500, 'f1': 700, 'baudrate': 50}
 
-    if 'term' not in devices and ARGS.port:
-        devices['term'] = {'type': 'term', 'port': ARGS.port}
+    if ARGS.telnet:
+        devices['telnet'] = {'type': 'telnet', 'port': ARGS.telnet}
 
-    if 'itelex' not in devices and ARGS.itelex:
+    if ARGS.itelex >= 0:
         devices['itelex'] = {'type': 'itelex', 'port': ARGS.itelex}
 
-    if 'eliza' not in devices and ARGS.eliza:
+    if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza'}
 
-    if 'log' not in devices and ARGS.log:
+    if ARGS.log:
         devices['log'] = {'type': 'log', 'filename': ARGS.log.strip()}
 
 
     CFG['verbose'] = ARGS.verbose
     CFG['wru_id'] = ARGS.wru_id
     CFG['mode'] = ARGS.mode
+
+    if ARGS.save:
+        with open('txConfig.json', 'w') as fp:
+            json.dump(CFG, fp, indent=2)
 
 #######
 

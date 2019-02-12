@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex for connecting to i-Telex
+Telex Device - i-Telex for connecting to other/external i-Telex stations
 
     number = '97475'   # Werner
     number = '727272'   # DWD

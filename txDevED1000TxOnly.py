@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex ED1000 Communication over Sound Card - Transmit Only
+Telex Device - ED1000 Communication over Sound Card - Transmit Only
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"

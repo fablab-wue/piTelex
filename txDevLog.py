@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Telex Serial Communication over CH340-Chip (not FTDI or Prolific)
+Telex Device - Writing a log-file
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -63,16 +63,13 @@ class TelexLog(txBase.TelexBase):
         
         if out:
             line = self._last_time
-            line += '  '
+            line += ' ,'
             line += self._last_source
-            line += ':  '
+            line += ', '
             line += self._line
             line += add
 
-            #print()
-            #print(line)
-            
-            with open(self._filename, 'a') as fp:
+            with open(self._filename, 'a', encoding='latin-1') as fp:
                 line += '\n'
                 fp.write(line)
 

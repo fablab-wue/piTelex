@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-i-Telex Server
+Telex Device - i-Telex Server for reveiving external calls
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
