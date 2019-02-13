@@ -41,14 +41,14 @@ class TelexScreen(txBase.TelexBase):
         '\x08': 'e e e ',
         }
     _replace_ctrl = {
-        b'H': 'U',   # Cursor up
-        b'P': 'D',   # Cursor down
-        b'K': 'L',   # Cursor left
-        b'M': 'R',   # Cursor right
-        b'G': 'H',   # Home
-        b'O': 'E',   # End
-        b'R': 'I',   # Ins
-        b'S': 'L',   # Del
+        b'H': '\x1bU',   # Cursor up
+        b'P': '\x1bD',   # Cursor down
+        b'K': '\x1bL',   # Cursor left
+        b'M': '\x1bR',   # Cursor right
+        b'G': '\x1bLT',  # Home
+        b'O': '\x1bST',  # End
+        b'R': '\x1bAT',  # Ins
+        b'S': '\x1bST',  # Del
         b'I': '\x1bA',   # Page up
         b'Q': '\x1bZ',   # Page down
         }
@@ -115,6 +115,7 @@ class TelexScreen(txBase.TelexBase):
                     k = self.getch()
                     c = self._replace_ctrl.get(k, '')
                     if c:
+                        print('\033[0;37;41m<'+c[1:]+'>\033[0m', end='', flush=True)
                         self._rx_buffer.append(c)
                     return '' # eat cursor and control keys
                 if k == b'\x1b':

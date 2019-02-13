@@ -119,8 +119,15 @@ def load():
 
 
     CFG['verbose'] = ARGS.verbose
-    CFG['wru_id'] = ARGS.wru_id
-    CFG['mode'] = ARGS.mode
+    
+    wru_id = ARGS.wru_id.strip()
+    if wru_id:
+        CFG['wru_id'] = wru_id
+    
+    mode = ARGS.mode.strip()
+    if mode:
+        CFG['mode'] = mode
+
 
     if ARGS.save:
         with open('txConfig.json', 'w') as fp:
