@@ -53,9 +53,8 @@ class TelexScreen(txBase.TelexBase):
         b'Q': '\x1bZ',   # Page down
         }
 
-    def __init__(self, mode:str, **params):
+    def __init__(self, **params):
         '''Creates a Screen object that you can call to do various keyboard things. '''
-
         super().__init__()
 
         self.id = '_'
@@ -67,7 +66,7 @@ class TelexScreen(txBase.TelexBase):
         if os.name == 'nt':
             pass
 
-        else:
+        else:   # Linux and RPi
             # Save the terminal settings
             self.fd = sys.stdin.fileno()
             self.new_term = termios.tcgetattr(self.fd)

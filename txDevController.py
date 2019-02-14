@@ -20,11 +20,15 @@ class TelexController(txBase.TelexBase):
     _fontsep = '~'
 
 
-    def __init__(self, mode:str, device_id:str):
-        self.device_id = device_id
+    def __init__(self, **params):
+        super().__init__()
+
 
         self.id = '^'
-        self.params = {}
+        self.params = params
+
+        self.device_id = params.get('wru_id', '')
+
         self._rx_buffer = []
         self._mx_buffer = []
 
@@ -38,7 +42,7 @@ class TelexController(txBase.TelexBase):
 
     def __del__(self):
         self._run = False
-        pass
+        super().__del__()
     
 
     def read(self) -> str:
@@ -89,13 +93,13 @@ class TelexController(txBase.TelexBase):
             return True
 
 
-        if a == '\x1bLOREM':   # print LOREM IPSUM
+        if a == '\x1bLOREM':   # print LOREM IPSUM (440 characters)
             self._rx_buffer.extend(list('LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISICI ELIT,\r\nSED EIUSMOD TEMPOR INCIDUNT UT LABORE ET DOLORE MAGNA ALIQUA.\r\nUT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO\r\nLABORIS NISI UT ALIQUID EX EA COMMODI CONSEQUAT. QUIS AUTE IURE\r\nREPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT\r\nNULLA PARIATUR. EXCEPTEUR SINT OBCAECAT CUPIDITAT NON PROIDENT,\r\nSUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.\r\n'))   # send text
             return True
 
 
-        if a == '\x1bRY':   # print RY pattern
-            self._rx_buffer.extend(list('RYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRY'))   # send text
+        if a == '\x1bRY':   # print RY pattern (64 characters)
+            self._rx_buffer.extend(list('RYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRY'))   # send text
             return True
 
 

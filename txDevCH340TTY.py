@@ -17,8 +17,7 @@ import txBase
 #######
 
 class TelexCH340TTY(txBase.TelexBase):
-    def __init__(self, mode:str, **params):
-
+    def __init__(self, **params):
         super().__init__()
 
         self.id = '~'
@@ -44,7 +43,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._is_enabled = False
         self._is_online = False
 
-        self._set_mode(mode)
+        self._set_mode(params['mode'])
         if loopback is not None:
             self._loopback = loopback
 
@@ -128,7 +127,7 @@ class TelexCH340TTY(txBase.TelexBase):
                     if a:
                         self._check_special_sequences(a)
 
-                elif self._use_pulse_dial:
+                elif self._is_online and self._use_pulse_dial:
                     b = bb[0]
 
                     if b == 0:   # break or idle mode

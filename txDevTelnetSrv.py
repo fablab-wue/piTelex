@@ -17,11 +17,10 @@ import txBase
 #######
 
 class TelexTelnetSrv(txBase.TelexBase):
-    def __init__(self, mode:str, **params):
-
+    def __init__(self, **params):
         super().__init__()
 
-        self.id = '>'
+        self.id = '-'
         self.params = params
 
         self._port = params.get('port', 6666)

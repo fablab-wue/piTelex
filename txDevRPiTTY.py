@@ -21,8 +21,7 @@ pi = pigpio.pi()
 #######
 
 class TelexRPiTTY(txBase.TelexBase):
-    def __init__(self, mode:str, **params):
-
+    def __init__(self, **params):
         super().__init__()
 
         self._tx_buffer = []

@@ -20,7 +20,7 @@ import txBase
 #######
 
 class TelexED1000TxOnly(txBase.TelexBase):
-    def __init__(self, mode:str, **params):
+    def __init__(self, **params):
 
         super().__init__()
 

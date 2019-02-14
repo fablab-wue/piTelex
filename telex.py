@@ -36,55 +36,57 @@ def init():
 
     mode = txConfig.CFG['mode'].strip()
 
-    ctrl = txDevController.TelexController(mode, txConfig.CFG['wru_id'].strip())
+    ctrl = txDevController.TelexController(**txConfig.CFG)
     DEVICES.append(ctrl)
 
     for dev_name, dev_param in txConfig.CFG['devices'].items():
         dev_param['name'] = dev_name
+        if 'mode' not in dev_param:
+            dev_param['mode'] = mode
         
         if dev_param['type'] == 'screen':
             import txDevScreen
-            screen = txDevScreen.TelexScreen(mode, **dev_param)
+            screen = txDevScreen.TelexScreen(**dev_param)
             DEVICES.append(screen)
 
         if dev_param['type'] == 'CH340TTY':
             import txDevCH340TTY
-            serial = txDevCH340TTY.TelexCH340TTY(mode, **dev_param)
+            serial = txDevCH340TTY.TelexCH340TTY(**dev_param)
             DEVICES.append(serial)
 
         if dev_param['type'] == 'RPiTTY':
             import txDevRPiTTY
-            serial = txDevRPiTTY.TelexRPiTTY(mode, **dev_param)
+            serial = txDevRPiTTY.TelexRPiTTY(**dev_param)
             DEVICES.append(serial)
 
         if dev_param['type'] == 'ED1000':
             import txDevED1000TxOnly
-            serial = txDevED1000TxOnly.TelexED1000TxOnly(mode, **dev_param)
+            serial = txDevED1000TxOnly.TelexED1000TxOnly(**dev_param)
             DEVICES.append(serial)
 
         if dev_param['type'] == 'telnet':
             import txDevTelnetSrv
-            srv = txDevTelnetSrv.TelexTelnetSrv(mode, **dev_param)
+            srv = txDevTelnetSrv.TelexTelnetSrv(**dev_param)
             DEVICES.append(srv)
 
         if dev_param['type'] == 'i-telex':
             import txDevITelexClient
-            srv = txDevITelexClient.TelexITelexClient(mode, **dev_param)
+            srv = txDevITelexClient.TelexITelexClient(**dev_param)
             DEVICES.append(srv)
 
             if dev_param['port'] > 0:
                 import txDevITelexSrv
-                srv = txDevITelexSrv.TelexITelexSrv(mode, **dev_param)
+                srv = txDevITelexSrv.TelexITelexSrv(**dev_param)
                 DEVICES.append(srv)
 
         if dev_param['type'] == 'eliza':
             import txDevEliza
-            eliza = txDevEliza.TelexEliza(mode, **dev_param)
+            eliza = txDevEliza.TelexEliza(**dev_param)
             DEVICES.append(eliza)
 
         if dev_param['type'] == 'log':
             import txDevLog
-            log = txDevLog.TelexLog(mode, **dev_param)
+            log = txDevLog.TelexLog(**dev_param)
             DEVICES.insert(0,log)
 
 # =====

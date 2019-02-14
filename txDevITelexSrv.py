@@ -21,12 +21,10 @@ def LOG(text:str, level:int=3):
     log.LOG('\033[5;30;44m<'+text+'>\033[0m', level)
 
 class TelexITelexSrv(txBase.TelexBase):
-    def __init__(self, mode:str, **params):
-        #, port:int
-
+    def __init__(self, **params):
         super().__init__()
 
-        self.id = '>'
+        self.id = '<'
         self.params = params
 
         self._port = params.get('port', 2342)

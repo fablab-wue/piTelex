@@ -34,11 +34,10 @@ def LOG(text:str, level:int=3):
 class TelexITelexClient(txBase.TelexBase):
     USERLIST = []   # cached list of user dicts of file 'userlist.csv'
 
-    def __init__(self, mode:str, **params):
-
+    def __init__(self, **params):
         super().__init__()
 
-        self.id = '<'
+        self.id = '>'
         self.params = params
 
         #self._baudrate = params.get('baudrate', 50)
