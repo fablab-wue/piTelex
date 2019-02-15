@@ -16,7 +16,6 @@ import txBase
 
 class TelexLog(txBase.TelexBase):
     def __init__(self, **params):
-
         super().__init__()
 
         self.id = '"'

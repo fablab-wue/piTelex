@@ -41,10 +41,10 @@ class TelexScreen(txBase.TelexBase):
         '\x08': 'e e e ',
         }
     _replace_ctrl = {
-        b'H': '\x1bU',   # Cursor up
-        b'P': '\x1bD',   # Cursor down
-        b'K': '\x1bL',   # Cursor left
-        b'M': '\x1bR',   # Cursor right
+        b'H': '\x1bCU',   # Cursor up
+        b'P': '\x1bCD',   # Cursor down
+        b'K': '\x1bCL',   # Cursor left
+        b'M': '\x1bCR',   # Cursor right
         b'G': '\x1bLT',  # Home
         b'O': '\x1bST',  # End
         b'R': '\x1bAT',  # Ins

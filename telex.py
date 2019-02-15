@@ -69,7 +69,7 @@ def init():
             srv = txDevTelnetSrv.TelexTelnetSrv(**dev_param)
             DEVICES.append(srv)
 
-        if dev_param['type'] == 'i-telex':
+        if dev_param['type'] == 'i-Telex':
             import txDevITelexClient
             srv = txDevITelexClient.TelexITelexClient(**dev_param)
             DEVICES.append(srv)

@@ -79,7 +79,7 @@ def load():
 
     parser.add_argument("-I", "--itelex", 
         dest="itelex", default=-1, metavar='PORT', type=int,
-        help="Device: i-Telex")
+        help="Device: i-Telex Client and Server if PORT>0")
 
     parser.add_argument("-Z", "--eliza",
         dest="eliza", default=False, action="store_true", 
@@ -109,7 +109,7 @@ def load():
         devices['telnet'] = {'type': 'telnet', 'port': ARGS.telnet}
 
     if ARGS.itelex >= 0:
-        devices['itelex'] = {'type': 'itelex', 'port': ARGS.itelex}
+        devices['i-Telex'] = {'type': 'i-Telex', 'port': ARGS.itelex}
 
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza'}

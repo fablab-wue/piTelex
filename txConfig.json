@@ -9,13 +9,13 @@
       "baudrate": 50,
       "loopback": true
     },
-    "itelex": {
-      "type": "itelex",
-      "port": 0
-    },
     "log": {
       "type": "log",
       "filename": "test.log"
+    },
+    "i-Telex": {
+      "type": "i-Telex",
+      "port": 0
     }
   },
   "verbose": true,
