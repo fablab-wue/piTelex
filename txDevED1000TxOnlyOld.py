@@ -21,12 +21,11 @@ import txBase
 
 class TelexED1000TxOnly(txBase.TelexBase):
     def __init__(self, **params):
-
         super().__init__()
 
         self._mc = txCode.BaudotMurrayCode()
 
-        self.id = '"'
+        self.id = '='
         self.params = params
 
         self._tx_buffer = []
@@ -61,27 +60,27 @@ class TelexED1000TxOnly(txBase.TelexBase):
     def thread_tx(self):
         """Handler for sending tones."""
         baudrate = self.params.get('baudrate', 50)
-        f0 = self.params.get('f0', 500)
-        f1 = self.params.get('f1', 700)
-        freq = [f0, f1]
+        send_f0 = self.params.get('send_f0', 500)
+        send_f1 = self.params.get('send_f1', 700)
+        send_f = [send_f0, send_f1]
 
-        fs = 44100       # sampling rate, Hz, must be integer
-        Fpb = int(fs / baudrate + 0.5)   # Frames per bit
-        Fpw = int(Fpb*7.5 + 0.5)   # Frames per wave
+        sample_f = 48000       # sampling rate, Hz, must be integer
+        Fpb = int(sample_f / baudrate + 0.5)   # Frames per bit
+        Fpw = int(Fpb * 7.5 + 0.5)   # Frames per wave
 
         audio = pyaudio.PyAudio()
-        #stream = audio.open(format=pyaudio.paInt8, channels=1, rate=fs, output=True)
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=fs, output=True)
-        #stream = audio.open(format=pyaudio.paFloat32, channels=1, rate=fs, output=True)
+        #stream = audio.open(format=pyaudio.paInt8, channels=1, rate=sample_f, output=True, input=False)
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False)
+        #stream = audio.open(format=pyaudio.paFloat32, channels=1, rate=sample_f, output=True, input=False)
 
-        a = stream.get_write_available()
+        #a = stream.get_write_available()
 
         waves = []
         for i in range(2):
             samples=[]
             for n in range(Fpb):
-                t = n / fs
-                s = math.sin(t * 2 * math.pi * freq[i])
+                t = n / sample_f
+                s = math.sin(t * 2 * math.pi * send_f[i])
                 samples.append(int(s*32000+0.5))   # 16 bit
                 #samples.append(int(s*127+128.5))   # 8 bit
                 #samples.append(s)   # float

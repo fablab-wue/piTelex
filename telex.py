@@ -60,8 +60,8 @@ def init():
             DEVICES.append(serial)
 
         if dev_param['type'] == 'ED1000':
-            import txDevED1000TxOnly
-            serial = txDevED1000TxOnly.TelexED1000TxOnly(**dev_param)
+            import txDevED1000SC
+            serial = txDevED1000SC.TelexED1000SC(**dev_param)
             DEVICES.append(serial)
 
         if dev_param['type'] == 'telnet':
