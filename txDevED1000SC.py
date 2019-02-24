@@ -182,9 +182,10 @@ class TelexED1000SC(txBase.TelexBase):
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=Fps)
 
         filters = []
+        fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
         for i in range(2):
             f = recv_f[i]
-            filter_bp = signal.remez(5, [f/2.0, f/1.2, f/1.1, f*1.1, f*1.2, f*2.0], [0,1,0], fs=sample_f)
+            filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
             filters.append(filter_bp)
 
         while self.run:
