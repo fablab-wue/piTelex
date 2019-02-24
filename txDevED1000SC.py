@@ -61,24 +61,25 @@ class TelexED1000SC(txBase.TelexBase):
 
         plt.figure()
         plt.ylim(-60, 5)
-        plt.xlim(0, 6000)
+        plt.xlim(0, 5500)
         plt.grid(True)
         plt.xlabel('Frequency (Hz)')
         plt.ylabel('Gain (dB)')
         plt.title('{}Hz, {}Hz'.format(recv_f[0], recv_f[1]))
 
         filters = []
-        fbw = (recv_f[1] - recv_f[0]) * 0.95
+        fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
         for i in range(2):
             f = recv_f[i]
-            filter_bp = signal.remez(80, [0, f-fbw, f, f, f+fbw, sample_f/2], [0,1,0], fs=sample_f)
-            #filter_bp = signal.remez(80, [0, f/1.4, f, f, f*1.4, sample_f/2], [0,1,0], fs=sample_f)
+            filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
             filters.append(filter_bp)
 
-            w, h = signal.freqz(filters[i], [1], worN=2000)
+            w, h = signal.freqz(filters[i], [1], worN=2500)
             plt.plot(0.5*sample_f*w/np.pi, 20*np.log10(np.abs(h)))
             plt.plot((f,f), (10, -60), color='red', linestyle='dashed')
 
+        plt.plot((500,500), (10, -60), color='blue', linestyle='dashed')
+        plt.plot((700,700), (10, -60), color='blue', linestyle='dashed')
         plt.show()
 
     # =====
