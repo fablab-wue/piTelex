@@ -27,7 +27,7 @@ class TelexED1000SC(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self._mc = txCode.BaudotMurrayCode()
+        self._mc = txCode.BaudotMurrayCode(loop_back=False)
 
         self.id = '='
         self.params = params
@@ -60,27 +60,44 @@ class TelexED1000SC(txBase.TelexBase):
         sample_f = 48000       # sampling rate, Hz, must be integer
 
         plt.figure()
-        plt.ylim(-60, 5)
+        plt.ylim(-100, 5)
         plt.xlim(0, 5500)
         plt.grid(True)
         plt.xlabel('Frequency (Hz)')
         plt.ylabel('Gain (dB)')
         plt.title('{}Hz, {}Hz'.format(recv_f[0], recv_f[1]))
 
+        # FIR
         filters = []
         fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
         for i in range(2):
             f = recv_f[i]
+
             filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
             filters.append(filter_bp)
 
             w, h = signal.freqz(filters[i], [1], worN=2500)
             plt.plot(0.5*sample_f*w/np.pi, 20*np.log10(np.abs(h)))
-            plt.plot((f,f), (10, -60), color='red', linestyle='dashed')
+            plt.plot((f,f), (10, -100), color='red', linestyle='dashed')
 
-        plt.plot((500,500), (10, -60), color='blue', linestyle='dashed')
-        plt.plot((700,700), (10, -60), color='blue', linestyle='dashed')
+        # IIR
+        filters = []
+        for i in range(2):
+            f = recv_f[i]
+
+            filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
+                        analog=False, ftype='butter', fs=sample_f,
+                        output='sos')
+            filters.append(filter_bp)
+
+            w, h = signal.sosfreqz(filter_bp, 2000, fs=sample_f)
+            plt.plot(w, 20*np.log10(np.abs(h)), label=str(f)+'Hz')
+            plt.plot((f,f), (10, -100), color='red', linestyle='dashed')
+
+        plt.plot((500,500), (10, -100), color='blue', linestyle='dashed')
+        plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
         plt.show()
+        pass
 
     # =====
 
@@ -182,10 +199,13 @@ class TelexED1000SC(txBase.TelexBase):
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=Fps)
 
         filters = []
-        fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
+        # FIR fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
         for i in range(2):
             f = recv_f[i]
-            filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
+            # FIR filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
+            # IIR
+            filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
+                        analog=False, ftype='butter', fs=sample_f, output='sos')
             filters.append(filter_bp)
 
         while self.run:
@@ -194,14 +214,15 @@ class TelexED1000SC(txBase.TelexBase):
 
             val = [None, None]
             for i in range(2):
-                fdata = signal.lfilter(filters[i], 1, data)
+                # FIR fdata = signal.lfilter(filters[i], 1, data)
+                fdata = signal.sosfilt(filters[i], data)
                 fdata = np.abs(fdata)
                 val[i] = np.average(fdata)
 
             bit = val[0] < val[1]
-            carrier = (val[0] + val[1]) > 1000
+            carrier = (val[0] + val[1]) > 100
 
-            #print(val, bit)
+            print(bit, val)
 
             if carrier and self._carrier_counter < 100:
                 self._carrier_counter += 1
