@@ -31,10 +31,17 @@ ADo8-Plug
 
 ### Software
 
+In development:
+
 <img src="img/ED1000.png">
 
 
 
 fbw = (recv_f[1] - recv_f[0]) * 0.95
 
-filter_bp = signal.remez(80, [0, f-fbw, f, f, f+fbw, sample_f/2], [0,1,0], fs=sample_f)
+    filter_bp = signal.remez(80, [0, f-fbw, f, f, f+fbw, sample_f/2], [0,1,0], fs=sample_f)
+
+<img src="img/ED1000IIR.png">
+
+    filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
+                analog=False, ftype='butter', fs=sample_f, output='sos')

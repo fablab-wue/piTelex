@@ -40,8 +40,8 @@ class TelexED1000SC(txBase.TelexBase):
         self.do_plot()
 
         self.run = True
-        #self._tx_thread = Thread(target=self.thread_tx)
-        #self._tx_thread.start()
+        self._tx_thread = Thread(target=self.thread_tx)
+        self._tx_thread.start()
         self._rx_thread = Thread(target=self.thread_rx)
         self._rx_thread.start()
 
@@ -57,6 +57,7 @@ class TelexED1000SC(txBase.TelexBase):
         recv_f1 = self.params.get('recv_f1', 3150)
         recv_f = [recv_f0, recv_f1]
 
+        return
         sample_f = 48000       # sampling rate, Hz, must be integer
 
         plt.figure()
@@ -96,7 +97,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         plt.plot((500,500), (10, -100), color='blue', linestyle='dashed')
         plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
-        plt.show()
+        #plt.show()
         pass
 
     # =====
@@ -134,7 +135,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         audio = pyaudio.PyAudio()
         #stream = audio.open(format=pyaudio.paInt8, channels=1, rate=sample_f, output=True, input=False)
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False)
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=None)
         #stream = audio.open(format=pyaudio.paFloat32, channels=1, rate=sample_f, output=True, input=False)
 
         #a = stream.get_write_available()
@@ -196,7 +197,7 @@ class TelexED1000SC(txBase.TelexBase):
         Fps = int(sample_f / baudrate / 4 + 0.5)   # Frames per slice
 
         audio = pyaudio.PyAudio()
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=Fps)
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=Fps, input_device_index=None)
 
         filters = []
         # FIR fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
@@ -222,7 +223,7 @@ class TelexED1000SC(txBase.TelexBase):
             bit = val[0] < val[1]
             carrier = (val[0] + val[1]) > 100
 
-            print(bit, val)
+            #print(bit, val)
 
             if carrier and self._carrier_counter < 100:
                 self._carrier_counter += 1
@@ -264,7 +265,7 @@ class TelexED1000SC(txBase.TelexBase):
                 if slice_counter >= 28:   # end of stop step
                     slice_counter = 0
                     #print(val, symbol)
-                    self._rxb_buffer.append(val)
+                    self._rxb_buffer.append(symbol)
                     continue
 
                 slice_counter += 1

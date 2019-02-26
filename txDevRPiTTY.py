@@ -28,7 +28,12 @@ class TelexRPiTTY(txBase.TelexBase):
         self._rx_buffer = []
         self._cb = None
         self._is_pulse_dial = False
+        self._use_pulse_dial = True
         self._pulse_dial_count = 0
+        self._is_online = False
+        self._is_enabled = False
+        self._use_squelch = True
+        self._time_squelch = 0
 
         self.id = '#'
         self.params = params
@@ -46,7 +51,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._inv_rxd = params.get('inv_rxd', False)
         #self._inv_txd = params.get('inv_txd', False)
         self._loopback = params.get('loopback', True)
-        self._uscoding = params.get('uscoding', True)
+        self._uscoding = params.get('uscoding', False)
 
         # init codec
         character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate
@@ -70,7 +75,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         # init bit bongo serial read
         pi.set_glitch_filter(self._pin_rxd, 1000)   # 1ms
-        status = pi.bb_serial_read_open(self._pin_rxd, self._baudrate, self._bytesize)   # 50 baud
+        status = pi.bb_serial_read_open(self._pin_rxd, self._baudrate, self._bytesize)
         pi.bb_serial_invert(self._pin_rxd, self._inv_rxd)
 
         # init bit bongo serial write
@@ -95,7 +100,7 @@ class TelexRPiTTY(txBase.TelexBase):
         ret = ''
 
         count, data = pi.bb_serial_read(self._pin_rxd)
-        if count:
+        if count and (not self._use_squelch or time.time() >= self._time_squelch):
             bb = data
             a = self._mc.decodeBM2A(bb)
             if a:
@@ -109,6 +114,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
+            self._check_commands(a)
             return
 
         bb = self._mc.encodeA2BM(a)
@@ -120,8 +126,9 @@ class TelexRPiTTY(txBase.TelexBase):
 
 
     def idle(self):
-        if self._tx_buffer:
-            self._write_wave()
+        if not self._use_squelch or time.time() >= self._time_squelch:
+            if self._tx_buffer:
+                self._write_wave()
 
 
     # =====
@@ -153,8 +160,24 @@ class TelexRPiTTY(txBase.TelexBase):
 
         self._tx_buffer = []
 
+    # -----
 
-    def enable_pulse_dial(self, enable:bool):
+    def _set_online(self, online:bool):
+        self._is_online = online
+        pi.write(self._pin_opt, online)   # pos polarity
+
+    # -----
+
+    def _set_enable(self, enable:bool):
+        self._is_enabled = enable
+        pi.write(self._pin_rel, enable)   # pos polarity
+        self._mc.reset()
+        if self._use_squelch:
+            self._set_time_squelch(0.5)
+
+    # -----
+
+    def _set_pulse_dial(self, enable:bool):
         if self._cb:
             self._cb.cancel()
             self._cb = None
@@ -165,6 +188,7 @@ class TelexRPiTTY(txBase.TelexBase):
         else:
             pi.set_watchdog(self._pin_rxd, 0)   # disable
 
+    # -----
 
     def _callback_pulse_dial(self, gpio, level, tick):
         print(gpio, level, tick)
@@ -176,6 +200,43 @@ class TelexRPiTTY(txBase.TelexBase):
             self._pulse_dial_count = 0
         else:
             self._pulse_dial_count += 1
+
+    # -----
+
+    def _check_commands(self, a:str):
+        enable = None
+
+        if a == '\x1bA':
+            self._set_pulse_dial(False)
+            self._set_online(True)
+            enable = True
+
+        if a == '\x1bZ':
+            self._tx_buffer = []    # empty write buffer...
+            self._set_pulse_dial(False)
+            self._set_online(False)
+            enable = False   #self._use_dedicated_line
+            if not enable and self._use_squelch:
+                self._set_time_squelch(1.5)
+
+        if a == '\x1bWB':
+            self._set_online(True)
+            if self._use_pulse_dial:   # TW39
+                self._set_pulse_dial(True)
+                #self._tty.write(b'\x01')   # send pulse with 25ms low to signal 'ready for dialing' ('Wahlbereitschaft')
+                enable = False
+            else:   # dedicated line, TWM, V.10
+                enable = True
+
+        if enable is not None:
+            self._set_enable(enable)
+
+    # -----
+
+    def _set_time_squelch(self, t_diff):
+        t = time.time() + t_diff
+        if self._time_squelch < t:
+            self._time_squelch = t
 
 #######
 
