@@ -29,6 +29,8 @@ ADo8-Plug
 4 c line
 5-6 Bridge (for signaling a connected plug)
 
+<img src="img/ED1000Schematic.png">
+
 ### Software
 
 In development:
