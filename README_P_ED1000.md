@@ -48,7 +48,7 @@ Seeing the lower frequencies as a bit value '0' and the higher as '1', the bit v
 ### ADo8 Plug
 
 | Pin |  Description |
-| ---: | --- | --- |
+| ---: | --- |
 | 1 | Line a
 | 2 | nc
 | 3 | nc
