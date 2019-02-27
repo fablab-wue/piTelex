@@ -30,6 +30,7 @@ As side effect teletypes with V.10 inteface (like TeKaDe FS200) can also be conn
 
  * [Baudot-Murray-Code = CCITT-2 = ITA2](/README_P_BMC.md)
  * [TW39 / TWM Transmission](/README_P_TW39.md)
+ * [ED1000 Transmission](/README_P_ED1000.md)
 
 ## Additional Information
 
