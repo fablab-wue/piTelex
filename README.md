@@ -21,10 +21,12 @@ As side effect teletypes with V.10 inteface (like TeKaDe FS200) can also be conn
 
  * [Electronic for Current-Loop Interface](/README_HW_ILoop.md)
  * [Electronic for V.10 Interface](/README_HW_V10.md)
+ * [Electronic for ED1000 Interface](/README_HW_ED1000.md)
 
 ## Software
 
  * [Software](/README_SW.md)
+    * [Plugin ED1000](/README_SW_ED1000.md)
 
 ## Protocol / Coding
 

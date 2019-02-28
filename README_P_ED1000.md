@@ -6,7 +6,7 @@ ED1000 is a technique to connect a teletype to a central office with 2 wires. A 
 
 ## SEU-A/B Standard
 
-### Definitions
+### Definitions / Naming
 
 | Type | Definition |
 | --- | --- |
@@ -43,9 +43,9 @@ Seeing the lower frequencies as a bit value '0' and the higher as '1', the bit v
 | A &rarr; B | 600Hz &pm; 100Hz | 14dB
 | B &rarr; A | 2700Hz &pm; 450Hz | 25dB
 
-## Hardware
+## ADo8 Plug
 
-### ADo8 Plug
+It is common for ED1000 system to use an ADo8 plug.
 
 | Pin |  Description |
 | ---: | --- |
@@ -60,31 +60,6 @@ Seeing the lower frequencies as a bit value '0' and the higher as '1', the bit v
 
 The line wires are used to send **and** receive at the same time like a MODEM on phone wires.
 
-The bridge between pin 5 and 6 is for signaling a connected plug. May be high voltages can be used by teletype!
+The bridge between pin 5 and 6 is for signaling a connected plug. May be high voltages can be used by teletype to detect the bridge!
 
 Some teletypes use a switch (relay) on pin 7 and 8 to signal paper end.
-
-### Connecting a PC Sound Card to ADo8
-
-<img src="img/ED1000Schematic.png" width="274px">
-
-## Software
-
-> In development:
-
-### Using IIR-Filter
-
-<img src="img/ED1000IIR.png" width="300px">
-
- * Slice samples in 5ms pieces
- * Filter each slice for 2250HZ and 3150Hz:
-
-        filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
-                    analog=False, ftype='butter', fs=sample_f, output='sos')
-
- * Get average of abs() per slice per frequency
- * Compare values of both frequencies to get bit value (0/1)
-
- ### Using FFT...
-
- ...
