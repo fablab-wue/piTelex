@@ -21,6 +21,8 @@ import matplotlib.pyplot as plt
 import txCode
 import txBase
 
+sample_f = 48000       # sampling rate, Hz, must be integer
+
 #######
 
 class TelexED1000SC(txBase.TelexBase):
@@ -32,12 +34,16 @@ class TelexED1000SC(txBase.TelexBase):
         self.id = '='
         self.params = params
 
-        self._txb_buffer = []
-        self._rxb_buffer = []
-        self._carrier_counter = 0
-        self._carrier_detected = False
+        self._tx_buffer = []
+        self._rx_buffer = []
+        self._is_online = False
+        self._tx_1_pulse = 0
 
-        self.do_plot()
+        recv_f0 = self.params.get('recv_f0', 2250)
+        recv_f1 = self.params.get('recv_f1', 3150)
+        recv_f = [recv_f0, recv_f1]
+
+        self._recv_decode_init(recv_f)
 
         self.run = True
         self._tx_thread = Thread(target=self.thread_tx)
@@ -52,130 +58,132 @@ class TelexED1000SC(txBase.TelexBase):
 
         super().__del__()
 
-    def do_plot(self):
-        recv_f0 = self.params.get('recv_f0', 2250)
-        recv_f1 = self.params.get('recv_f1', 3150)
-        recv_f = [recv_f0, recv_f1]
-
-        return
-        sample_f = 48000       # sampling rate, Hz, must be integer
-
-        plt.figure()
-        plt.ylim(-100, 5)
-        plt.xlim(0, 5500)
-        plt.grid(True)
-        plt.xlabel('Frequency (Hz)')
-        plt.ylabel('Gain (dB)')
-        plt.title('{}Hz, {}Hz'.format(recv_f[0], recv_f[1]))
-
-        # FIR
-        filters = []
-        fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
-        for i in range(2):
-            f = recv_f[i]
-
-            filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
-            filters.append(filter_bp)
-
-            w, h = signal.freqz(filters[i], [1], worN=2500)
-            plt.plot(0.5*sample_f*w/np.pi, 20*np.log10(np.abs(h)))
-            plt.plot((f,f), (10, -100), color='red', linestyle='dashed')
-
-        # IIR
-        filters = []
-        for i in range(2):
-            f = recv_f[i]
-
-            filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
-                        analog=False, ftype='butter', fs=sample_f,
-                        output='sos')
-            filters.append(filter_bp)
-
-            w, h = signal.sosfreqz(filter_bp, 2000, fs=sample_f)
-            plt.plot(w, 20*np.log10(np.abs(h)), label=str(f)+'Hz')
-            plt.plot((f,f), (10, -100), color='red', linestyle='dashed')
-
-        plt.plot((500,500), (10, -100), color='blue', linestyle='dashed')
-        plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
-        #plt.show()
-        pass
-
     # =====
 
     def read(self) -> str:
-        if self._rxb_buffer:
-            b = self._rxb_buffer.pop(0)
-            a = self._mc.decodeBM2A([b])
+        if self._rx_buffer:
+            a = self._rx_buffer.pop(0)
             return a
 
+    # -----
 
     def write(self, a:str, source:str):
         if len(a) != 1:
+            self._check_commands(a)
             return
             
-        bb = self._mc.encodeA2BM(a)
-        if bb:
-            for b in bb:
-                self._txb_buffer.append(b)
+        if a == '#':
+            a = '@'   # ask teletype for hardware ID
+
+        if a and self._is_online:
+            self._tx_buffer.append(a)
+
+    # =====
+
+    def _check_commands(self, a:str):
+        if a == '\x1bA':
+            self._tx_1_pulse = 25
+            self._set_online(True)
+
+        if a == '\x1bZ':
+            self._set_online(False)
+
+        if a == '\x1bWB':
+            self._tx_1_pulse = 0
+            self._set_online(True)
+
+    # -----
+
+    def _set_online(self, online:bool):
+        self._is_online = online
 
     # =====
 
     def thread_tx(self):
         """Handler for sending tones."""
+
+        devindex = self.params.get('devindex', None)
         baudrate = self.params.get('baudrate', 50)
         send_f0 = self.params.get('send_f0', 500)
         send_f1 = self.params.get('send_f1', 700)
-        #send_f0 = self.params.get('recv_f0', 2250)
-        #send_f1 = self.params.get('recv_f1', 3150)
-        send_f = [send_f0, send_f1]
+        #send_f0 = self.params.get('recv_f0', 2250)   #debug
+        #send_f1 = self.params.get('recv_f1', 3150)   #debug
+        send_f = [send_f0, send_f1, (send_f0+send_f1)/2]
+        zcarrier = self.params.get('zcarrier', False)
 
-        sample_f = 48000       # sampling rate, Hz, must be integer
         Fpb = int(sample_f / baudrate + 0.5)   # Frames per bit
         Fpw = int(Fpb * 7.5 + 0.5)   # Frames per wave
 
-        audio = pyaudio.PyAudio()
-        #stream = audio.open(format=pyaudio.paInt8, channels=1, rate=sample_f, output=True, input=False)
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=None)
-        #stream = audio.open(format=pyaudio.paFloat32, channels=1, rate=sample_f, output=True, input=False)
-
-        #a = stream.get_write_available()
+        time.sleep(0.5)
 
         waves = []
-        for i in range(2):
+        for i in range(3):
             samples=[]
             for n in range(Fpb):
                 t = n / sample_f
                 s = math.sin(t * 2 * math.pi * send_f[i])
-                samples.append(int(s*32000+0.5))   # 16 bit
-                #samples.append(int(s*127+128.5))   # 8 bit
-                #samples.append(s)   # float
+                samples.append(int(s*32000))   # 16 bit
             waves.append(struct.pack('%sh' % Fpb, *samples))   # 16 bit
-            #waves.append(struct.pack('%sf' % Fpb, *samples))   # float
 
+        audio = pyaudio.PyAudio()
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex)
+
+        #a = stream.get_write_available()
 
         while self.run:
-            if self._txb_buffer:
-                b = self._txb_buffer.pop(0)
-                d1 = 1 if b & 1 else 0
-                d2 = 1 if b & 2 else 0
-                d3 = 1 if b & 4 else 0
-                d4 = 1 if b & 8 else 0
-                d5 = 1 if b & 16 else 0
-                #print (b, d1, d2, d3, d4, d5)
-                wavecomp = bytearray()
-                wavecomp.extend(waves[0])
-                wavecomp.extend(waves[d1])
-                wavecomp.extend(waves[d2])
-                wavecomp.extend(waves[d3])
-                wavecomp.extend(waves[d4])
-                wavecomp.extend(waves[d5])
-                wavecomp.extend(waves[1])
-                wavecomp.extend(waves[1])
-                stream.write(bytes(wavecomp), Fpw)   # blocking
+            if self._tx_1_pulse < 0:
+                for i in range(50):
+                    stream.write(waves[2], Fpb)   # blocking
+                for i in range(2):
+                    stream.write(waves[0], Fpb)   # blocking
+                for i in range(100):
+                    stream.write(waves[1], Fpb)   # blocking
+                self._tx_1_pulse = 0
 
-            else:   # nothing to send
-                stream.write(waves[1], Fpb)   # blocking
-        
+            if self._tx_1_pulse:
+                wavecomp = bytearray()
+                for i in range(self._tx_1_pulse):
+                    wavecomp.extend(waves[1])
+                stream.write(bytes(wavecomp), Fpb*self._tx_1_pulse)   # blocking
+                self._tx_1_pulse = 0
+
+            if self._is_online:
+                if self._tx_buffer:
+                    a = self._tx_buffer.pop(0)
+                    bb = self._mc.encodeA2BM(a)
+                    if bb:
+                        for b in bb:
+                            bits = [
+                                1 if b & 1 else 0,
+                                1 if b & 2 else 0,
+                                1 if b & 4 else 0,
+                                1 if b & 8 else 0,
+                                1 if b & 16 else 0
+                                ]
+
+                            bits = [0, 0, 0, 0, 0]
+                            mask = 1
+                            for i in range(5):
+                                if b & mask:
+                                    bits[i] = 1
+                                mask <<= 1
+                            wavecomp = bytearray()
+                            wavecomp.extend(waves[0])
+                            for bit in bits:
+                                wavecomp.extend(waves[bit])
+                            wavecomp.extend(waves[1])
+                            wavecomp.extend(waves[1])
+                            stream.write(bytes(wavecomp), Fpw)   # blocking
+
+                else:   # nothing to send
+                    stream.write(waves[1], Fpb)   # blocking
+
+            else:   # offline
+                if zcarrier:
+                    stream.write(waves[0], Fpb)   # blocking
+                else:
+                    time.sleep(0.100)
+
             time.sleep(0.001)
 
 
@@ -185,54 +193,40 @@ class TelexED1000SC(txBase.TelexBase):
     # =====
 
     def thread_rx(self):
-        """Handler for sending tones."""
-        baudrate = self.params.get('baudrate', 50)
-        recv_f0 = self.params.get('recv_f0', 2250)
-        recv_f1 = self.params.get('recv_f1', 3150)
-        recv_f = [recv_f0, recv_f1]
+        """Handler for receiving tones."""
 
+        _bit_counter_0 = 0
+        _bit_counter_1 = 0
         slice_counter = 0
+        
+        devindex = self.params.get('devindex', None)
+        baudrate = self.params.get('baudrate', 50)
 
-        sample_f = 48000       # sampling rate, Hz, must be integer
-        Fps = int(sample_f / baudrate / 4 + 0.5)   # Frames per slice
+        FpS = int(sample_f / baudrate / 4 + 0.5)   # Frames per slice
+
+        time.sleep(1.5)
 
         audio = pyaudio.PyAudio()
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=Fps, input_device_index=None)
-
-        filters = []
-        # FIR fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
-        for i in range(2):
-            f = recv_f[i]
-            # FIR filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
-            # IIR
-            filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
-                        analog=False, ftype='butter', fs=sample_f, output='sos')
-            filters.append(filter_bp)
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
 
         while self.run:
-            bdata = stream.read(Fps, exception_on_overflow=False)   # blocking
+            bdata = stream.read(FpS, exception_on_overflow=False)   # blocking
             data = np.frombuffer(bdata, dtype=np.int16)
 
-            val = [None, None]
-            for i in range(2):
-                # FIR fdata = signal.lfilter(filters[i], 1, data)
-                fdata = signal.sosfilt(filters[i], data)
-                fdata = np.abs(fdata)
-                val[i] = np.average(fdata)
-
-            bit = val[0] < val[1]
-            carrier = (val[0] + val[1]) > 100
+            bit = self._recv_decode(data)
 
             #print(bit, val)
 
-            if carrier and self._carrier_counter < 100:
-                self._carrier_counter += 1
-                if self._carrier_counter == 100:
-                    self._carrier_detected = True
-            if not carrier and self._carrier_counter > 0:
-                self._carrier_counter -= 1
-                if self._carrier_counter == 0:
-                    self._carrier_detected = False
+            if bit:
+                _bit_counter_0 = 0
+                _bit_counter_1 += 1
+                if _bit_counter_1 == 100 and not self._is_online:   # 0.5sec
+                    self._rx_buffer.append('\x1bAT')
+            else:
+                _bit_counter_0 += 1
+                _bit_counter_1 = 0
+                if _bit_counter_0 == 100:   # 0.5sec
+                    self._rx_buffer.append('\x1bST')
 
 
             if slice_counter == 0:
@@ -242,6 +236,8 @@ class TelexED1000SC(txBase.TelexBase):
 
             else:
                 if slice_counter == 2:   # middle of start step
+                    if bit:
+                        slice_counter = -1
                     pass
                 if slice_counter == 6:   # middle of step 1
                     if bit:
@@ -260,12 +256,14 @@ class TelexED1000SC(txBase.TelexBase):
                         symbol |= 16
                 if slice_counter == 26:   # middle of stop step
                     if not bit:
-                        #slice_counter = -10
+                        slice_counter = -5
                         pass
                 if slice_counter >= 28:   # end of stop step
                     slice_counter = 0
-                    #print(val, symbol)
-                    self._rxb_buffer.append(symbol)
+                    #print(symbol, val)   #debug
+                    a = self._mc.decodeBM2A([symbol])
+                    if a:
+                        self._rx_buffer.append(a)
                     continue
 
                 slice_counter += 1
@@ -275,6 +273,101 @@ class TelexED1000SC(txBase.TelexBase):
 
         stream.stop_stream()  
         stream.close()
+
+    # =====
+
+    # IIR-filter
+    def _recv_decode_init(self, recv_f):
+        self._filters = []
+        for i in range(2):
+            f = recv_f[i]
+            filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
+                        analog=False, ftype='butter', fs=sample_f, output='sos')
+            self._filters.append(filter_bp)
+
+        return
+
+        plt.figure()
+        plt.ylim(-100, 5)
+        plt.xlim(0, 5500)
+        plt.grid(True)
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Gain (dB)')
+        plt.title('{}Hz, {}Hz'.format(recv_f[0], recv_f[1]))
+
+        for i in range(2):
+            f = recv_f[i]
+            w, h = signal.sosfreqz(self._filters[i], 2000, fs=sample_f)
+            plt.plot(w, 20*np.log10(np.abs(h)), label=str(f)+'Hz')
+            plt.plot((f,f), (10, -100), color='red', linestyle='dashed')
+
+        plt.plot((500,500), (10, -100), color='blue', linestyle='dashed')
+        plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
+        plt.show()
+        pass
+
+    # -----
+
+    # IIR-filter
+    def _recv_decode(self, data):
+        val = [None, None]
+        for i in range(2):
+            fdata = signal.sosfilt(self._filters[i], data)
+            fdata = np.abs(fdata)   # rectifier - instead of envelope curve
+            val[i] = np.average(fdata)   # get energy for each frequency band
+
+        bit = val[0] < val[1]   # compare energy of each frequency band
+        if (val[0] + val[1]) < 100:   # no carrier
+            bit = None
+        return bit
+
+    # =====
+
+    # FIR-filter - not longer ised
+    def _recv_decode_init_FIR(self, recv_f):
+        self._filters = []
+        fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
+        for i in range(2):
+            f = recv_f[i]
+            filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
+            self._filters.append(filter_bp)
+
+        return
+
+        plt.figure()
+        plt.ylim(-60, 5)
+        plt.xlim(0, 5500)
+        plt.grid(True)
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Gain (dB)')
+        plt.title('{}Hz, {}Hz'.format(recv_f[0], recv_f[1]))
+
+        fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
+        for i in range(2):
+            f = recv_f[i]
+            w, h = signal.freqz(self._filters[i], [1], worN=2500)
+            plt.plot(0.5*sample_f*w/np.pi, 20*np.log10(np.abs(h)))
+            plt.plot((f,f), (10, -100), color='red', linestyle='dashed')
+
+        plt.plot((500,500), (10, -100), color='blue', linestyle='dashed')
+        plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
+        plt.show()
+        pass
+
+    # -----
+
+    # FIR-filter - not longer ised
+    def _recv_decode_FIR(self, data):
+        val = [None, None]
+        for i in range(2):
+            fdata = signal.lfilter(self._filters[i], 1, data)
+            fdata = np.abs(fdata)
+            val[i] = np.average(fdata)
+
+        bit = val[0] < val[1]
+        if (val[0] + val[1]) < 100:   # no carrier
+            bit = None
+        return bit
 
 #######
 

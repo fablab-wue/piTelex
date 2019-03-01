@@ -17,7 +17,7 @@ Type 'B' is the normal configuration for a teletype. Some teletypes can be confi
 
 ### Levels and Frequencys
 
-| SEU | Direction | Frq A<br>(space, 0) | Frq Z<br>(mark, 1) | Level | U rms * | U p * |
+| SEU | Direction | Frq A<br>(space, 0) | Frq Z<br>(mark, 1) | Level | U rms * | U peak * |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | A | Send | 500Hz | 700Hz | -14.5dBm | 0.146V | 0.206V
 | A | Receive | 2250Hz | 3150Hz | &ge;-34.0dBm | &ge;0.015V | &ge;0.022V
