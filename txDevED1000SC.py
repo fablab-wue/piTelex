@@ -37,7 +37,6 @@ class TelexED1000SC(txBase.TelexBase):
         self._tx_buffer = []
         self._rx_buffer = []
         self._is_online = False
-        self._tx_1_pulse = 0
 
         recv_f0 = self.params.get('recv_f0', 2250)
         recv_f1 = self.params.get('recv_f1', 3150)
@@ -82,14 +81,17 @@ class TelexED1000SC(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         if a == '\x1bA':
-            self._tx_1_pulse = 25
+            self._tx_buffer = []
+            self._tx_buffer.append('§A')   # signaling type A - connection
             self._set_online(True)
 
         if a == '\x1bZ':
+            self._tx_buffer = []
             self._set_online(False)
 
         if a == '\x1bWB':
-            self._tx_1_pulse = 0
+            self._tx_buffer = []
+            self._tx_buffer.append('§W')   # signaling type A - ready for dial
             self._set_online(True)
 
     # -----
@@ -131,39 +133,24 @@ class TelexED1000SC(txBase.TelexBase):
         #a = stream.get_write_available()
 
         while self.run:
-            if self._tx_1_pulse < 0:
-                for i in range(50):
-                    stream.write(waves[2], Fpb)   # blocking
-                for i in range(2):
-                    stream.write(waves[0], Fpb)   # blocking
-                for i in range(100):
-                    stream.write(waves[1], Fpb)   # blocking
-                self._tx_1_pulse = 0
-
-            if self._tx_1_pulse:
-                wavecomp = bytearray()
-                for i in range(self._tx_1_pulse):
-                    wavecomp.extend(waves[1])
-                stream.write(bytes(wavecomp), Fpb*self._tx_1_pulse)   # blocking
-                self._tx_1_pulse = 0
-
             if self._is_online:
                 if self._tx_buffer:
                     a = self._tx_buffer.pop(0)
-                    bb = self._mc.encodeA2BM(a)
+                    if a == '§W':
+                        bb = [0xF9FFFFFF]
+                        nbit = 32
+                    elif a == '§A':
+                        bb = [0xFFC0]
+                        nbit = 16
+                    else:
+                        bb = self._mc.encodeA2BM(a)
+                        nbit = 5
+                    
                     if bb:
                         for b in bb:
-                            bits = [
-                                1 if b & 1 else 0,
-                                1 if b & 2 else 0,
-                                1 if b & 4 else 0,
-                                1 if b & 8 else 0,
-                                1 if b & 16 else 0
-                                ]
-
-                            bits = [0, 0, 0, 0, 0]
+                            bits = [0]*nbit
                             mask = 1
-                            for i in range(5):
+                            for i in range(nbit):
                                 if b & mask:
                                     bits[i] = 1
                                 mask <<= 1
@@ -220,7 +207,7 @@ class TelexED1000SC(txBase.TelexBase):
             if bit:
                 _bit_counter_0 = 0
                 _bit_counter_1 += 1
-                if _bit_counter_1 == 100 and not self._is_online:   # 0.5sec
+                if _bit_counter_1 == 20 and not self._is_online:   # 0.1sec
                     self._rx_buffer.append('\x1bAT')
             else:
                 _bit_counter_0 += 1
