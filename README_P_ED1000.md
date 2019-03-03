@@ -63,3 +63,65 @@ The line wires are used to send **and** receive at the same time like a MODEM on
 The bridge between pin 5 and 6 is for signaling a connected plug. May be high voltages can be used by teletype to detect the bridge!
 
 Some teletypes use a switch (relay) on pin 7 and 8 to signal paper end.
+
+# Frequency Shift Keying (FSK)
+
+<img src="img/ED1000FSK1.png" width="234px">
+
+For signaling Z (logical 1) a high frequency is used (700Hz, 3150Hz). For signaling A (logical 0) a lower frequency is used (500Hz, 2250Hz). Both frequencies have the same amplitude.
+
+<img src="img/ED1000FSK2.png" width="297px">
+
+For sending a character the transmitter switches betwenn the corresponding frequency with the giver baud rate.
+
+For timing see: [Baudot-Murray-Code](/README_P_BMC.md)
+
+# Protocol
+
+## Outgoing Call
+
+Idle mode ...
+
+### Begin Call and Dialing
+
+<img src="img/ED1000Call1.png" width="550px">
+
+Pressing button AT on FSG...
+
+### Connecting
+
+<img src="img/ED1000Call3.png" width="240px">
+
+On fail...
+
+<img src="img/ED1000Call2.png" width="550px">
+
+On success...
+
+### Transmitting Content
+
+<img src="img/ED1000Call4.png" width="550px">
+
+Typing characters...
+
+<img src="img/ED1000Call5.png" width="550px">
+
+Transmitting without pause...
+
+### Ending Call
+
+<img src="img/ED1000Call6.png" width="240px">
+
+Pressing button ST...
+
+<img src="img/ED1000Call7.png" width="240px">
+
+Ending by other side...
+
+## Incoming Call
+
+<img src="img/ED1000Incomming.png" width="550px">
+
+## WRU (Wer da?)
+
+<img src="img/ED1000WRU.png" width="550px">
