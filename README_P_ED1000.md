@@ -66,15 +66,15 @@ Some teletypes use a switch (relay) on pin 7 and 8 to signal paper end.
 
 # Frequency Shift Keying (FSK)
 
-<img src="img/ED1000FSK1.png" width="472px">
+<img src="img/ED1000FSK1.png" width="943px">
 
 For signaling Z (logical 1) a high frequency is used (700Hz, 3150Hz). For signaling A (logical 0) a lower frequency is used (500Hz, 2250Hz). Both frequencies have the same amplitude.
 
-<img src="img/ED1000FSK3.png" width="442px">
+<img src="img/ED1000FSK3.png" width="441px">
 
 In frequency domain ...
 
-<img src="img/ED1000FSK2.png" width="595px">
+<img src="img/ED1000FSK2.png" width="780px">
 
 For sending a character the transmitter switches between the corresponding frequency with the giver baud rate.
 

@@ -52,7 +52,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._stopbits2 = int(self._stopbits * 2 + 0.5)
         self._pin_txd = params.get('pin_txd', 17)
         self._pin_rxd = params.get('pin_rxd', 27)
-        self._pin_fsg_ns = params.get('pin_fsg_ns', 27)
+        self._pin_fsg_ns = params.get('pin_fsg_ns', 6)
         self._pin_rel = params.get('pin_rel', 22)
         self._pin_dir = params.get('pin_dir', 11)
         #self._pin_oin = params.get('pin_oin', 10)
@@ -119,7 +119,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         count, data = pi.bb_serial_read(self._pin_rxd)
         if count \
-            and (not self._use_squelch or time.time() >= self._time_squelch) \
+            and not(self._use_squelch and time.time() <= self._time_squelch) \
             and not self._is_pulse_dial:
             bb = data
             a = self._mc.decodeBM2A(bb)
@@ -243,7 +243,9 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def _callback_pulse_dial(self, gpio, level, tick):
-
+        if (self._use_squelch and time.time() <= self._time_squelch):
+            return
+            
         if level == pigpio.TIMEOUT:   # watchdog timeout
             print(gpio, level, tick)   # debug
             if self._pulse_dial_count:
