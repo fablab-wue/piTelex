@@ -197,7 +197,8 @@ class TelexCH340TTY(txBase.TelexBase):
             if self._tx_buffer:
                 a = self._tx_buffer.pop(0)
                 bb = self._mc.encodeA2BM(a)
-                self._tty.write(bb)
+                if bb:
+                    self._tty.write(bb)
 
     # -----
 
@@ -255,7 +256,7 @@ class TelexCH340TTY(txBase.TelexBase):
             enable = True
 
         if a == '\x1bZ':
-            #self._tty.    # TODO empty write buffer...
+            self._tx_buffer = []    # empty write buffer...
             self._set_pulse_dial(False)
             self._set_online(False)
             enable = False   #self._use_dedicated_line
@@ -266,7 +267,7 @@ class TelexCH340TTY(txBase.TelexBase):
             self._set_online(True)
             if self._use_pulse_dial:   # TW39
                 self._set_pulse_dial(True)
-                self._tty.write(b'\x01')   # send pulse with 25ms low to signal 'ready for dialing' ('Wahlbereitschaft')
+                self._tty.write(b'\x1E')   # send pulse with 25ms low to signal 'ready for dialing' ('Wahlbereitschaft')
                 enable = False
             else:   # dedicated line, TWM, V.10
                 enable = True
