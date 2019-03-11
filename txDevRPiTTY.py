@@ -178,6 +178,76 @@ class TelexRPiTTY(txBase.TelexBase):
 
     # =====
 
+    def _check_commands(self, a:str):
+        enable = None
+
+        if a == '\x1bA':
+            self._set_pulse_dial(False)
+            self._set_online(True)
+            enable = True
+
+        if a == '\x1bZ':
+            self._tx_buffer = []    # empty write buffer...
+            self._set_pulse_dial(False)
+            self._set_online(False)
+            enable = False   #self._use_dedicated_line
+            if not enable and self._use_squelch:
+                self._set_time_squelch(1.5)
+
+        if a == '\x1bWB':
+            self._set_online(True)
+            if self._use_pulse_dial:   # TW39
+                if self._use_squelch:
+                    self._set_time_squelch(0.5)
+                self._set_pulse_dial(True)
+                self._tx_buffer.append('[')   # send 20ms pulse
+                enable = False
+            else:   # dedicated line, TWM, V.10
+                enable = True
+
+        if enable is not None:
+            self._set_enable(enable)
+
+    # -----
+
+    def _set_time_squelch(self, t_diff:float):
+        t = time.time() + t_diff
+        if self._time_squelch < t:
+            self._time_squelch = t
+
+    # -----
+
+    def _set_online(self, online:bool):
+        self._is_online = online
+        pi.write(self._pin_opt, online)   # pos polarity
+
+    # -----
+
+    def _set_enable(self, enable:bool):
+        self._is_enabled = enable
+        pi.write(self._pin_rel, enable)   # pos polarity
+        self._mc.reset()
+        if self._use_squelch:
+            self._set_time_squelch(0.5)
+
+    # -----
+
+    def _set_pulse_dial(self, enable:bool):
+        self._is_pulse_dial = enable
+        if self._cb:
+            self._cb.cancel()
+            self._cb = None
+        self._pulse_dial_count = 0
+
+        if self._pin_fsg_ns:
+            if enable:
+                self._cb = pi.callback(self._pin_fsg_ns, pigpio.RISING_EDGE, self._callback_pulse_dial)
+                pi.set_watchdog(self._pin_fsg_ns, 2500)   # 250ms
+            else:
+                pi.set_watchdog(self._pin_fsg_ns, 0)   # disable
+
+    # =====
+
     def _write_wave(self):
         if (self._use_squelch and time.time() <= self._time_squelch) \
             or not self._tx_buffer \
@@ -211,37 +281,6 @@ class TelexRPiTTY(txBase.TelexBase):
 
     # -----
 
-    def _set_online(self, online:bool):
-        self._is_online = online
-        pi.write(self._pin_opt, online)   # pos polarity
-
-    # -----
-
-    def _set_enable(self, enable:bool):
-        self._is_enabled = enable
-        pi.write(self._pin_rel, enable)   # pos polarity
-        self._mc.reset()
-        if self._use_squelch:
-            self._set_time_squelch(0.5)
-
-    # -----
-
-    def _set_pulse_dial(self, enable:bool):
-        self._is_pulse_dial = enable
-        if self._cb:
-            self._cb.cancel()
-            self._cb = None
-        self._pulse_dial_count = 0
-
-        if self._pin_fsg_ns:
-            if enable:
-                self._cb = pi.callback(self._pin_fsg_ns, pigpio.RISING_EDGE, self._callback_pulse_dial)
-                pi.set_watchdog(self._pin_fsg_ns, 2500)   # 250ms
-            else:
-                pi.set_watchdog(self._pin_fsg_ns, 0)   # disable
-
-    # -----
-
     def _callback_pulse_dial(self, gpio, level, tick):
         if (self._use_squelch and time.time() <= self._time_squelch):
             return
@@ -249,49 +288,12 @@ class TelexRPiTTY(txBase.TelexBase):
         if level == pigpio.TIMEOUT:   # watchdog timeout
             print(gpio, level, tick)   # debug
             if self._pulse_dial_count:
-                if self._pulse_dial_count == 10:
+                if self._pulse_dial_count >= 10:
                     self._pulse_dial_count = 0
                 self._rx_buffer += str(self._pulse_dial_count)
                 self._pulse_dial_count = 0
         else:   # pigpio.FALLING_EDGE
             self._pulse_dial_count += 1
-
-    # -----
-
-    def _check_commands(self, a:str):
-        enable = None
-
-        if a == '\x1bA':
-            self._set_pulse_dial(False)
-            self._set_online(True)
-            enable = True
-
-        if a == '\x1bZ':
-            self._tx_buffer = []    # empty write buffer...
-            self._set_pulse_dial(False)
-            self._set_online(False)
-            enable = False   #self._use_dedicated_line
-            if not enable and self._use_squelch:
-                self._set_time_squelch(1.5)
-
-        if a == '\x1bWB':
-            self._set_online(True)
-            if self._use_pulse_dial:   # TW39
-                self._set_pulse_dial(True)
-                self._tx_buffer.append('[')
-                enable = False
-            else:   # dedicated line, TWM, V.10
-                enable = True
-
-        if enable is not None:
-            self._set_enable(enable)
-
-    # -----
-
-    def _set_time_squelch(self, t_diff:float):
-        t = time.time() + t_diff
-        if self._time_squelch < t:
-            self._time_squelch = t
 
 #######
 

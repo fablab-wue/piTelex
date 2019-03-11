@@ -19,20 +19,20 @@ As side effect teletypes with V.10 inteface (like TeKaDe FS200) can also be conn
 
 ## Hardware
 
- * [Electronic for Current-Loop Interface](/README_HW_ILoop.md)
- * [Electronic for V.10 Interface](/README_HW_V10.md)
- * [Electronic for ED1000 Interface](/README_HW_ED1000.md)
+ * [Electronic for Current-Loop Interface](/wiki/README_HW_ILoop.md)
+ * [Electronic for V.10 Interface](/wiki/README_HW_V10.md)
+ * [Electronic for ED1000 Interface](/wiki/README_HW_ED1000.md)
 
 ## Software
 
- * [Software](/README_SW.md)
+ * [Software](/wiki/README_SW.md)
 
 ## Protocol / Coding
 
- * [Baudot-Murray-Code = CCITT-2 = ITA2](/README_P_BMC.md)
- * [TW39 / TWM Transmission](/README_P_TW39.md)
- * [ED1000 Transmission](/README_P_ED1000.md)
+ * [Baudot-Murray-Code = CCITT-2 = ITA2](/wiki/README_P_BMC.md)
+ * [TW39 / TWM Transmission](/wiki/README_P_TW39.md)
+ * [ED1000 Transmission](/wiki/README_P_ED1000.md)
 
 ## Additional Information
 
- * [Additional Information](/README_A.md)
+ * [Additional Information](/wiki/README_A.md)
