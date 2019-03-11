@@ -2,7 +2,24 @@
 
 TODO...
 
+## Modules
+
 <img src="img/SW_Modules.png" width="1330px">
+
+### Device Modules
+
+| Module | Description | System | State |
+| :--- | :--- | --- | --- |
+| [Controller](README_SW_DevController.md) | Handling common tasks | all | RC
+| [Screen](README_SW_DevScreen.md) | Type and display on screen | PC-W, PC-L | RC
+| [Log](README_SW_DevLog.md) | Log to file | all | RC
+| [CH340TTY](README_SW_DevCH340TTY.md) | TODO | all (USB) | BETA
+| [RPiTTY](README_SW_DevRPiTTY.md) | TODO | RPi | ALPHA
+| [ED1000](README_SW_DevED1000.md) | TODO | PC-W, PC-L | ALPHA
+| [ITelexClient](README_SW_DevITelexClient.md) | TODO | all | BETA
+| [ITelexSrv](README_SW_DevITelexSrv.md) | TODO | all | BETA
+| [TelnetSrv](README_SW_DevTelnetSrv.md) | TODO | all | BETA
+| [Eliza](README_SW_DevEliza.md) | TODO | all | BETA
 
 ## State Machine
 
@@ -17,17 +34,4 @@ The internal states are controlled by escape sequences.
 | Z | Disconnected
 | WB | Begin dialing
 | #&lt;number&gt; | Dialing is finished, request IP-address, connecting
-
-
-## USB-Serial-Adapter
-
-Using an adapter board (or adapter cable - for V.10) based on the chip CH340 the device is detected as normal (virtual) serial interface. In Windows the device is shown as 'COMx'. In Linux it is shown as '/dev/ttyUSBx'.
-
-With the Python library "PySerial" all necessary settings can be done to handle 50 baud, 5 data-bits and 1.5 stop-bits. Also, the handshake pins RTS and DTR can be set by this library.
-
-## Raspberry Pi (RPi)
-
-The build in UART of the RPi can’t handle 50 baud.
-
-The correct timing can be formed jitter-free with the library “PiGPIO”. Receiving can be handled by asynchronous callbacks implemented in this library. With this also a Linux based computer like the RPi can handle precise and reliable timings.
 

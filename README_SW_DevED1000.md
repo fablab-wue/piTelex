@@ -1,6 +1,8 @@
-# Software Plugin ED1000
+# Device Module "DevED1000"
 
-## Plugin Information
+TODO...
+
+## Module Information
 
 ### System
 
@@ -11,7 +13,6 @@
 | PC Windows | in Develpment
 | Mac | unknown
 
-
 ### Dependencies
 
 | Python<br>Module | Install | Anaconda |
@@ -20,9 +21,25 @@
 | numpy | ? | -included-
 | scypy | ? | -included-
 
+### Command Line
+
+    -? <?>
+
+### Config File Parameter
+
+| Param | Description |
+| :--- | :--- |
+| TODO | TODO
+
+## Description
+
+TODO
 
 
-## Implementation Details
+
+## Implementation
+
+TODO
 
 > In development:
 

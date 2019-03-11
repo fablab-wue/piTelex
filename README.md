@@ -26,7 +26,6 @@ As side effect teletypes with V.10 inteface (like TeKaDe FS200) can also be conn
 ## Software
 
  * [Software](/README_SW.md)
-    * [Plugin ED1000](/README_SW_ED1000.md)
 
 ## Protocol / Coding
 

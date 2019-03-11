@@ -22,7 +22,12 @@ import txCode
 import txBase
 import log
 
-TNS_HOST = 'sonnibs.no-ip.org'  # The server's hostname or IP address    or itelex.teleprinter.net or 176.52.197.242
+# sonnibs.no-ip.org
+# tlnserv.teleprinter.net
+# tlnserv3.teleprinter.net
+# telexgateway.de
+
+TNS_HOST = 'sonnibs.no-ip.org'  # The server's hostname or IP address
 TNS_PORT = 11811        # The port used by the server
 
 #######
