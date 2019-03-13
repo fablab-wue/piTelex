@@ -177,7 +177,7 @@ class TelexCH340TTY(txBase.TelexBase):
             cts = not self._tty.cts != self._inverse_cts   # logical xor
             if cts != self._cts_stable:
                 self._cts_counter += 1
-                if self._cts_counter == 20:
+                if self._cts_counter == 20:   # 1.0sec
                     self._cts_stable = cts
                     print(cts)   # debug
                     if not cts:   # rxd=Low
@@ -218,16 +218,23 @@ class TelexCH340TTY(txBase.TelexBase):
 
     # -----
 
+    def _set_time_squelch(self, t_diff):
+        t = time.time() + t_diff
+        if self._time_squelch < t:
+            self._time_squelch = t
+
+    # -----
+
     def _set_pulse_dial(self, enable:bool):
         if not self._use_pulse_dial:
             return
         
         if enable:
-            self._tty.baudrate = 75
+            self._tty.baudrate = 75   # fix baudrate to scan number switch
         else:
             self._tty.baudrate = self._baudrate
 
-    # -----
+    # =====
 
     def _check_special_sequences(self, a:str):
         if not self._use_cts:
@@ -274,13 +281,6 @@ class TelexCH340TTY(txBase.TelexBase):
 
         if enable is not None:
             self._set_enable(enable)
-
-    # -----
-
-    def _set_time_squelch(self, t_diff):
-        t = time.time() + t_diff
-        if self._time_squelch < t:
-            self._time_squelch = t
 
 #######
 

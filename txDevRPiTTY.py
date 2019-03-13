@@ -27,6 +27,26 @@ class TelexRPiTTY(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
+        self.id = '#'
+        self.params = params
+
+        self._baudrate = params.get('baudrate', 50)
+        self._bytesize = params.get('bytesize', 5)
+        self._stopbits = params.get('stopbits', 1.5)
+        self._stopbits2 = int(self._stopbits * 2 + 0.5)
+        self._pin_txd = params.get('pin_txd', 17)
+        self._pin_rxd = params.get('pin_rxd', 27)
+        self._pin_fsg_ns = params.get('pin_fsg_ns', 6)   # connected to rxd
+        self._pin_rel = params.get('pin_rel', 22)
+        self._pin_dir = params.get('pin_dir', 11)
+        #self._pin_oin = params.get('pin_oin', 10)
+        self._pin_opt = params.get('pin_opt', 9)
+        #self._pin_sta = params.get('pin_sta', 12)
+        self._inv_rxd = params.get('inv_rxd', False)
+        #self._inv_txd = params.get('inv_txd', False)
+        self._uscoding = params.get('uscoding', False)
+        self._loopback = params.get('loopback', True)
+
         self._tx_buffer = []
         self._rx_buffer = []
         self._cb = None
@@ -43,25 +63,6 @@ class TelexRPiTTY(txBase.TelexBase):
         self._use_squelch = True
         self._use_rxd_observation = True
 
-        self.id = '#'
-        self.params = params
-
-        self._baudrate = params.get('baudrate', 50)
-        self._bytesize = params.get('bytesize', 5)
-        self._stopbits = params.get('stopbits', 1.5)
-        self._stopbits2 = int(self._stopbits * 2 + 0.5)
-        self._pin_txd = params.get('pin_txd', 17)
-        self._pin_rxd = params.get('pin_rxd', 27)
-        self._pin_fsg_ns = params.get('pin_fsg_ns', 6)
-        self._pin_rel = params.get('pin_rel', 22)
-        self._pin_dir = params.get('pin_dir', 11)
-        #self._pin_oin = params.get('pin_oin', 10)
-        self._pin_opt = params.get('pin_opt', 9)
-        #self._pin_sta = params.get('pin_sta', 12)
-        self._inv_rxd = params.get('inv_rxd', False)
-        #self._inv_txd = params.get('inv_txd', False)
-        self._loopback = params.get('loopback', True)
-        self._uscoding = params.get('uscoding', False)
 
         # init codec
         character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate
@@ -88,6 +89,9 @@ class TelexRPiTTY(txBase.TelexBase):
         pi.set_mode(self._pin_dir, pigpio.OUTPUT)   # direction of comminication
         pi.write(self._pin_dir, 0)   # 1=transmitting
 
+        self._set_enable(False)
+        self._set_online(False)
+
         # init bit bongo serial read
         try:
             status = pi.bb_serial_read_close(self._pin_rxd)
@@ -100,10 +104,10 @@ class TelexRPiTTY(txBase.TelexBase):
         self.last_wid = None
 
         # debug
-        cbs = pi.wave_get_max_cbs()
-        micros = pi.wave_get_max_micros()
-        pulses = pi.wave_get_max_pulses()
-        pass
+        #cbs = pi.wave_get_max_cbs()
+        #micros = pi.wave_get_max_micros()
+        #pulses = pi.wave_get_max_pulses()
+        #pass
 
 
     def __del__(self):
@@ -117,21 +121,22 @@ class TelexRPiTTY(txBase.TelexBase):
         #if not self._tty.in_waiting:
         ret = ''
 
-        count, data = pi.bb_serial_read(self._pin_rxd)
+        count, bb = pi.bb_serial_read(self._pin_rxd)
         if count \
             and not(self._use_squelch and time.time() <= self._time_squelch) \
             and not self._is_pulse_dial:
-            bb = data
+
             a = self._mc.decodeBM2A(bb)
+    
             if a:
+                #self._check_special_sequences(a)
                 self._rx_buffer.append(a)
             
             self._rxd_counter = 0
         
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
-
-        return ret
+            return ret
 
 
     def write(self, a:str, source:str):
@@ -152,9 +157,10 @@ class TelexRPiTTY(txBase.TelexBase):
         #time_act = time.time()
 
         if self._use_rxd_observation:
-            rxd = pi.read(self._pin_rxd)   #debug
-            rxd = (not pi.read(self._pin_rxd)) == self._inv_rxd   # logical xor
+            rxd = pi.read(self._pin_rxd)
+            rxd = (not pi.read(self._pin_rxd)) == self._inv_rxd   # int->bool, logical xor
             if rxd != self._rxd_stable:
+                
                 self._rxd_counter += 1
                 if self._rxd_counter == 10:   # 0.5sec
                     self._rxd_stable = rxd
@@ -210,13 +216,6 @@ class TelexRPiTTY(txBase.TelexBase):
 
     # -----
 
-    def _set_time_squelch(self, t_diff:float):
-        t = time.time() + t_diff
-        if self._time_squelch < t:
-            self._time_squelch = t
-
-    # -----
-
     def _set_online(self, online:bool):
         self._is_online = online
         pi.write(self._pin_opt, online)   # pos polarity
@@ -242,9 +241,16 @@ class TelexRPiTTY(txBase.TelexBase):
         if self._pin_fsg_ns:
             if enable:
                 self._cb = pi.callback(self._pin_fsg_ns, pigpio.RISING_EDGE, self._callback_pulse_dial)
-                pi.set_watchdog(self._pin_fsg_ns, 2500)   # 250ms
+                pi.set_watchdog(self._pin_fsg_ns, 500)   # 250ms
             else:
                 pi.set_watchdog(self._pin_fsg_ns, 0)   # disable
+
+    # -----
+
+    def _set_time_squelch(self, t_diff:float):
+        t = time.time() + t_diff
+        if self._time_squelch < t:
+            self._time_squelch = t
 
     # =====
 
