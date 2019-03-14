@@ -23,14 +23,13 @@ Typical and tested teletype combinations:
 
 | Computer | Hardware | Protocol | SW-Module | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| PC | CH340 USB-Serial-Adapter TTL<br>+ [I-Loop-Electronic](/wiki/README_HW_ILoop.md) | [TW39](/wiki/README_P_TW39.md) | [CH340TTY](/wiki/README_SW_DevCH340TTY.md) | for mechanical teletypes
+| PC-Linux,<br>PC-Windows | CH340 USB-Serial-Adapter TTL<br>+ [I-Loop-Electronic](/wiki/README_HW_ILoop.md) | [TW39](/wiki/README_P_TW39.md) | [CH340TTY](/wiki/README_SW_DevCH340TTY.md) | for mechanical teletypes
 | RPi | CH340 USB-Serial-Adapter TTL<br>+ [I-Loop-Electronic](/wiki/README_HW_ILoop.md) | [TW39](/wiki/README_P_TW39.md) | [CH340TTY](/wiki/README_SW_DevCH340TTY.md) | for mechanical teletypes
 | RPi | GPIO on RPi<br>+ [I-Loop-Electronic](/wiki/README_HW_ILoop.md) | [TW39](/wiki/README_P_TW39.md) | [RPiTTY](/wiki/README_SW_DevRPiTTY.md) | for mechanical teletypes
-| PC | CH340 USB-Serial-Adapter V.24<br>+ [V.10-Cable](/wiki/README_HW_V10.md) | V.10 | [CH340TTY](/wiki/README_SW_DevCH340TTY.md) | for TeKaDe FS200/FS220
-| PC | USB-Sound-Card<br>+ [ED1000-Electronic](/wiki/README_HW_ED1000.md) | [ED1000](/wiki/README_P_ED1000.md) | [ED1000](/wiki/README_SW_DevED1000.md) | for electronic teletypes
+| PC-Linux,<br>PC-Windows | CH340 USB-Serial-Adapter V.24<br>+ [V.10-Cable](/wiki/README_HW_V10.md) | V.10 | [CH340TTY](/wiki/README_SW_DevCH340TTY.md) | for TeKaDe FS200 / FS220
+| PC-Linux,<br>PC-Windows | USB-Sound-Card<br>+ [ED1000-Electronic](/wiki/README_HW_ED1000.md) | [ED1000](/wiki/README_P_ED1000.md) | [ED1000](/wiki/README_SW_DevED1000.md) | for modern electronic teletypes
 
-PC: PC/Laptop with Linux or Windows
-RPi: Raspberry Pi (Zero W)
+RPi: Raspberry Pi (Zero W) with Raspian
 
 ## Connection from/to Outer Space
 
