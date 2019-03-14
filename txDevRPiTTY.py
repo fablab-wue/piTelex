@@ -94,7 +94,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         # init bit bongo serial read
         try:
-            status = pi.bb_serial_read_close(self._pin_rxd)
+            status = pi.bb_serial_read_close(self._pin_rxd)   # try to close if it is still open from last debug
         except:
             pass
         status = pi.bb_serial_read_open(self._pin_rxd, self._baudrate, self._bytesize)

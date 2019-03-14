@@ -103,6 +103,10 @@ Design files can be found in project folder /PCB/
 
 This is designed for Raspberry Pi but with a CH340-serial-adapter this can be also used with a Windows-PC, Linux-PC, and Mac (not tested).
 
+<img src="../img/RPiPinout.png">
+
+Note: For pulse dial in I-loop connect pin 13 (RXD) with pin 31 (DIAL_SW) and configure GPIO 6 for 'pin_fsg_ns' in software.
+
 # Power supply
 
 All teletypes (with current loop interface) are designed for a current of 40mA. The receive unit (magnet coil) has a typical voltage drop of 15V. With the voltage drops in the interface circuits a power supply voltage of about 20V should do - in theory.
