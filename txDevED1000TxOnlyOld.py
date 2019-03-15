@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Telex Device - ED1000 Communication over Sound Card - Transmit Only
 """

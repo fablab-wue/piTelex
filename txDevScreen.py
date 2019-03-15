@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Telex Device - Keyboard input and Screen output
 """
@@ -23,6 +23,7 @@ if os.name == 'nt':
 else:
     import sys
     import termios
+    import tty
     import atexit
     from select import select
 
@@ -45,12 +46,24 @@ class TelexScreen(txBase.TelexBase):
         b'P': '\x1bCD',   # Cursor down
         b'K': '\x1bCL',   # Cursor left
         b'M': '\x1bCR',   # Cursor right
-        b'G': '\x1bLT',  # Home
-        b'O': '\x1bST',  # End
-        b'R': '\x1bAT',  # Ins
-        b'S': '\x1bST',  # Del
-        b'I': '\x1bA',   # Page up
-        b'Q': '\x1bZ',   # Page down
+        b'G': '\x1bLT',   # Home
+        b'O': '\x1bST',   # End
+        b'R': '\x1bAT',   # Ins
+        b'S': '\x1bST',   # Del
+        b'I': '\x1bA',    # Page up
+        b'Q': '\x1bZ',    # Page down
+        }
+    _replace_escape = {
+        '\x1b[a': '\x1bCU',    # Cursor up
+        '\x1b[b': '\x1bCD',    # Cursor down
+        '\x1b[d': '\x1bCL',    # Cursor left
+        '\x1b[c': '\x1bCR',    # Cursor right
+        '\x1b[1~': '\x1bLT',   # Home
+        '\x1b[4~': '\x1bST',   # End
+        '\x1b[2~': '\x1bAT',   # Ins
+        '\x1b[3~': '\x1bST',   # Del
+        '\x1b[5~': '\x1bA',    # Page up
+        '\x1b[6~': '\x1bZ',    # Page down
         }
 
     def __init__(self, **params):
@@ -75,6 +88,7 @@ class TelexScreen(txBase.TelexBase):
             # New terminal setting unbuffered
             self.new_term[3] = (self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
+            #tty.setraw(self.fd)
 
             # Support normal-terminal reset at exit
             atexit.register(self.set_normal_term)
@@ -110,6 +124,7 @@ class TelexScreen(txBase.TelexBase):
         if self.kbhit():
             k = self.getch()
             if k:
+                #print(int(k))
                 if k == b'\xe0':
                     k = self.getch()
                     c = self._replace_ctrl.get(k, '')
@@ -117,8 +132,9 @@ class TelexScreen(txBase.TelexBase):
                         print('\033[0;37;41m<'+c[1:]+'>\033[0m', end='', flush=True)
                         self._rx_buffer.append(c)
                     return '' # eat cursor and control keys
-                if k == b'\x1b':
+                if k == b'\x1b' or k == '\x1b':
                     self._escape = '\x1b'
+                    print('§', end='', flush=True)
                     return ''
 
                 if os.name == 'nt':
@@ -127,13 +143,19 @@ class TelexScreen(txBase.TelexBase):
                     c = k
 
                 if self._escape:
-                    if c == '\r':
+                    if c == '\r' or c == '\n':
                         self._escape = self._escape.upper()
                         self._rx_buffer.append(self._escape)
                         print('\033[1;37;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
                         self._escape = ''
                     else:
                         self._escape += c
+                        c = self._replace_escape.get(self._escape, '')
+                        if c:
+                            self._escape = c
+                            self._rx_buffer.append(self._escape)
+                            print('\033[1;36;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
+                            self._escape = ''
                 else:
                     c = self._replace_char.get(c, c)
                     c = txCode.BaudotMurrayCode.translate(c)

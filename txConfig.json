@@ -3,12 +3,6 @@
     "screen": {
       "type": "screen"
     },
-    "CH340TTY": {
-      "type": "CH340TTY",
-      "portname": "COM7",
-      "baudrate": 50,
-      "loopback": true
-    },
     "log": {
       "type": "log",
       "filename": "test.log"

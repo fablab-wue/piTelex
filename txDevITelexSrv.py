@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Telex Device - i-Telex Server for reveiving external calls
 """

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Telex Device - Serial Communication over CH340-Chip (not FTDI, not Prolific, not CP213x)
 """

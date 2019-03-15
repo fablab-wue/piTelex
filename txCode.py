@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Telex Code Conversion
 Baudot-Code = CCITT-1

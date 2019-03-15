@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Telex Device - System-Controller
 """
@@ -118,6 +118,9 @@ class TelexController(txBase.TelexBase):
                 text = time.strftime("%Y-%m-%d  %H:%M", time.localtime()) + '\r\n'
                 self._rx_buffer.extend(list(text))   # send text
                 return True
+
+            if a == '\x1bEXIT':   # print RY pattern (64 characters = 10sec@50baud)
+                raise('EXIT')
 
 
         if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """
 Telex Device - Serial Communication over Rasperry Pi (Zero W)
 """
