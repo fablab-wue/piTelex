@@ -81,6 +81,7 @@ class TelexScreen(txBase.TelexBase):
 
         else:   # Linux and RPi
             # Save the terminal settings
+            #self.fd = os.fdopen(sys.stdin.detach().fileno(), 'rb', buffering=0)   # experimental
             self.fd = sys.stdin.fileno()
             self.new_term = termios.tcgetattr(self.fd)
             self.old_term = termios.tcgetattr(self.fd)
@@ -89,6 +90,7 @@ class TelexScreen(txBase.TelexBase):
             self.new_term[3] = (self.new_term[3] & ~termios.ICANON & ~termios.ECHO)
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new_term)
             #tty.setraw(self.fd)
+            #tty.cbreak(self.fd)
 
             # Support normal-terminal reset at exit
             atexit.register(self.set_normal_term)
@@ -208,6 +210,9 @@ class TelexScreen(txBase.TelexBase):
 
         else:
             dr, dw, de = select([sys.stdin], [], [], 0)
+            
+            #dr, dw, de = select([self.fd], [], [], 0)
+
             return dr != []
 
 #######
