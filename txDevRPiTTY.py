@@ -123,7 +123,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         count, bb = pi.bb_serial_read(self._pin_rxd)
         if count \
-            and not(self._use_squelch and time.time() <= self._time_squelch) \
+            and not(self._use_squelch and (time.time() <= self._time_squelch)) \
             and not self._is_pulse_dial:
 
             a = self._mc.decodeBM2A(bb)
@@ -149,7 +149,6 @@ class TelexRPiTTY(txBase.TelexBase):
 
         if a:
             self._tx_buffer.append(a)
-            self._write_wave()
 
     # =====
 
@@ -178,6 +177,9 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def idle(self):
+        if self._use_squelch and (time.time() <= self._time_squelch):
+            return
+
         if self._tx_buffer:
             self._write_wave()
 
@@ -206,7 +208,8 @@ class TelexRPiTTY(txBase.TelexBase):
                 if self._use_squelch:
                     self._set_time_squelch(0.5)
                 self._set_pulse_dial(True)
-                self._tx_buffer.append('[')   # send 20ms pulse
+                self._tx_buffer = ['[']   # send 20ms pulse
+                self._write_wave()
                 enable = False
             else:   # dedicated line, TWM, V.10
                 enable = True
@@ -240,8 +243,8 @@ class TelexRPiTTY(txBase.TelexBase):
 
         if self._pin_fsg_ns:
             if enable:
-                self._cb = pi.callback(self._pin_fsg_ns, pigpio.RISING_EDGE, self._callback_pulse_dial)
-                pi.set_watchdog(self._pin_fsg_ns, 500)   # 250ms
+                self._cb = pi.callback(self._pin_fsg_ns, pigpio.FALLING_EDGE, self._callback_pulse_dial)
+                pi.set_watchdog(self._pin_fsg_ns, 250)   # 250ms
             else:
                 pi.set_watchdog(self._pin_fsg_ns, 0)   # disable
 
@@ -255,8 +258,9 @@ class TelexRPiTTY(txBase.TelexBase):
     # =====
 
     def _write_wave(self):
-        if (self._use_squelch and time.time() <= self._time_squelch) \
-            or not self._tx_buffer \
+        #if (self._use_squelch and time.time() <= self._time_squelch) \
+        #    or not self._tx_buffer \
+        if not self._tx_buffer \
             or pi.wave_tx_busy():   # last wave is still transmitting
             return
 
@@ -288,17 +292,17 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def _callback_pulse_dial(self, gpio, level, tick):
-        if (self._use_squelch and time.time() <= self._time_squelch):
+        if self._use_squelch and (time.time() <= self._time_squelch):
             return
             
         if level == pigpio.TIMEOUT:   # watchdog timeout
-            print(gpio, level, tick)   # debug
+            #print(gpio, level, tick)   # debug
             if self._pulse_dial_count:
                 if self._pulse_dial_count >= 10:
                     self._pulse_dial_count = 0
                 self._rx_buffer += str(self._pulse_dial_count)
                 self._pulse_dial_count = 0
-        else:   # pigpio.FALLING_EDGE
+        elif level == pigpio.LOW:
             self._pulse_dial_count += 1
 
 #######
