@@ -20,9 +20,10 @@ import txBase
 REMOTE_IP = '10.23.42.234'
 
 pi = pigpio.pi(REMOTE_IP)
+if not pi.connected:
+    raise(Exception('no connection to remote RPi'))
 
 #######
-
 class TelexRPiTTY(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
@@ -244,7 +245,7 @@ class TelexRPiTTY(txBase.TelexBase):
         if self._pin_fsg_ns:
             if enable:
                 self._cb = pi.callback(self._pin_fsg_ns, pigpio.FALLING_EDGE, self._callback_pulse_dial)
-                pi.set_watchdog(self._pin_fsg_ns, 250)   # 250ms
+                pi.set_watchdog(self._pin_fsg_ns, 240)   # 240ms
             else:
                 pi.set_watchdog(self._pin_fsg_ns, 0)   # disable
 

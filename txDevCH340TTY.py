@@ -165,7 +165,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def idle20Hz(self):
         time_act = time.time()
 
-        if self._use_pulse_dial and self._counter_dial and (time_act - self._time_last_dial) > 0.5:
+        if self._use_pulse_dial and self._counter_dial and (time_act - self._time_last_dial) > 0.24:
             if self._counter_dial >= 10:
                 self._counter_dial = 0
             a = str(self._counter_dial)
