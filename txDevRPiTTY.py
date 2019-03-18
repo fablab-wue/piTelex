@@ -122,19 +122,6 @@ class TelexRPiTTY(txBase.TelexBase):
         #if not self._tty.in_waiting:
         ret = ''
 
-        count, bb = pi.bb_serial_read(self._pin_rxd)
-        if count \
-            and not(self._use_squelch and (time.time() <= self._time_squelch)) \
-            and not self._is_pulse_dial:
-
-            a = self._mc.decodeBM2A(bb)
-    
-            if a:
-                #self._check_special_sequences(a)
-                self._rx_buffer.append(a)
-            
-            self._rxd_counter = 0
-        
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
             return ret
@@ -174,6 +161,22 @@ class TelexRPiTTY(txBase.TelexBase):
                     pass
             else:
                 self._rxd_counter = 0
+
+        count, bb = pi.bb_serial_read(self._pin_rxd)
+        #print('.', end='')
+        if count \
+            and not(self._use_squelch and (time.time() <= self._time_squelch)) \
+            and not self._is_pulse_dial:
+
+            aa = self._mc.decodeBM2A(bb)
+    
+            if aa:
+                #print('#'+aa+'!')
+                #self._check_special_sequences(a)
+                for a in aa:
+                    self._rx_buffer.append(a)
+            
+            self._rxd_counter = 0
 
     # -----
 
@@ -297,7 +300,7 @@ class TelexRPiTTY(txBase.TelexBase):
             return
             
         if level == pigpio.TIMEOUT:   # watchdog timeout
-            #print(gpio, level, tick)   # debug
+            print(gpio, level, tick)   # debug
             if self._pulse_dial_count:
                 if self._pulse_dial_count >= 10:
                     self._pulse_dial_count = 0

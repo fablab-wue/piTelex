@@ -8,8 +8,6 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
-from colorama import init, Fore, Back, Style   # https://pypi.org/project/colorama/
-init()
 import os
 
 import txBase
@@ -18,6 +16,8 @@ import txCode
 # Windows
 if os.name == 'nt':
     import msvcrt
+    from colorama import init   # https://pypi.org/project/colorama/
+    init()
 
 # Posix (Linux, OS X)
 else:
