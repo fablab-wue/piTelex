@@ -7,7 +7,7 @@ Today most of the work can be done in software.
 
 A (USB) sound card is used to play and record the carrier frequencies and 5 electronic components adapts the audio signal to teletype ED1000.
 
-With this USB sound card adapter the teletype can be connected to a Windows-PC, a Linux-PC, a Mac (not tested) or a Raspberry Pi. A USB sound card is available in online shops for about 10€. Using a PC or laptop the build-in sound card can be used also.
+With this USB sound card adapter the teletype can be connected to a Windows-PC, a Linux-PC, a Mac (not tested) or a Raspberry Pi (not tested). A USB sound card is available in online shops for about 10€. Using a PC or laptop the build-in sound card can be used also.
 
 ### Connecting a PC Sound Card to ADo8
 
@@ -23,8 +23,8 @@ With this USB sound card adapter the teletype can be connected to a Windows-PC, 
 | 4 | Line b
 | 5 | Bridge to 6
 | 6 | Bridge to 5
-| 7 | nc / Paper-End-Switch
-| 8 | nc / Paper-End-Switch
+| 7 | nc / Option: Paper-End-Switch
+| 8 | nc / Option: Paper-End-Switch
 
 The line wires are used to send **and** receive at the same time like a MODEM on phone wires.
 

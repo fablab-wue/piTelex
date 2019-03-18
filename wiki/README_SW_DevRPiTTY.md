@@ -7,10 +7,10 @@ TODO...
 
 | System | Comments |
 | --- | --- |
-| RPi | OK
-| PC Linux | OK
-| PC Windows | OK
-| Mac | OK
+| RPi | All boards with Raspian
+| PC Linux | -
+| PC Windows | -
+| Mac | -
 
 ### Dependencies
 
@@ -18,15 +18,30 @@ TODO...
 | --- | --- | --- |
 | pigpio | pip install pigpio | conda install pigpio
 
-### Command Line
+### Command Line Arguments
 
-    -? <?>
+    -G
+    --RPiTTY
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+| Param | Default | Description |
+| :--- | --- | :--- |
+| baudrate | 50 |
+| bytesize | 5 |
+| stopbits | 1.5 |
+| pin_txd | 17 |
+| pin_rxd | 27 |
+| pin_fsg_ns | 6 | connected to rxd
+| pin_rel | 22 |
+| pin_dir | 11 |
+| pin_oin | 10 |
+| pin_opt | 9 |
+| pin_sta | 12 |
+| inv_rxd | False |
+| inv_txd | False | not implemented yet
+| uscoding | False |
+| loopback | True |
 
 ## Description
 

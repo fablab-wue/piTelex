@@ -2,7 +2,7 @@
 
 ## Outgoing Call
 
-Idle mode ... +7mA ...
+Idle mode ... +5...7mA ...
 
 ### Begin Call
 
@@ -44,7 +44,11 @@ Transmitting without pause...
 
 <img src="../img/TW39Call7.png" width="244px">
 
-Pressing button ST...
+User is pressing button ST...
+
+<img src="../img/TW39Call8.png" width="244px">
+
+Ending by office...
 
 ## Incoming Call
 

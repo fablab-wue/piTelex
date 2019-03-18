@@ -19,15 +19,26 @@ TODO...
 | --- | --- | --- |
 | pyserial | pip install pyserial | conda install pyserial
 
-### Command Line
+### Command Line Arguments
 
-    -? <?>
+    -Y TTY
+    --CH340TTY TTY
+
+Example Windows: telex.py -Y COM3
+
+Example Linux: telex.py -Y /dev/ttyUSB0
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+| Param | Default | Description |
+| :--- | --- | :--- |
+| portname | '/dev/ttyUSB0' |
+| baudrate | 50 |
+| bytesize | 5 |
+| stopbits | 1.5 |
+| uscoding | False |
+| loopback | None |
+| loc_echo | False |
 
 ## Description
 

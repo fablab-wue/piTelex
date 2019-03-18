@@ -15,19 +15,20 @@
 
 none
 
-### Command Line
+### Command Line Arguments
 
-    -? <?>
+    -Z
+    --eliza
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+none
 
 ## Description
 
-TODO
+Small talk with Eliza for demonstation and fun.
+
+See [Wikipedia](https://en.wikipedia.org/wiki/ELIZA)
 
 ## Implementation
 

@@ -14,19 +14,20 @@ TODO...
 
 ### Dependencies
 
-| Python<br>Module | Install | Anaconda |
-| --- | --- | --- |
-| - | pip install - | conda install -
+none
 
 ### Command Line
 
-    -? <?>
+    -I PORT
+    --itelex PORT
+
+Use 0 for PORT to disable the server
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+| Param | Default | Description |
+| :--- | --- | :--- |
+| port | 2342 |
 
 ## Description
 

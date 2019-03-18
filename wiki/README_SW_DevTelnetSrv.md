@@ -14,19 +14,18 @@ TODO...
 
 ### Dependencies
 
-| Python<br>Module | Install | Anaconda |
-| --- | --- | --- |
-| - | pip install - | conda install -
+none
 
 ### Command Line
 
-    -? <?>
+    -T PORT
+    --telnet PORT
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+| Param | Default | Description |
+| :--- | --- | :--- |
+| port | 6666 |
 
 ## Description
 

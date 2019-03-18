@@ -1,5 +1,7 @@
 # Software
 
+For Installation see [SW_Install](/wiki/README_SW_Install.md)
+
 TODO...
 
 ## Modules
@@ -7,6 +9,8 @@ TODO...
 <img src="../img/SW_Modules.png" width="1330px">
 
 ### Device Modules
+
+For more information on single module click on the link in the table.
 
 | Module | Description | System | State |
 | :--- | :--- | --- | --- |
@@ -29,7 +33,7 @@ The internal states are controlled by escape sequences.
 | --- | --- |
 | AT | User start outgoing call
 | ST | User stop outgoing call
-| LT | Locale
+| LT | User set to Locale mode
 | A | Connected
 | Z | Disconnected
 | WB | Begin dialing

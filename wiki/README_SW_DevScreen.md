@@ -14,19 +14,26 @@ TODO...
 
 ### Dependencies
 
+Windows:
 | Python<br>Module | Install | Anaconda |
 | --- | --- | --- |
-| - | pip install - | conda install -
+| colorama | pip install colorama | conda install colorama
 
-### Command Line
+Linux:
+| Python<br>Module | Install | Anaconda |
+| --- | --- | --- |
+| termios | ? | ?
 
-    -? <?>
+### Command Line Arguments
+
+    -S
+    --noscreen
+
+Use this argument to **disable** the screen
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+none
 
 ## Description
 

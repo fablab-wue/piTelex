@@ -18,7 +18,15 @@ To use router and FSG functionality the adapter hardware can be connected direct
 
 <img src="../img/TelexRPi.png" width="504px">
 
+---
+
 ## Current Regulators
+
+### Historic Current Loop
+
+... hand trimmed potentiometer for each line
+
+TODO
 
 ### Current Source and Regulator
 
@@ -37,6 +45,8 @@ With 2 Transistors a current regulator is implemented with a voltage tolerance o
 Note: At a supply voltage of 60V a continuous power of about 2W have to be handled by the TIP47 and its heat sink.
 
 Note: The regulator can be combined with the transmitter. See examples below.
+
+---
 
 ## Telex Transmitters
 
@@ -58,6 +68,8 @@ Alternatively, to a bipolar transistor a logic level FET can be used.
 
 <img src="../img/TelexTXDFET.png" width="167px">
 
+---
+
 ## Telex Receivers
 
 To get data from the Telex the current must be observed. A current of 40mA means High, an open loop (no current) means Low. 
@@ -72,17 +84,21 @@ As opto-coupler a LTV817 or PC817 is recommended. All other coupler with couplin
 
 The receiver has a voltage drop on the current loop of about 2V.
 
+---
+
 ## Telex Commutate (Option)
 
 To signal the FSG (dialing and switching device) an established connection, the polarity of the current loop is reversed with a relay.
 
 <img src="../img/TelexCommutate.png" width="197px">
 
+---
+
 # Complete Examples
 
 ## TW39 Compact USB Interface
 
-<img src="../img/USB.JPG" width="320px">
+<img src="../img/USB.JPG" width="160px">
 
 This is the first approach with a USB to TTL adapter (middle), a DC/DC converter (bottom) and a self-made-board (top) for current regulator, reading and controlling the loop.
 
@@ -90,22 +106,22 @@ This is the first approach with a USB to TTL adapter (middle), a DC/DC converter
 
 This can be used with a Windows-PC, Linux-PC, Mac (not tested) and Raspberry Pi.
 
-## TW39 High Voltage Raspberry Pi Interface
+Details at [Example_USB](/wiki/README_Example_USB.md)
 
-<img src="../img/pyTelexPCBt.png" width="314px">
-<img src="../img/pyTelexPCBb.png" width="314px">
+---
 
-The PCBs are ordered and will be assembled and tested in Feb. 2019
+## TW39 High Voltage USB and Raspberry Pi Interface
 
-Design files can be found in project folder /PCB/
+<img src="../img/pyTelexPCBt.png" width="157px">
+<img src="../img/pyTelexPCBb.png" width="157px">
 
-<img src="../img/TelexCurrentTXD3.png" width="376px">
+<img src="../img/TelexCurrentTXD3.png" width="476px">
 
 This is designed for Raspberry Pi but with a CH340-serial-adapter this can be also used with a Windows-PC, Linux-PC, and Mac (not tested).
 
-<img src="../img/RPiPinout.png">
+Details at [Example_RPi](/wiki/README_Example_RPi.md)
 
-Note: For pulse dial in I-loop connect pin 13 (RXD) with pin 31 (DIAL_SW) and configure GPIO 6 for 'pin_fsg_ns' in software.
+---
 
 # Power supply
 

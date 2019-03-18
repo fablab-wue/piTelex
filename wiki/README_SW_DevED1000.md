@@ -10,7 +10,7 @@ TODO...
 | --- | --- |
 | RPi | unknown
 | PC Linux | unknown
-| PC Windows | in Develpment
+| PC Windows | BETA working
 | Mac | unknown
 
 ### Dependencies
@@ -21,15 +21,22 @@ TODO...
 | numpy | ? | -included-
 | scypy | ? | -included-
 
-### Command Line
+### Command Line Arguments
 
-    -? <?>
+    -E
+    --ED1000
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+| Param | Default | Description |
+| :--- | --- | :--- |
+| devindex | None |
+| baudrate | 50 |
+| send_f0 | 500 |
+| send_f1 | 700 |
+| recv_f0 | 2250 |
+| recv_f1 | 3150 |
+| zcarrier | False |
 
 ## Description
 

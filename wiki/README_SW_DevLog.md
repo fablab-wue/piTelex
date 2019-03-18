@@ -16,15 +16,18 @@ TODO...
 
 none
 
-### Command Line
+### Command Line Arguments
 
-    -? <?>
+    -L NAME
+    --log NAME
+
+Example: telex.py -L /data/telex.log
 
 ### Config File Parameter
 
-| Param | Description |
-| :--- | :--- |
-| TODO | TODO
+| Param | Default | Description |
+| :--- | --- | :--- |
+| filename | 'log.txt' |
 
 ## Description
 
