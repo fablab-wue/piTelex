@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Telex Device - Serial Communication over Rasperry Pi (Zero W)
+Telex Device - Serial Communication over Rasperry Pi (Zero W) to TW39 teletype
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -10,14 +10,17 @@ __version__     = "0.0.1"
 
 #https://www.programcreek.com/python/example/93338/pigpio.pi
 
+import os
 import time
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html   pip install pigpio
 
 import txCode
 import txBase
 
-#REMOTE_IP = None
-REMOTE_IP = '10.23.42.234'
+if os.name == 'nt':   # debug on windows PC
+    REMOTE_IP = '10.23.42.234'   # IP of the remote RPi with its GPIO
+else:
+    REMOTE_IP = None   # GPIO on RPi itself
 
 pi = pigpio.pi(REMOTE_IP)
 if not pi.connected:
@@ -42,7 +45,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._pin_dir = params.get('pin_dir', 11)
         #self._pin_oin = params.get('pin_oin', 10)
         self._pin_opt = params.get('pin_opt', 9)
-        #self._pin_sta = params.get('pin_sta', 12)
+        self._pin_sta = params.get('pin_sta', 23)
         self._inv_rxd = params.get('inv_rxd', False)
         #self._inv_txd = params.get('inv_txd', False)
         self._uscoding = params.get('uscoding', False)
@@ -64,6 +67,9 @@ class TelexRPiTTY(txBase.TelexBase):
         self._use_squelch = True
         self._use_rxd_observation = True
 
+        self._status_out = 0
+        self._status_act = 0
+        self._status_dst = 0
 
         # init codec
         character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate

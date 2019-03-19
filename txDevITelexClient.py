@@ -22,13 +22,11 @@ import txCode
 import txBase
 import log
 
+# TNS-servers:
 # sonnibs.no-ip.org
 # tlnserv.teleprinter.net
 # tlnserv3.teleprinter.net
 # telexgateway.de
-
-TNS_HOST = 'sonnibs.no-ip.org'  # The server's hostname or IP address
-TNS_PORT = 11811        # The port used by the server
 
 #######
 
@@ -38,6 +36,9 @@ def LOG(text:str, level:int=3):
 
 class TelexITelexClient(txBase.TelexBase):
     USERLIST = []   # cached list of user dicts of file 'userlist.csv'
+    _tns_host = ''
+    _tns_port = 0
+    _userlist = ''
 
     def __init__(self, **params):
         super().__init__()
@@ -45,7 +46,10 @@ class TelexITelexClient(txBase.TelexBase):
         self.id = '>'
         self.params = params
 
-        #self._baudrate = params.get('baudrate', 50)
+        TelexITelexClient._tns_host = params.get('tns_host', 'sonnibs.no-ip.org')
+        TelexITelexClient._tns_port = params.get('tns_port', 11811)
+        TelexITelexClient._userlist = params.get('userlist', 'userlist.csv')
+
         self._tx_buffer = []
         self._rx_buffer = []
         self._connected = False
@@ -294,14 +298,14 @@ class TelexITelexClient(txBase.TelexBase):
 
     # =====
 
-    @staticmethod
-    def query_TNS(number):
+    @classmethod
+    def query_TNS(cls, number):
         # get IP of given number from Telex-Number-Server (TNS)
         # typical answer from TNS: 'ok\r\n234200\r\nFabLab, Wuerzburg\r\n1\r\nfablab.dyn.nerd2nerd.org\r\n2342\r\n-\r\n+++\r\n'
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
-                s.connect((TNS_HOST, TNS_PORT))
+                s.connect((cls._tns_host, cls._tns_port))
                 qry = bytearray('q{}\r\n'.format(number), "ASCII")
                 s.sendall(qry)
                 data = s.recv(1024)
@@ -331,14 +335,14 @@ class TelexITelexClient(txBase.TelexBase):
         return None
 
 
-    @staticmethod
-    def query_userlist(number):
+    @classmethod
+    def query_userlist(cls, number):
         # get IP of given number from CSV file
         # the header items must be: 'nick,tnum,extn,type,host,port,name' (can be in any order)
         # typical rows in csv-file: 'FABLAB, 234200, -, I, fablab.dyn.nerd2nerd.org, 2342, "FabLab, Wuerzburg"'
         try:
             if not TelexITelexClient.USERLIST:
-                with open('userlist.csv', 'r') as f:
+                with open(cls._userlist, 'r') as f:
                     dialect = csv.Sniffer().sniff(f.read(1024))
                     f.seek(0)
                     csv_reader = csv.DictReader(f, dialect=dialect, skipinitialspace=True)
