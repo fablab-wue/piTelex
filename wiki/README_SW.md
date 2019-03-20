@@ -4,6 +4,8 @@ For Installation see [SW_Install](/wiki/README_SW_Install.md)
 
 TODO...
 
+---
+
 ## Modules
 
 <img src="../img/SW_Modules.png" width="1330px">
@@ -25,6 +27,8 @@ For more information on single module click on the link in the table.
 | [TelnetSrv](/wiki/README_SW_DevTelnetSrv.md) | TODO | all | BETA
 | [Eliza](/wiki/README_SW_DevEliza.md) | TODO | all | BETA
 
+---
+
 ## State Machine
 
 The internal states are controlled by escape sequences. 
@@ -38,4 +42,3 @@ The internal states are controlled by escape sequences.
 | Z | Disconnected
 | WB | Begin dialing
 | #&lt;number&gt; | Dialing is finished, request IP-address, connecting
-

@@ -34,16 +34,19 @@ TIME_20HZ = time.time()
 def init():
     global DEVICES
 
-    mode = txConfig.CFG['mode'].strip()
+    #mode = txConfig.CFG['mode'].strip()
 
     ctrl = txDevController.TelexController(**txConfig.CFG)
     DEVICES.append(ctrl)
 
     for dev_name, dev_param in txConfig.CFG['devices'].items():
-        dev_param['name'] = dev_name
-        if 'mode' not in dev_param:
-            dev_param['mode'] = mode
+        if not dev_param.get('enable', False):
+            continue
         
+        dev_param['name'] = dev_name
+        #if 'mode' not in dev_param:
+        #    dev_param['mode'] = mode
+
         if dev_param['type'] == 'screen':
             import txDevScreen
             screen = txDevScreen.TelexScreen(**dev_param)

@@ -43,6 +43,8 @@ Seeing the lower frequencies as a bit value '0' and the higher as '1', the bit v
 | A &rarr; B | 600Hz &pm; 100Hz | 14dB
 | B &rarr; A | 2700Hz &pm; 450Hz | 25dB
 
+---
+
 ## ADo8 Plug
 
 It is common for ED1000 system to use an ADo8 plug.
@@ -64,6 +66,8 @@ The bridge between pin 5 and 6 is for signaling a connected plug. May be high vo
 
 Some teletypes use a switch (relay) on pin 7 and 8 to signal paper end.
 
+---
+
 # Frequency Shift Keying (FSK)
 
 <img src="../img/ED1000FSK1.png" width="943px">
@@ -79,6 +83,8 @@ In frequency domain ...
 For sending a character the transmitter switches between the corresponding frequency with the giver baud rate.
 
 For timing see: [Baudot-Murray-Code](/wiki/README_P_BMC.md)
+
+---
 
 # Protocol
 
@@ -122,9 +128,13 @@ Pressing button ST...
 
 Ending by other side...
 
+---
+
 ## Incoming Call
 
 <img src="../img/ED1000Incomming.png" width="550px">
+
+---
 
 ## WRU (Wer da?)
 

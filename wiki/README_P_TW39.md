@@ -50,9 +50,13 @@ User is pressing button ST...
 
 Ending by office...
 
+---
+
 ## Incoming Call
 
 <img src="../img/TW39Incomming.png" width="554px">
+
+---
 
 ## WRU (Wer da?)
 

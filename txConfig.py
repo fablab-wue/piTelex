@@ -32,21 +32,83 @@ CFG = {}
 def load():
     global ARGS, CFG
 
-    with open('txConfig.json', 'r') as fp:
-        CFG = json.load(fp)
+    try:
+        with open('txConfig.json', 'r') as fp:
+            CFG = json.load(fp)
+    except:
+        CFG = {}
 
     if not CFG['devices']:
         CFG['devices'] = {}
 
-    parser = ArgumentParser(prog='-=TEST-TELEX=-', conflict_handler='resolve')
 
-    parser.add_argument("-k", "--id", 
-        dest="wru_id", default='', metavar="ID",
+    parser = ArgumentParser(
+        prog='telex', 
+        conflict_handler='resolve', 
+        description='Handle historic teletypes.', 
+        epilog='More infos at https://github.com/fablab-wue/piTelex.git',
+        allow_abbrev=True)
+
+    gi = parser.add_argument_group("Interfaces")
+
+    gi.add_argument("-G", "--RPi-TW39",
+        dest="RPiTTY", default=False, action="store_true", 
+        help="GPIO (pigpio) on RPi with TW39 teletype")
+
+    gi.add_argument("-Y", "--tty", 
+        dest="CH340", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+        help="USB-Serial-Adapter (CH340-chip) with teletype (without dialing)")
+
+    gi.add_argument("-W", "--tty-TW39", 
+        dest="CH340_TW39", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+        help="USB-Serial-Adapter (CH340-chip) with TW39 teletype (pulse dial)")
+
+    gi.add_argument("-M", "--tty-TWM", 
+        dest="CH340_TWM", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+        help="USB-Serial-Adapter (CH340-chip) with TWM teletype (keypad dial)")
+
+    gi.add_argument("-V", "--tty-V10", 
+        dest="CH340_V10", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+        help="USB-Serial-Adapter (CH340-chip) with V.10 teletype (FS200, FS220)")
+
+    gi.add_argument("-E", "--audio-ED1000",
+        dest="ED1000", default=False, action="store_true", 
+        help="USB-Sound-Card with ED1000 teletype")
+
+    gi.add_argument("--noscreen",
+        dest="screen", default=True, action="store_false", 
+        help="No Screen in/out")
+
+
+    gg = parser.add_argument_group("Gateways")
+
+    gg.add_argument("-I", "--i-Telex", 
+        dest="itelex", default=-1, metavar='<PORT>', type=int,
+        help="i-Telex Client and Server (if PORT>0)")
+
+    gg.add_argument("-T", "--telnet", 
+        dest="telnet", default=0, metavar='<PORT>', type=int,
+        help="Terminal Socket Server at Port Number")
+
+    gg.add_argument("-Z", "--eliza",
+        dest="eliza", default=False, action="store_true", 
+        help="Eliza chat bot")
+
+
+    gd = parser.add_argument_group("Debug")
+
+    gd.add_argument("-L", "--log", 
+        dest="log", default='', metavar="<FILE>",
+        help="Log to File")
+
+
+    parser.add_argument("-k", "--id", "--KG", 
+        dest="wru_id", default='', metavar="<ID>",
         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
-    parser.add_argument("-m", "--mode", 
-        dest="mode", default='', metavar="MODE",
-        help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
+    #parser.add_argument("-m", "--mode", 
+    #    dest="mode", default='', metavar="MODE",
+    #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
 
     parser.add_argument("-q", "--quiet",
         dest="verbose", default=True, action="store_false", 
@@ -54,68 +116,70 @@ def load():
 
     parser.add_argument("-s", "--save",
         dest="save", default=False, action="store_true", 
-        help="Save command line args to config file")
+        help="Save command line args to config file (txConfig.json)")
 
-
-    parser.add_argument("-S", "--noscreen",
-        dest="screen", default=True, action="store_false", 
-        help="Device: No Screen in/out")
-
-    parser.add_argument("-Y", "--CH340TTY", 
-        dest="CH340TTY", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
-        help="Device: Use Virtual Serial Line (CH340) to communicate with Teletype")
-
-    parser.add_argument("-G", "--RPiTTY",
-        dest="RPiTTY", default=False, action="store_true", 
-        help="Device: Use GPIO (pigpio) on RPi")
-
-    parser.add_argument("-E", "--ED1000",
-        dest="ED1000", default=False, action="store_true", 
-        help="Device: Use ED1000 (Tx only) on Sound Card")
-
-    parser.add_argument("-T", "--telnet", 
-        dest="telnet", default=0, metavar='PORT', type=int,
-        help="Device: Use Terminal Socket Server at Port Number")
-
-    parser.add_argument("-I", "--itelex", 
-        dest="itelex", default=-1, metavar='PORT', type=int,
-        help="Device: i-Telex Client and Server if PORT>0")
-
-    parser.add_argument("-Z", "--eliza",
-        dest="eliza", default=False, action="store_true", 
-        help="Device: Use Eliza Chat Bot")
-
-    parser.add_argument("-L", "--log", 
-        dest="log", default='', metavar="NAME",
-        help="Device: Log to File")
 
     ARGS = parser.parse_args()
 
     devices = CFG['devices']
     
     if ARGS.screen:
-        devices['screen'] = {'type': 'screen'}
+        devices['screen'] = {'type': 'screen', 'enable': True}
 
-    if ARGS.CH340TTY:
-        devices['CH340TTY'] = {'type': 'CH340TTY', 'portname': ARGS.CH340TTY.strip(), 'baudrate': 50, 'loopback': True}
+    if ARGS.CH340:
+        devices['CH340'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340.strip(), 'mode': '', 'baudrate': 50, 'loopback': True}
+
+    if ARGS.CH340_TW39:
+        devices['CH340_TW39'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TW39.strip(), 'mode': 'TW39', 'baudrate': 50, 'loopback': True}
+
+    if ARGS.CH340_TWM:
+        devices['CH340_TWM'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TWM.strip(), 'mode': 'TWM', 'baudrate': 50, 'loopback': True}
+
+    if ARGS.CH340_V10:
+        devices['CH340_V10'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_V10.strip(), 'mode': 'V10', 'baudrate': 50, 'loopback': False}
 
     if ARGS.RPiTTY:
-        devices['RPiTTY'] = {'type': 'RPiTTY', 'pin_txd': 17, 'pin_rxd': 27, 'pin_rel': 22, 'pin_oin': 10, 'pin_opt': 9, 'pin_dir': 11, 'baudrate': 50, 'inv_txd': False, 'inv_rxd': False, 'loopback': True}
+        devices['RPiTTY'] = {
+            'type': 'RPiTTY',
+            'enable': True, 
+            'pin_txd': 17, 
+            'pin_rxd': 27, 
+            'pin_fsg_ns': 6,
+            'pin_rel': 22, 
+            'pin_oin': 10, 
+            'pin_opt': 9, 
+            'pin_dir': 11, 
+            'pin_sta': 23,
+            'baudrate': 50, 
+            'inv_rxd': False, 
+            'uscoding': False,
+            'loopback': True,
+            }
 
     if ARGS.ED1000:
-        devices['ED1000'] = {'type': 'ED1000', 'f0': 500, 'f1': 700, 'baudrate': 50}
+        devices['ED1000'] = {
+            'type': 'ED1000',
+            'enable': True, 
+            'send_f0': 500, 
+            'send_f1': 700, 
+            'recv_f0': 2250, 
+            'recv_f1': 3150, 
+            'baudrate': 50, 
+            'devindex': None, 
+            'zcarrier': False,
+            }
 
     if ARGS.telnet:
-        devices['telnet'] = {'type': 'telnet', 'port': ARGS.telnet}
+        devices['telnet'] = {'type': 'telnet', 'enable': True, 'port': ARGS.telnet}
 
     if ARGS.itelex >= 0:
-        devices['i-Telex'] = {'type': 'i-Telex', 'port': ARGS.itelex}
+        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex}
 
     if ARGS.eliza:
-        devices['eliza'] = {'type': 'eliza'}
+        devices['eliza'] = {'type': 'eliza', 'enable': True}
 
     if ARGS.log:
-        devices['log'] = {'type': 'log', 'filename': ARGS.log.strip()}
+        devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
 
 
     CFG['verbose'] = ARGS.verbose
@@ -124,9 +188,9 @@ def load():
     if wru_id:
         CFG['wru_id'] = wru_id
     
-    mode = ARGS.mode.strip()
-    if mode:
-        CFG['mode'] = mode
+    #mode = ARGS.mode.strip()
+    #if mode:
+    #    CFG['mode'] = mode
 
 
     if ARGS.save:

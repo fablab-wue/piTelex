@@ -35,6 +35,8 @@
 | 111.10 |    V     | =
 | 111.11 |    LTRS Bu | LTRS Bu | '['
 
+---
+
 ## Timing
 
 <img src="../img/TW39Timing.png" width="561px">

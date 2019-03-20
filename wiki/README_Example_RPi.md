@@ -18,7 +18,7 @@ Design files can be found in project folder /PCB/
 
 Note: For pulse dial in I-loop connect pin 13 (RXD) with pin 31 (DIAL_SW) and configure GPIO 6 for 'pin_fsg_ns' in software.
 
-
+---
 
 ## Software
 
@@ -28,7 +28,7 @@ This electronic is handles by the software module [RPiTTY](/wiki/README_SW_DevRP
 
 Start the program with arguments -G and -m TW39 on RPi:
     
-    telex -G -m TW39 -I 2342
+    telex -G -I 2342
 
 Note: The argument -I is to start the i-Telex [client](/wiki/README_SW_DevITelexClient.md) and [server](/wiki/README_SW_DevITelexSrv.md) at port 2342.
 
