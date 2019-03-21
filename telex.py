@@ -95,7 +95,12 @@ def init():
 # =====
 
 def exit():
-    pass
+    global DEVICES
+    
+    for device in DEVICES:
+        device.exit()
+        del device
+    DEVICES = []
 
 # =====
 

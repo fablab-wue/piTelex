@@ -1,6 +1,12 @@
 #!/usr/bin/python3
 """
 Telex Device - ED1000 Communication over Sound Card - Transmit Only
+
+Articles:
+https://www.allaboutcircuits.com/technical-articles/fsk-explained-with-python/
+https://dsp.stackexchange.com/questions/29946/demodulating-fsk-audio-in-python
+https://stackoverflow.com/questions/35759353/demodulating-an-fsk-signal-in-python#
+
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -56,6 +62,10 @@ class TelexED1000SC(txBase.TelexBase):
         self.run = False
 
         super().__del__()
+
+
+    def exit(self):
+        self._run = False
 
     # =====
 
@@ -272,7 +282,7 @@ class TelexED1000SC(txBase.TelexBase):
                         analog=False, ftype='butter', fs=sample_f, output='sos')
             self._filters.append(filter_bp)
 
-        return
+        return   # debug - remove to plot spectrum
 
         plt.figure()
         plt.ylim(-100, 5)
@@ -310,7 +320,7 @@ class TelexED1000SC(txBase.TelexBase):
 
     # =====
 
-    # FIR-filter - not longer ised
+    # FIR-filter - not longer used
     def _recv_decode_init_FIR(self, recv_f):
         self._filters = []
         fbw = [(recv_f[1] - recv_f[0]) * 0.85, (recv_f[1] - recv_f[0]) * 0.8]
@@ -343,7 +353,7 @@ class TelexED1000SC(txBase.TelexBase):
 
     # -----
 
-    # FIR-filter - not longer ised
+    # FIR-filter - not longer used
     def _recv_decode_FIR(self, data):
         val = [None, None]
         for i in range(2):

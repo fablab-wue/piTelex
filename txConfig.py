@@ -9,9 +9,10 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import time
-#import threading
 from argparse import ArgumentParser
 import json
+
+import log
 
 #######
 # definitions and configuration
@@ -51,27 +52,27 @@ def load():
 
     gi = parser.add_argument_group("Interfaces")
 
-    gi.add_argument("-G", "--RPi-TW39",
+    gi.add_argument("-G", "--RPiTW39",
         dest="RPiTTY", default=False, action="store_true", 
         help="GPIO (pigpio) on RPi with TW39 teletype")
 
     gi.add_argument("-Y", "--tty", 
-        dest="CH340", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+        dest="CH340", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with teletype (without dialing)")
 
-    gi.add_argument("-W", "--tty-TW39", 
-        dest="CH340_TW39", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+    gi.add_argument("-W", "--ttyTW39", 
+        dest="CH340_TW39", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with TW39 teletype (pulse dial)")
 
-    gi.add_argument("-M", "--tty-TWM", 
-        dest="CH340_TWM", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+    gi.add_argument("-M", "--ttyTWM", 
+        dest="CH340_TWM", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with TWM teletype (keypad dial)")
 
-    gi.add_argument("-V", "--tty-V10", 
-        dest="CH340_V10", default='', metavar="<TTY>",   # '/dev/serial0'   '/dev/ttyUSB0'
+    gi.add_argument("-V", "--ttyV10", 
+        dest="CH340_V10", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with V.10 teletype (FS200, FS220)")
 
-    gi.add_argument("-E", "--audio-ED1000",
+    gi.add_argument("-E", "--audioED1000",
         dest="ED1000", default=False, action="store_true", 
         help="USB-Sound-Card with ED1000 teletype")
 
@@ -82,12 +83,12 @@ def load():
 
     gg = parser.add_argument_group("Gateways")
 
-    gg.add_argument("-I", "--i-Telex", 
-        dest="itelex", default=-1, metavar='<PORT>', type=int,
+    gg.add_argument("-I", "--iTelex", 
+        dest="itelex", default=-1, const=0, nargs='?', metavar='PORT', type=int,
         help="i-Telex Client and Server (if PORT>0)")
 
     gg.add_argument("-T", "--telnet", 
-        dest="telnet", default=0, metavar='<PORT>', type=int,
+        dest="telnet", default=0, metavar='PORT', type=int,
         help="Terminal Socket Server at Port Number")
 
     gg.add_argument("-Z", "--eliza",
@@ -98,12 +99,16 @@ def load():
     gd = parser.add_argument_group("Debug")
 
     gd.add_argument("-L", "--log", 
-        dest="log", default='', metavar="<FILE>",
+        dest="log", default='', metavar="FILE",
         help="Log to File")
+
+    gd.add_argument("-d", "--debug", 
+        dest="debug", default=2, metavar='LEVEL', type=int,
+        help="Debug level")
 
 
     parser.add_argument("-k", "--id", "--KG", 
-        dest="wru_id", default='', metavar="<ID>",
+        dest="wru_id", default='', metavar="ID",
         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
     #parser.add_argument("-m", "--mode", 
@@ -184,13 +189,16 @@ def load():
 
     CFG['verbose'] = ARGS.verbose
     
-    wru_id = ARGS.wru_id.strip()
+    wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
         CFG['wru_id'] = wru_id
     
     #mode = ARGS.mode.strip()
     #if mode:
     #    CFG['mode'] = mode
+
+    CFG['debug'] = ARGS.debug
+    log.set_log_level(ARGS.debug)
 
 
     if ARGS.save:

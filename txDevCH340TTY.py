@@ -13,6 +13,10 @@ import time
 
 import txCode
 import txBase
+import log
+
+def LOG(text:str, level:int=3):
+    log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
 
 #######
 
@@ -107,7 +111,6 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def __del__(self):
-        #print('__del__ in TelexSerial')
         self._tty.close()
         super().__del__()
     
@@ -177,9 +180,9 @@ class TelexCH340TTY(txBase.TelexBase):
             cts = not self._tty.cts != self._inverse_cts   # logical xor
             if cts != self._cts_stable:
                 self._cts_counter += 1
-                if self._cts_counter == 20:   # 1.0sec
+                if self._cts_counter == 10:   # 0.5sec
                     self._cts_stable = cts
-                    print(cts)   # debug
+                    LOG(cts, 4)   # debug
                     if not cts:   # rxd=Low
                         self._rx_buffer.append('\x1bST')
                         pass

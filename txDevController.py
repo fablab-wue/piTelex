@@ -46,6 +46,10 @@ class TelexController(txBase.TelexBase):
         super().__del__()
     
 
+    def exit(self):
+        self._run = False
+
+
     def read(self) -> str:
         ret = ''
 
@@ -112,7 +116,7 @@ class TelexController(txBase.TelexBase):
                 return True
 
             if a == '\x1bEXIT':   # print RY pattern (64 characters = 10sec@50baud)
-                raise('EXIT')
+                raise(Exception('EXIT'))
 
 
         if self._font_mode:   # 
@@ -134,7 +138,8 @@ class TelexController(txBase.TelexBase):
             self._dial_number += a
             self._rx_buffer.append('\x1b#'+self._dial_number)   # send text
 
-
+    # =====
+    
     def thread_memory(self):
         while self._run:
             #LOG('.')
@@ -142,7 +147,6 @@ class TelexController(txBase.TelexBase):
                 a = self._mx_buffer.pop(0)
                 self._rx_buffer.append(a)
             time.sleep(0.15)
-
-
+        
 #######
 

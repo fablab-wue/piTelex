@@ -16,6 +16,10 @@ import pigpio # http://abyz.co.uk/rpi/pigpio/python.html   pip install pigpio
 
 import txCode
 import txBase
+import log
+
+def LOG(text:str, level:int=3):
+    log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
 
 if os.name == 'nt':   # debug on windows PC
     REMOTE_IP = '10.23.42.234'   # IP of the remote RPi with its GPIO
@@ -38,6 +42,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._bytesize = params.get('bytesize', 5)
         self._stopbits = params.get('stopbits', 1.5)
         self._stopbits2 = int(self._stopbits * 2 + 0.5)
+
         self._pin_txd = params.get('pin_txd', 17)
         self._pin_rxd = params.get('pin_rxd', 27)
         self._pin_fsg_ns = params.get('pin_fsg_ns', 6)   # connected to rxd
@@ -46,6 +51,10 @@ class TelexRPiTTY(txBase.TelexBase):
         #self._pin_oin = params.get('pin_oin', 10)
         self._pin_opt = params.get('pin_opt', 9)
         self._pin_sta = params.get('pin_sta', 23)
+        self._pin_fsg_at = params.get('pin_fsg_at', 0)   # button AT optional
+        self._pin_fsg_st = params.get('pin_fsg_st', 0)   # button ST optional
+        self._pin_fsg_lt = params.get('pin_fsg_lt', 0)   # button LT optional
+
         self._inv_rxd = params.get('inv_rxd', False)
         #self._inv_txd = params.get('inv_txd', False)
         self._uscoding = params.get('uscoding', False)
@@ -91,10 +100,26 @@ class TelexRPiTTY(txBase.TelexBase):
         pi.write(self._pin_txd, 1)
         pi.set_mode(self._pin_opt, pigpio.OUTPUT)
         pi.write(self._pin_opt, 0)
-        pi.set_mode(self._pin_rel, pigpio.OUTPUT)   # relais for commutating
+        pi.set_mode(self._pin_rel, pigpio.OUTPUT)   # relay for commutating
         pi.write(self._pin_rel, 0)   # pos polarity
         pi.set_mode(self._pin_dir, pigpio.OUTPUT)   # direction of comminication
         pi.write(self._pin_dir, 0)   # 1=transmitting
+
+        if self._pin_fsg_at:
+            pi.set_mode(self._pin_fsg_at, pigpio.INPUT)
+            pi.set_pull_up_down(self._pin_fsg_at, pigpio.PUD_UP)
+            pi.set_glitch_filter(self._pin_fsg_at, 50000)   # 50ms
+            pi.callback(self._pin_fsg_at, pigpio.FALLING_EDGE, self._callback_button_at)
+        if self._pin_fsg_st:
+            pi.set_mode(self._pin_fsg_st, pigpio.INPUT)
+            pi.set_pull_up_down(self._pin_fsg_st, pigpio.PUD_UP)
+            pi.set_glitch_filter(self._pin_fsg_st, 50000)   # 50ms
+            pi.callback(self._pin_fsg_st, pigpio.FALLING_EDGE, self._callback_button_st)
+        if self._pin_fsg_lt:
+            pi.set_mode(self._pin_fsg_lt, pigpio.INPUT)
+            pi.set_pull_up_down(self._pin_fsg_lt, pigpio.PUD_UP)
+            pi.set_glitch_filter(self._pin_fsg_lt, 50000)   # 50ms
+            pi.callback(self._pin_fsg_lt, pigpio.FALLING_EDGE, self._callback_button_lt)
 
         self._set_enable(False)
         self._set_online(False)
@@ -125,13 +150,10 @@ class TelexRPiTTY(txBase.TelexBase):
     # =====
 
     def read(self) -> str:
-        #if not self._tty.in_waiting:
-        ret = ''
-
         if self._rx_buffer:
-            ret = self._rx_buffer.pop(0)
-            return ret
+            return self._rx_buffer.pop(0)
 
+    # -----
 
     def write(self, a:str, source:str):
         if len(a) != 1:
@@ -157,7 +179,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._rxd_counter += 1
                 if self._rxd_counter == 10:   # 0.5sec
                     self._rxd_stable = rxd
-                    print(rxd)   # debug
+                    LOG(rxd, 4)   # debug
                     if not rxd:   # rxd=Low
                         self._rx_buffer.append('\x1bST')
                         pass
@@ -169,7 +191,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._rxd_counter = 0
 
         count, bb = pi.bb_serial_read(self._pin_rxd)
-        #print('.', end='')
+        LOG('.', 5)
         if count \
             and not(self._use_squelch and (time.time() <= self._time_squelch)) \
             and not self._is_pulse_dial:
@@ -177,9 +199,8 @@ class TelexRPiTTY(txBase.TelexBase):
             aa = self._mc.decodeBM2A(bb)
     
             if aa:
-                #print('#'+aa+'!')
-                #self._check_special_sequences(a)
                 for a in aa:
+                    #self._check_special_sequences(a)
                     self._rx_buffer.append(a)
             
             self._rxd_counter = 0
@@ -275,9 +296,9 @@ class TelexRPiTTY(txBase.TelexBase):
             return
 
         #a = self._tx_buffer.pop(0)
-        a = ''.join(self._tx_buffer)
+        aa = ''.join(self._tx_buffer)
         self._tx_buffer = []
-        bb = self._mc.encodeA2BM(a)
+        bb = self._mc.encodeA2BM(aa)
         if not bb:
             return
 
@@ -295,25 +316,35 @@ class TelexRPiTTY(txBase.TelexBase):
         if self.last_wid is not None:
             pi.wave_delete(self.last_wid) # delete no longer used waveform
 
-        #print("wid", self.last_wid, "new_wid", new_wid) # debug
-
         self.last_wid = new_wid
 
-    # -----
+    # =====
 
     def _callback_pulse_dial(self, gpio, level, tick):
         if self._use_squelch and (time.time() <= self._time_squelch):
             return
             
         if level == pigpio.TIMEOUT:   # watchdog timeout
-            print(gpio, level, tick)   # debug
+            LOG(str(gpio)+str(level)+str(tick), 5)   # debug
             if self._pulse_dial_count:
                 if self._pulse_dial_count >= 10:
                     self._pulse_dial_count = 0
-                self._rx_buffer += str(self._pulse_dial_count)
+                #self._rx_buffer += str(self._pulse_dial_count)
+                self._rx_buffer.append(str(self._pulse_dial_count))
                 self._pulse_dial_count = 0
         elif level == pigpio.LOW:
             self._pulse_dial_count += 1
+
+    # -----
+
+    def _callback_button_at(self, gpio, level, tick):
+        self._rx_buffer.append('\x1bAT')
+
+    def _callback_button_st(self, gpio, level, tick):
+        self._rx_buffer.append('\x1bST')
+
+    def _callback_button_lt(self, gpio, level, tick):
+        self._rx_buffer.append('\x1bLT')
 
 #######
 

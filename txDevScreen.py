@@ -109,8 +109,7 @@ class TelexScreen(txBase.TelexBase):
 
 
     def set_normal_term(self):
-        ''' Resets to normal terminal.  On Windows this is a no-op.
-        '''
+        ''' Resets to normal terminal.  On Windows this is a no-op. '''
         
         if os.name == 'nt':
             pass
@@ -131,12 +130,13 @@ class TelexScreen(txBase.TelexBase):
                     k = self.getch()
                     c = self._replace_ctrl.get(k, '')
                     if c:
-                        print('\033[0;37;41m<'+c[1:]+'>\033[0m', end='', flush=True)
+                        print('\033[1;33;41m<'+c[1:]+'>\033[0m', end='', flush=True)
                         self._rx_buffer.append(c)
                     return '' # eat cursor and control keys
                 if k == b'\x1b' or k == '\x1b':
                     self._escape = '\x1b'
-                    print('§', end='', flush=True)
+                    print('\033[0;30;41m§\033[0m', end='', flush=True)
+                    #print('§', end='', flush=True)
                     return ''
 
                 if os.name == 'nt':
@@ -148,7 +148,7 @@ class TelexScreen(txBase.TelexBase):
                     if c == '\r' or c == '\n':
                         self._escape = self._escape.upper()
                         self._rx_buffer.append(self._escape)
-                        print('\033[1;37;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
+                        print('\033[0;93;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
                         self._escape = ''
                     else:
                         self._escape += c
@@ -156,7 +156,7 @@ class TelexScreen(txBase.TelexBase):
                         if c:
                             self._escape = c
                             self._rx_buffer.append(self._escape)
-                            print('\033[1;36;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
+                            print('\033[0;92;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
                             self._escape = ''
                 else:
                     c = self._replace_char.get(c, c)
@@ -169,7 +169,7 @@ class TelexScreen(txBase.TelexBase):
                         if a == '\r' or a == '\n':
                             print(a, end='')
                         else:
-                            print('\033[31m'+a+'\033[0m', end='', flush=True)
+                            print('\033[1;31m'+a+'\033[0m', end='', flush=True)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
@@ -187,6 +187,10 @@ class TelexScreen(txBase.TelexBase):
             print(a, end='')
         else:
             print(a, end='', flush=True)
+
+
+    def exit(self):
+        pass
 
     # =====
 
