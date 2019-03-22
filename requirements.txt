@@ -1,0 +1,7 @@
+# piTelex requirements
+pyserial
+pigpio
+pyaudio
+numpy
+scipi
+colorama
