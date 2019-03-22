@@ -39,9 +39,9 @@
 
 ## Timing
 
-<img src="../img/TW39Timing.png" width="561px">
+<img src="img/TW39Timing.png" width="561px">
 
 Example:
 
-<img src="../img/TW39Example.png" width="559px">
+<img src="img/TW39Example.png" width="559px">
 

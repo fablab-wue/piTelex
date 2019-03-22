@@ -52,7 +52,7 @@ TODO
 
 ### Using IIR-Filter
 
-<img src="../img/ED1000IIR.png" width="300px">
+<img src="img/ED1000IIR.png" width="300px">
 
  * Slice samples in 5ms pieces
  * Filter each slice for 2250HZ and 3150Hz:

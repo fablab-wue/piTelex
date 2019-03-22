@@ -1,6 +1,6 @@
 # Electronic for V.10 Interface
 
-<img src="../img/V.10.JPG" width="320px">
+<img src="img/V.10.JPG" width="320px">
 
 Some teletypes have an optional V.10 interface like the TeKaDe FS200Z / FS220Z. The V.10 definition is near to V.24 (RS-232) with a voltage limit of -6...6V.
 
@@ -10,7 +10,7 @@ In online stores you find an adapter cable USB to RS-232 (not TTL) with a 9-pin 
 
 ### Pinout:
 
-<img src="../img/V10Adapter.png" width="250px">
+<img src="img/V10Adapter.png" width="250px">
 
 Note: the gray cables are optional.
 

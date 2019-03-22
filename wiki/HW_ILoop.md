@@ -6,17 +6,17 @@ The Telex adapter hardware must source a constant (regulated) current of 40mA, s
 
 The current loop is specified in "TW39".
 
-<img src="../img/TelexOverview.png" width="466px">
+<img src="img/TelexOverview.png" width="466px">
 
 To use a Telex as an USB-device you can use an USB-to-serial-TTL converter based on a CH340 chip (other chips from FTDI and Prolofic don't work at 50 baud, 5 data-bits, 1.5 stop-bits).
 
 The commutate circuit (drawn in cyan) is optional and only needed when the telex is using a FSG. Without a FSG the cyan area can be removed.
 
-<img src="../img/TelexCH340.png" width="504px">
+<img src="img/TelexCH340.png" width="504px">
 
 To use router and FSG functionality the adapter hardware can be connected directly to a Raspberry Pi.
 
-<img src="../img/TelexRPi.png" width="504px">
+<img src="img/TelexRPi.png" width="504px">
 
 ---
 
@@ -32,7 +32,7 @@ TODO
 
 To simplify the device an adjustable DC/DC boost converter board (from China) is used to get a voltage of 20...35V. The voltage regulator LM317 is used as a fixed current source to get the 40mA. The LM317 works as a linear regulator and must be mounted on a heat sink.
 
-<img src="../img/TelexCurrent.png" width="432px">
+<img src="img/TelexCurrent.png" width="432px">
 
 Note: The LM317 is designed for a maximal voltage of 35V. A higher voltage can damage the chip.
 
@@ -40,7 +40,7 @@ Note: The LM317 is designed for a maximal voltage of 35V. A higher voltage can d
 
 With 2 Transistors a current regulator is implemented with a voltage tolerance of 120 volt. The TIP47 works as a linear regulator and must be mounted on a heat sink.
 
-<img src="../img/TelexCurrent2.png" width="195px">
+<img src="img/TelexCurrent2.png" width="195px">
 
 Note: At a supply voltage of 60V a continuous power of about 2W have to be handled by the TIP47 and its heat sink.
 
@@ -58,7 +58,7 @@ The following schematics switches to GND. This simplifies the circuit and reduce
 
 The simplest way is to use a small NPN transistor.
 
-<img src="../img/TelexTXD.png" width="153px">
+<img src="img/TelexTXD.png" width="153px">
 
 The transmitter has effectively no voltage drop on the current loop (< 0.2V). No heat sink or big transistor is needed.
 
@@ -66,7 +66,7 @@ The transmitter has effectively no voltage drop on the current loop (< 0.2V). No
 
 Alternatively, to a bipolar transistor a logic level FET can be used.
 
-<img src="../img/TelexTXDFET.png" width="167px">
+<img src="img/TelexTXDFET.png" width="167px">
 
 ---
 
@@ -78,7 +78,7 @@ To get data from the Telex the current must be observed. A current of 40mA means
 
 For galvanic decoupling an opto-coupler is used.
 
-<img src="../img/TelexRXD.png" width="309px">
+<img src="img/TelexRXD.png" width="309px">
 
 As opto-coupler a LTV817 or PC817 is recommended. All other coupler with coupling factor > 50% should also work.
 
@@ -90,7 +90,7 @@ The receiver has a voltage drop on the current loop of about 2V.
 
 To signal the FSG (dialing and switching device) an established connection, the polarity of the current loop is reversed with a relay.
 
-<img src="../img/TelexCommutate.png" width="197px">
+<img src="img/TelexCommutate.png" width="197px">
 
 ---
 
@@ -98,28 +98,28 @@ To signal the FSG (dialing and switching device) an established connection, the 
 
 ## TW39 Compact USB Interface
 
-<img src="../img/USB.JPG" width="160px">
+<img src="img/USB.JPG" width="160px">
 
 This is the first approach with a USB to TTL adapter (middle), a DC/DC converter (bottom) and a self-made-board (top) for current regulator, reading and controlling the loop.
 
-<img src="../img/TelexUSB3.png" width="518px">
+<img src="img/TelexUSB3.png" width="518px">
 
 This can be used with a Windows-PC, Linux-PC, Mac (not tested) and Raspberry Pi.
 
-Details at [Example_USB](/wiki/README_Example_USB.md)
+Details at [Example_USB](Example_USB.md)
 
 ---
 
 ## TW39 High Voltage USB and Raspberry Pi Interface
 
-<img src="../img/pyTelexPCBt.png" width="157px">
-<img src="../img/pyTelexPCBb.png" width="157px">
+<img src="img/pyTelexPCBt.png" width="157px">
+<img src="img/pyTelexPCBb.png" width="157px">
 
-<img src="../img/TelexCurrentTXD3.png" width="476px">
+<img src="img/TelexCurrentTXD3.png" width="476px">
 
 This is designed for Raspberry Pi but with a CH340-serial-adapter this can be also used with a Windows-PC, Linux-PC, and Mac (not tested).
 
-Details at [Example_RPi](/wiki/README_Example_RPi.md)
+Details at [Example_RPi](Example_RPi.md)
 
 ---
 
