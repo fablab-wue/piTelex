@@ -1,7 +1,12 @@
 # piTelex requirements
+argparse
+json
 pyserial
 pigpio
 pyaudio
 numpy
-scipi
+scipy
+matplotlib
 colorama
+msvcrt
+termios
