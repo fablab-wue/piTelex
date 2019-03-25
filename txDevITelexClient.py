@@ -53,24 +53,21 @@ class TelexITelexClient(txBase.TelexBase):
         self._tx_buffer = []
         self._rx_buffer = []
         self._connected = False
-        self._received = 0
-        self._sent = 0
 
 
     def __del__(self):
-        self._connected = False
+        self.exit()
         super().__del__()
-    
+
+
+    def exit(self):
+        self._connected = False
+
     # =====
 
     def read(self) -> str:
-        #if not self._tty.in_waiting:
-        ret = ''
-
         if self._rx_buffer:
-            ret = self._rx_buffer.pop(0)
-
-        return ret
+            return self._rx_buffer.pop(0)
 
 
     def write(self, a:str, source:str):
@@ -91,13 +88,14 @@ class TelexITelexClient(txBase.TelexBase):
                 print(user)
             return
 
-        if source == '<' or source == '>':
+        if source in '<>':
             return
 
         if not self._connected:
             return
 
         self._tx_buffer.append(a)
+        #return True   #debug
 
 
     def idle(self):
@@ -106,7 +104,7 @@ class TelexITelexClient(txBase.TelexBase):
     # =====
 
     def connect_client(self, number:str):
-        Thread(target=self.thread_connect_as_client, args=(number.strip(),)).start()
+        Thread(target=self.thread_connect_as_client, name='iTelexC', args=(number.strip(),)).start()
 
 
     def disconnect_client(self):
@@ -117,6 +115,9 @@ class TelexITelexClient(txBase.TelexBase):
 
     def thread_connect_as_client(self, number):
         try:
+            received = 0
+            sent = 0
+
             # get IP of given number from Telex-Number-Server (TNS)
 
             user = self.query_userlist(number)
@@ -179,8 +180,8 @@ class TelexITelexClient(txBase.TelexBase):
                                     if a == '@':
                                         a = '#'
                                     self._rx_buffer.append(a)
-                                self._received += len(data[2:])
-                                self.send_ack(s)
+                                received += len(data[2:])
+                                self.send_ack(s, received)
 
                             elif data[0] == 3:   # End
                                 LOG('End '+repr(data), 4)
@@ -192,7 +193,7 @@ class TelexITelexClient(txBase.TelexBase):
 
                             elif data[0] == 6 and plen == 1:   # Acknowledge
                                 #LOG('Acknowledge '+repr(data), 4)
-                                LOG(str(data[2])+'/'+str(self._sent), 4)
+                                LOG(str(data[2])+'/'+str(sent), 4)
                                 pass
 
                             elif data[0] == 7 and plen >= 1:   # Version
@@ -215,18 +216,19 @@ class TelexITelexClient(txBase.TelexBase):
                                 if a == '@':
                                     a = '#'
                                 self._rx_buffer.append(a)
-                                self._received += 1
+                                received += 1
 
                     except socket.timeout:
                         #LOG('.', 4)
-                        if not self._received and not is_ascii:
+                        if not received and not is_ascii:
                             self._tx_buffer.append('[')
 
                         if self._tx_buffer:
                             if is_ascii:
-                                self.send_data_ascii(s)
+                                l = self.send_data_ascii(s)
                             else:
-                                self.send_data_baudot(s, bmc)
+                                l = self.send_data_baudot(s, bmc)
+                            sent += l
 
 
                     except socket.error:
@@ -246,8 +248,8 @@ class TelexITelexClient(txBase.TelexBase):
 
     # =====
 
-    def send_ack(self, s):
-        data = bytearray([6, 1, self._received & 0xff])
+    def send_ack(self, s, received:int):
+        data = bytearray([6, 1, received & 0xff])
         s.sendall(data)
 
 
@@ -276,6 +278,7 @@ class TelexITelexClient(txBase.TelexBase):
         a = self._tx_buffer.pop(0)
         data = a.encode('ASCII')
         s.sendall(data)
+        return len(data)
 
 
     def send_data_baudot(self, s, bmc):
@@ -288,8 +291,8 @@ class TelexITelexClient(txBase.TelexBase):
                     data.append(b)
         l = len(data) - 2
         data[1] = l
-        self._sent += l
         s.sendall(data)
+        return l
 
 
     def send_end(self, s):

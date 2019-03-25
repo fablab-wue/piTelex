@@ -100,12 +100,15 @@ class TelexScreen(txBase.TelexBase):
         ''' Resets to normal terminal.  On Windows this is a no-op. '''
         #print('__del__ in Screen')
 
+        super().__del__()
+
+
+    def exit(self):
         if os.name == 'nt':
             pass
 
         else:
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
-        super().__del__()
 
 
     def set_normal_term(self):
@@ -148,7 +151,7 @@ class TelexScreen(txBase.TelexBase):
                     if c == '\r' or c == '\n':
                         self._escape = self._escape.upper()
                         self._rx_buffer.append(self._escape)
-                        print('\033[0;93;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
+                        print('\033[0;37;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
                         self._escape = ''
                     else:
                         self._escape += c
@@ -186,11 +189,10 @@ class TelexScreen(txBase.TelexBase):
         if a == '\r' or a == '\n':
             print(a, end='')
         else:
-            print(a, end='', flush=True)
-
-
-    def exit(self):
-        pass
+            if source == '^':
+                print('\033[0;33m'+a+'\033[0m', end='', flush=True)
+            else:
+                print(a, end='', flush=True)
 
     # =====
 

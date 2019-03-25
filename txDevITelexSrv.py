@@ -31,6 +31,7 @@ class TelexITelexSrv(txBase.TelexBase):
 
         self._rx_buffer = []
         self._tx_buffer = []
+        self._connected = False
         self._received = 0
 
         self.run = True
@@ -41,34 +42,44 @@ class TelexITelexSrv(txBase.TelexBase):
 
         self.SERVER.listen(2)
         #print("Waiting for connection...")
-        Thread(target=self.thread_srv_accept_incoming_connections).start()
+        Thread(target=self.thread_srv_accept_incoming_connections, name='iTelexSaic').start()
 
 
     def __del__(self):
-        self.run = False
+        self.exit()
         #print('__del__ in TelexWebSrv')
-        self.SERVER.close()
         super().__del__()
     
+
+    def exit(self):
+        self._connected = False
+        self._run = False
+        self.SERVER.close()
+
     # =====
 
     def read(self) -> str:
-        ret = ''
-
         if self._rx_buffer:
-            ret = self._rx_buffer.pop(0)
+            return self._rx_buffer.pop(0)
 
-        return ret
 
 
     def write(self, a:str, source:str):
         if len(a) != 1:
+            if a == '\x1bZ':   # end session
+                self.disconnect_client()
             return
 
-        if source == '<' or source == '>':
+        if source in '<>':
             return
 
         self._tx_buffer.append(a)
+
+    # =====
+
+    def disconnect_client(self):
+        self._tx_buffer = []
+        self._connected = False
 
     # =====
 
@@ -83,7 +94,7 @@ class TelexITelexSrv(txBase.TelexBase):
                 continue
             self.clients[client] = client_address
             self._tx_buffer = []
-            Thread(target=self.thread_srv_handle_client, args=(client,)).start()
+            Thread(target=self.thread_srv_handle_client, name='iTelexShc', args=(client,)).start()
 
 
     def thread_srv_handle_client(self, client):  # Takes client socket as argument.
@@ -95,7 +106,9 @@ class TelexITelexSrv(txBase.TelexBase):
 
         self._rx_buffer.append('\x1bA')
 
-        while self.run:
+        self._connected = True
+
+        while self._connected:
             try:
                 data = client.recv(1)
                 
@@ -189,6 +202,7 @@ class TelexITelexSrv(txBase.TelexBase):
         LOG('end connection', 3)
         client.close()
         del self.clients[client]
+        self._connected = False
         self._rx_buffer.append('\x1bZ')
         pass
 

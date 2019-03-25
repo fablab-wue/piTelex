@@ -37,7 +37,7 @@ class TelexController(txBase.TelexBase):
         self._dial_number = ''
 
         self._run = True
-        self._tx_thread = Thread(target=self.thread_memory)
+        self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
         self._tx_thread.start()
 
 
@@ -101,6 +101,20 @@ class TelexController(txBase.TelexBase):
                 self._rx_buffer.extend(list('ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 .,-+=/()?\'%'))   # send text
                 return True
 
+            if a == '\x1bLOGO':   # print piTelex logo (380 characters = 57sec@50baud)
+                self._rx_buffer.extend(list('''
+-------------------------------------------------
+    OOO   OOO  OOOOO  OOOO  O     OOOO  O   O
+    O  O   O     O    O     O     O      O O
+    OOO    O     O    OOO   O     OOO     O
+.................................................
+    O      O     O    O     O     O      O O
+    O     OOO    O    OOOO  OOOO  OOOO  O   O
+-------------------------------------------------
+'''))   # send text
+                return True
+
+
             if a[:3] == '\x1bM=':   # set memory text
                 self._mx_buffer.extend(list(a[3:]))   # send text
                 return True
@@ -116,7 +130,7 @@ class TelexController(txBase.TelexBase):
                 return True
 
             if a == '\x1bEXIT':   # print RY pattern (64 characters = 10sec@50baud)
-                raise(Exception('EXIT'))
+                raise(SystemExit('EXIT'))
 
 
         if self._font_mode:   # 

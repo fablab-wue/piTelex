@@ -110,11 +110,12 @@ class BaudotMurrayCode:
         return ret
 
 
-    def __init__(self, loop_back:bool=False, us_coding=False, flip_bits=False, character_duration=0.15):
+    def __init__(self, loop_back:bool=False, us_coding=False, flip_bits=False, character_duration=0.15, sync_layer:bool=True):
         self._ModeA2BM = None   # 0=LTRS 1=FIGS
         self._ModeBM2A = 0   # 0=LTRS 1=FIGS
         self._flip_bits = flip_bits
         self._loop_back = loop_back
+        self._sync_layer = sync_layer
         self._loop_back_eat_bytes = 0
         self._loop_back_expire_time = 0
         self._character_duration = character_duration
@@ -153,6 +154,9 @@ class BaudotMurrayCode:
                 except: # symbol not found -> ignore
                     pass
 
+        if self._sync_layer:
+            self._ModeBM2A = self._ModeA2BM
+
         if ret and self._flip_bits:
             for i, b in enumerate(ret):
                 ret[i] = self.do_flip_bits(b)
@@ -190,7 +194,7 @@ class BaudotMurrayCode:
                     mode = self._LUT_BMsw.index(b)
                     if self._ModeBM2A != mode:
                         self._ModeBM2A = mode
-                        if self._loop_back:
+                        if self._loop_back or self._sync_layer:
                             self._ModeA2BM = self._ModeBM2A # on sending a sysmbol the machine switches itself to other symbol layer
                         continue
 

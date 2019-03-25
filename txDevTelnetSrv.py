@@ -37,7 +37,7 @@ class TelexTelnetSrv(txBase.TelexBase):
 
         self.SERVER.listen(2)
         #print("Waiting for connection...")
-        self.ACCEPT_THREAD = Thread(target=self.accept_incoming_connections)
+        self.ACCEPT_THREAD = Thread(target=self.accept_incoming_connections, name='TelnetSaic')
         self.ACCEPT_THREAD.start()
         pass
 
@@ -73,7 +73,7 @@ class TelexTelnetSrv(txBase.TelexBase):
             client, client_address = self.SERVER.accept()
             print("%s:%s has connected." % client_address)
             self.clients[client] = client_address
-            Thread(target=self.handle_client, args=(client,)).start()
+            Thread(target=self.handle_client, name='TelnetShc', args=(client,)).start()
 
 
     def handle_client(self, client):  # Takes client socket as argument.

@@ -31,7 +31,7 @@ class TelexED1000TxOnly(txBase.TelexBase):
         self._tx_buffer = []
 
         self.run = True
-        self._tx_thread = Thread(target=self.thread_tx)
+        self._tx_thread = Thread(target=self.thread_tx, name='ED1000tx')
         self._tx_thread.start()
 
 

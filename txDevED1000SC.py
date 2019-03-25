@@ -51,9 +51,9 @@ class TelexED1000SC(txBase.TelexBase):
         self._recv_decode_init(recv_f)
 
         self.run = True
-        self._tx_thread = Thread(target=self.thread_tx)
+        self._tx_thread = Thread(target=self.thread_tx, name='ED1000tx')
         self._tx_thread.start()
-        self._rx_thread = Thread(target=self.thread_rx)
+        self._rx_thread = Thread(target=self.thread_rx, name='ED1000rx')
         self._rx_thread.start()
 
 
