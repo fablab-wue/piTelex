@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "C:\\GITHUB\\piTelex.wiki"
 		}
 	],
 	"settings": {
