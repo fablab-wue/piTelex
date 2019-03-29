@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+cdr/Sicherungskopie*.cdr
+cdr/Handlocher Lorenz HL38.cdr
+.vscode/*
