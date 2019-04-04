@@ -117,6 +117,8 @@ class TelexITelexClient(txBase.TelexBase):
         try:
             received = 0
             sent = 0
+            timeout_counter = 5
+            is_ping = True
 
             # get IP of given number from Telex-Number-Server (TNS)
 
@@ -174,6 +176,7 @@ class TelexITelexClient(txBase.TelexBase):
                                 pass
 
                             elif data[0] == 2 and plen > 0:   # Baudot data
+                                is_ping = False
                                 #LOG('Baudot data '+repr(data), 4)
                                 aa = bmc.decodeBM2A(data[2:])
                                 for a in aa:
@@ -192,6 +195,7 @@ class TelexITelexClient(txBase.TelexBase):
                                 break
 
                             elif data[0] == 6 and plen == 1:   # Acknowledge
+                                is_ping = False
                                 #LOG('Acknowledge '+repr(data), 4)
                                 LOG(str(data[2])+'/'+str(sent), 4)
                                 pass
@@ -210,6 +214,7 @@ class TelexITelexClient(txBase.TelexBase):
                                 pass
 
                         else:   # ASCII character(s)
+                            is_ping = False
                             #LOG('Other', repr(data), 4)
                             data = data.decode('ASCII', errors='ignore').upper()
                             for a in data:
@@ -220,8 +225,14 @@ class TelexITelexClient(txBase.TelexBase):
 
                     except socket.timeout:
                         #LOG('.', 4)
-                        if not received and not is_ascii:
-                            self._tx_buffer.append('[')
+                        timeout_counter -= 1
+                        if timeout_counter <= 0:
+                            timeout_counter = 3
+                            #if not received and not is_ascii:
+                            if is_ping:
+                                self._tx_buffer.append('[')
+                        else:
+                            pass
 
                         if self._tx_buffer:
                             if is_ascii:

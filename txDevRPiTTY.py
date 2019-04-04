@@ -51,8 +51,8 @@ class TelexRPiTTY(txBase.TelexBase):
         #self._pin_oin = params.get('pin_oin', 10)
         self._pin_opt = params.get('pin_opt', 9)
         self._pin_sta = params.get('pin_sta', 23)
-        self._pin_fsg_at = params.get('pin_fsg_at', 0)   # button AT optional
-        self._pin_fsg_st = params.get('pin_fsg_st', 0)   # button ST optional
+        self._pin_fsg_at = params.get('pin_fsg_at', 8)   # button AT optional
+        self._pin_fsg_st = params.get('pin_fsg_st', 7)   # button ST optional
         self._pin_fsg_lt = params.get('pin_fsg_lt', 0)   # button LT optional
 
         self._inv_rxd = params.get('inv_rxd', False)
@@ -179,7 +179,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._rxd_counter += 1
                 if self._rxd_counter == 10:   # 0.5sec
                     self._rxd_stable = rxd
-                    LOG(rxd, 4)   # debug
+                    #LOG(str(rxd), 4)   # debug
                     if not rxd:   # rxd=Low
                         self._rx_buffer.append('\x1bST')
                         pass

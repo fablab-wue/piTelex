@@ -32,7 +32,6 @@ class TelexITelexSrv(txBase.TelexBase):
         self._rx_buffer = []
         self._tx_buffer = []
         self._connected = False
-        self._received = 0
 
         self.run = True
         self.clients = {}
@@ -101,6 +100,9 @@ class TelexITelexSrv(txBase.TelexBase):
         """Handles a single client connection."""
         bmc = txCode.BaudotMurrayCode(False, False, True)
         is_ascii = None   # not known yet
+        welcome_state = 0
+        sent = 0
+        received = 0
 
         client.settimeout(0.2)
 
@@ -116,9 +118,8 @@ class TelexITelexSrv(txBase.TelexBase):
                     break
 
                 elif data[0] < 0x10:   # i-Telex packet
-                    if is_ascii is None:
-                        self.send_welcome(client)
                     is_ascii = False
+
                     d = client.recv(1)
                     data += d
                     plen = d[0]
@@ -134,13 +135,15 @@ class TelexITelexSrv(txBase.TelexBase):
 
                     elif data[0] == 2 and plen > 0:   # Baudot data
                         #LOG('Baudot data '+repr(data), 4)
+                        if welcome_state == 0:
+                            welcome_state = 1
                         aa = bmc.decodeBM2A(data[2:])
                         for a in aa:
                             if a == '@':
                                 a = '#'
                             self._rx_buffer.append(a)
-                        self._received += len(data[2:])
-                        self.send_ack(client)
+                        received += len(data[2:])
+                        self.send_ack(client, received)
 
                     elif data[0] == 3:   # End
                         LOG('End '+repr(data), 4)
@@ -152,7 +155,8 @@ class TelexITelexSrv(txBase.TelexBase):
 
                     elif data[0] == 6 and plen == 1:   # Acknowledge
                         #LOG('Acknowledge '+repr(data), 4)
-                        LOG(str(data[2]))
+                        LOG(str(data[2])+'/'+str(sent), 4)
+                        #LOG(str(data[2]))
                         pass
 
                     elif data[0] == 7 and plen >= 1:   # Version
@@ -169,8 +173,8 @@ class TelexITelexSrv(txBase.TelexBase):
 
                 else:   # ASCII character(s)
                     #LOG('Other', repr(data), 4)
-                    if is_ascii is None:
-                        self.send_welcome(client)
+                    if welcome_state == 0:
+                        welcome_state = 1
                     is_ascii = True
                     data = data.decode('ASCII', errors='ignore').upper()
                     data = txCode.BaudotMurrayCode.translate(data)
@@ -178,17 +182,21 @@ class TelexITelexSrv(txBase.TelexBase):
                         if a == '@':
                             a = '#'
                         self._rx_buffer.append(a)
-                        self._received += 1
+                        received += 1
 
 
             except socket.timeout:
                 #LOG('.', 4)
+                if welcome_state == 1:
+                    welcome_state = 2
+                    self.send_welcome(client)
                 if is_ascii is not None:
                     if self._tx_buffer:
                         if is_ascii:
-                            self.send_data_ascii(client)
+                            l = self.send_data_ascii(client)
                         else:
-                            self.send_data_baudot(client, bmc)
+                            l = self.send_data_baudot(client, bmc)
+                        sent += l
                     else:
                         if not is_ascii:
                             self.send_heartbeat(client)
@@ -212,8 +220,8 @@ class TelexITelexSrv(txBase.TelexBase):
         s.sendall(data)
 
 
-    def send_ack(self, s):
-        data = bytearray([6, 1, self._received & 0xff])
+    def send_ack(self, s, received:int):
+        data = bytearray([6, 1, received & 0xff])
         s.sendall(data)
 
 
@@ -226,6 +234,7 @@ class TelexITelexSrv(txBase.TelexBase):
         a = self._tx_buffer.pop(0)
         data = a.encode('ASCII')
         s.sendall(data)
+        return len(data)
 
 
     def send_data_baudot(self, s, bmc):
@@ -239,6 +248,7 @@ class TelexITelexSrv(txBase.TelexBase):
         l = len(data) - 2
         data[1] = l
         s.sendall(data)
+        return l
 
 
     def send_end(self, s):
@@ -247,13 +257,16 @@ class TelexITelexSrv(txBase.TelexBase):
 
 
     def send_reject(self, s):
-        send = bytearray([4, 3, 'o', 'c', 'c'])   # Reject
+        send = bytearray([4, 3, ord('o'), ord('c'), ord('c')])   # Reject
         s.sendall(send)
 
 
     def send_welcome(self, s):
-        self._tx_buffer.extend(list('[[[\r\n'))   # send text
-        self._rx_buffer.append('\x1bT')
+        #self._tx_buffer.extend(list('[[[\r\n'))   # send text
+        #self._rx_buffer.append('\x1bT')
+        #self._rx_buffer.append('#')
+        #self._rx_buffer.append('@')
+        self._rx_buffer.append('\x1bI')
 
 
     def broadcast(self, msg:str):

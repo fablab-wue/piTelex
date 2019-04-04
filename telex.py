@@ -134,7 +134,7 @@ def main():
     #test()
     init()
 
-    print('-=TELEX=-')
+    print('\033[2J-=TELEX=-')
 
     try:
         while True:
