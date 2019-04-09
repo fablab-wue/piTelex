@@ -117,7 +117,7 @@ class TelexITelexSrv(txBase.TelexBase):
                 if not data:   # lost connection
                     break
 
-                elif data[0] < 0x10:   # i-Telex packet
+                elif data[0] < 10:   # i-Telex packet
                     is_ascii = False
 
                     d = client.recv(1)

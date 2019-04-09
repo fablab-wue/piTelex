@@ -82,6 +82,11 @@ def init():
                 srv = txDevITelexSrv.TelexITelexSrv(**dev_param)
                 DEVICES.append(srv)
 
+        if dev_param['type'] == 'news':
+            import txDevNews
+            news = txDevNews.TelexNews(**dev_param)
+            DEVICES.insert(0,news)
+
         if dev_param['type'] == 'eliza':
             import txDevEliza
             eliza = txDevEliza.TelexEliza(**dev_param)

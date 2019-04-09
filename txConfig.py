@@ -91,6 +91,10 @@ def load():
         dest="telnet", default=0, metavar='PORT', type=int,
         help="Terminal Socket Server at Port Number")
 
+    gg.add_argument("-N", "--news", 
+        dest="news", default='', metavar="PATH",
+        help="News from File")
+
     gg.add_argument("-Z", "--eliza",
         dest="eliza", default=False, action="store_true", 
         help="Eliza chat bot")
@@ -179,6 +183,9 @@ def load():
 
     if ARGS.itelex >= 0:
         devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex}
+
+    if ARGS.news:
+        devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
 
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}

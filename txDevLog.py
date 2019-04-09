@@ -29,7 +29,12 @@ class TelexLog(txBase.TelexBase):
 
 
     def __del__(self):
+        self.exit()
         super().__del__()
+    
+
+    def exit(self):
+        pass
     
     # =====
 

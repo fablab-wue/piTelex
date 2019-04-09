@@ -143,16 +143,17 @@ class TelexITelexClient(txBase.TelexBase):
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 LOG('connected to '+user['Name'], 3)
-                s.connect((user['Host'], int(user['Port'])))
+                c = (user['Host'], int(user['Port']))
+                s.connect(c)
                 s.settimeout(0.2)
 
                 self._connected = True
 
                 if not is_ascii:
-                    self.send_version(s)
-
                     if user['ENum'].isnumeric():
                         self.send_direct_dial(s, user['ENum'])
+
+                    self.send_version(s)
 
                 while self._connected:
                     try:
@@ -165,7 +166,8 @@ class TelexITelexClient(txBase.TelexBase):
                             d = s.recv(1)
                             data += d
                             plen = d[0]
-                            data += s.recv(plen)
+                            if plen:
+                                data += s.recv(plen)
 
                             if data[0] == 0:   # Heartbeat
                                 #LOG('Heartbeat '+repr(data), 4)
@@ -201,9 +203,11 @@ class TelexITelexClient(txBase.TelexBase):
                                 pass
 
                             elif data[0] == 7 and plen >= 1:   # Version
-                                #LOG('Version '+repr(data), 4)
+                                LOG('Version '+repr(data), 4)
                                 if data[2] != 1:
                                     self.send_version(s)
+                                if user['ENum'].isnumeric():
+                                    self.send_direct_dial(s, user['ENum'])
 
                             elif data[0] == 8:   # Self test
                                 LOG('Self test '+repr(data), 4)
