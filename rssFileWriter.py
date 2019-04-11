@@ -33,8 +33,8 @@ if __name__ == "__main__":
 
         if new_ids is not None:
             for id in new_ids:
-                print(new_feed.entry[id].title)
-                print(new_feed.entry[id].summary)
+                print(new_feed.entries[id].title)
+                print(new_feed.entries[id].summary)
                 #outfile.flush()
             feed = new_feed
             feed_ids = new_feed_ids
