@@ -32,9 +32,10 @@ if __name__ == "__main__":
         new_ids = set(new_feed_ids) - set(feed_ids)
 
         if new_ids is not None:
-            for id in new_ids:
-                print(new_feed.entries[id].title)
-                print(new_feed.entries[id].summary)
+            elements = filter(lambda x: x.id in new_ids, new_feed.entries)
+            for element in elements:
+                print(element.title)
+                print(element.summary)
                 #outfile.flush()
             feed = new_feed
             feed_ids = new_feed_ids
