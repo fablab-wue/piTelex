@@ -69,6 +69,7 @@ class TelexNews(txBase.TelexBase):
 
         self._rx_buffer = []
         self._news_buffer = []
+        self._state_counter = 0
 
         self._observer = Observer()
         self._observer.schedule(self.EventHandler(self._news_buffer), path=self._newspath, recursive=True)
@@ -91,15 +92,29 @@ class TelexNews(txBase.TelexBase):
 
 
     def write(self, a:str, source:str):
-        pass
+        if len(a) != 1:
+            if a == '\x1bA':   # start session
+                self._state_counter = 0
+            if a == '\x1bZ':   # end session
+                self._state_counter = 1
+            if a == '\x1bWB':   # ready for dial
+                self._state_counter = 0
+            return
 
 
     def idle20Hz(self):
-        if self._news_buffer:
-            text = self._news_buffer.pop(0)
-            aa = txCode.BaudotMurrayCode.translate(text)
-            for a in aa:
-                self._rx_buffer.append(a)
+        if self._news_buffer and self._state_counter:
+            self._state_counter += 1
+            
+            if self._state_counter == 2:
+                self._rx_buffer.append('\x1bA')
+
+            if self._state_counter > 25:
+                text = self._news_buffer.pop(0)
+                aa = txCode.BaudotMurrayCode.translate(text)
+                aa = '\r\n' + aa + '\r\n\r\n\r\n'
+                for a in aa:
+                    self._rx_buffer.append(a)
 
 
 #######

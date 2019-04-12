@@ -86,6 +86,7 @@ class TelexController(txBase.TelexBase):
     def read(self) -> str:
         ret = ''
 
+
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
 
