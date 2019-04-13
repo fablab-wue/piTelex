@@ -95,6 +95,10 @@ def load():
         dest="news", default='', metavar="PATH",
         help="News from File")
 
+    gg.add_argument("-C", "--IRC", 
+        dest="irc", default='', metavar="CHANNEL",
+        help="IRC Client")
+
     gg.add_argument("-Z", "--eliza",
         dest="eliza", default=False, action="store_true", 
         help="Eliza chat bot")
@@ -186,6 +190,9 @@ def load():
 
     if ARGS.news:
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
+
+    if ARGS.irc:
+        devices['irc'] = {'type': 'irc', 'enable': True, 'channel': ARGS.irc.strip()}
 
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}
