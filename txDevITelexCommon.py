@@ -134,6 +134,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         LOG('Remote config '+repr(data), 4)
                         pass
 
+                    # Wrong packet - will resync at next socket.timeout
                     else:
                         LOG('ERROR Packet '+repr(data), 3)
                         packet_error = True
