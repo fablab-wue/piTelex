@@ -105,6 +105,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             # get IP of given number from Telex-Number-Server (TNS)
 
             user = self.query_userlist(number)
+            
             if not user:
                 user = self.query_TNS(number)
 

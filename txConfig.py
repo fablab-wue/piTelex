@@ -192,7 +192,7 @@ def load():
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
 
     if ARGS.irc:
-        devices['irc'] = {'type': 'irc', 'enable': True, 'channel': ARGS.irc.strip()}
+        devices['IRC'] = {'type': 'IRC', 'enable': True, 'channel': ARGS.irc.strip()}
 
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}
