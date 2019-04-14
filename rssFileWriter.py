@@ -5,11 +5,15 @@ import time
 import sys
 from argparse import ArgumentParser
 from glob import glob
+import html2text
 
 def formatted_write(output_path, rss_entry):
-    outfilenames = glob(output_path + "*.rsstx")
-    outfilename = output_path + "entry-%d.rsstx" % (len(outfilenames) + 1)
+    #outfilenames = glob(output_path + "*.rsstx")
+    #outfilename = output_path + "entry-%d.rsstx" % (len(outfilenames) + 1)
+    outfilename = "entry-" + time.strftime("%Y-%d-%b-%H:%M:%S", rss_entry.published_parsed) + ".rsstx"
     with open(outfilename, "w+") as outfile:
+        # in case of HTML pull lever
+        # text = html2text.html2text(html)
         print(entry.title) # TODO: format this stuff
         print("    " + entry.summary + "\n")
         outfile.write(entry.title + "\n")
