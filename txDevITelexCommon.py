@@ -10,6 +10,7 @@ __version__     = "0.0.1"
 
 from threading import Thread
 import socket
+import time
 
 import txCode
 import txBase
@@ -51,6 +52,7 @@ class TelexITelexCommon(txBase.TelexBase):
         sent_counter = 0
         received_counter = 0
         timeout_counter = -1
+        time_next_send = None
 
         s.settimeout(0.2)
 
@@ -115,7 +117,14 @@ class TelexITelexCommon(txBase.TelexBase):
                     # Acknowledge
                     elif data[0] == 6 and plen == 1:
                         #LOG('Acknowledge '+repr(data), 4)
-                        LOG(str(data[2])+'/'+str(sent_counter), 5)
+                        unprinted = (sent_counter - int(data[2])) & 0xFF
+                        #if unprinted < 0:
+                        #    unprinted += 256
+                        LOG(str(data[2])+'/'+str(sent_counter)+'='+str(unprinted), 4)
+                        if unprinted < 7:
+                            time_next_send = None
+                        else:
+                            time_next_send = time.time() + (unprinted-1)*0.15
                         pass
 
                     # Version
@@ -174,8 +183,14 @@ class TelexITelexCommon(txBase.TelexBase):
                             self.send_ack(s, received_counter)
 
                         if self._tx_buffer:
-                            sent = self.send_data_baudot(s, bmc)
-                            sent_counter += sent
+                            if time_next_send and time.time() < time_next_send:
+                                LOG(str(time_next_send-time.time()), 4)
+                                pass
+                            else:
+                                sent = self.send_data_baudot(s, bmc)
+                                sent_counter += sent
+                                if sent > 7:
+                                    time_next_send = time.time() + (sent-1)*0.15
                         
                         elif (timeout_counter % 15) == 0:   # every 3 sec
                             self.send_heartbeat(s)
@@ -231,7 +246,9 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def send_data_ascii(self, s):
         '''Send ASCII data direct'''
-        a = self._tx_buffer.pop(0)
+        a = ''
+        while self._tx_buffer and len(a) < 250:
+            a += self._tx_buffer.pop(0)
         data = a.encode('ASCII')
         s.sendall(data)
         return len(data)

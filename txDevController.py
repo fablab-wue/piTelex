@@ -181,17 +181,17 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 self._rx_buffer.extend(list(text))   # send text
                 return True
 
-            if a == '\x1bI':   # actual time
-                text = '[[[\r\n' + time.strftime("%Y-%m-%d  %H:%M", time.localtime()) + '\r\n'
-                if self.device_id:
-                    text += self.device_id   # send back device id
-                else:
-                    text += '#'
+            if a == '\x1bI':   # welcome as server
+                text = '[[[\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
+                #if self.device_id:
+                #    text += self.device_id   # send back device id
+                #else:
+                #    text += '#'
                 self._rx_buffer.extend(list(text))   # send text
                 return True
 
 
-            if a == '\x1bEXIT':   # print RY pattern (64 characters = 10sec@50baud)
+            if a == '\x1bEXIT':   # leave program
                 raise(SystemExit('EXIT'))
 
 

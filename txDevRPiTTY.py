@@ -275,7 +275,7 @@ class TelexRPiTTY(txBase.TelexBase):
         if self._pin_fsg_ns:
             if enable:
                 self._cb = pi.callback(self._pin_fsg_ns, pigpio.FALLING_EDGE, self._callback_pulse_dial)
-                pi.set_watchdog(self._pin_fsg_ns, 240)   # 240ms
+                pi.set_watchdog(self._pin_fsg_ns, 200)   # 200ms
             else:
                 pi.set_watchdog(self._pin_fsg_ns, 0)   # disable
 

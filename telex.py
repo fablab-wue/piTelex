@@ -67,10 +67,10 @@ def init():
             serial = txDevED1000SC.TelexED1000SC(**dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'telnet':
-            import txDevTelnetSrv
-            srv = txDevTelnetSrv.TelexTelnetSrv(**dev_param)
-            DEVICES.append(srv)
+        #if dev_param['type'] == 'telnet':
+        #    import txDevTelnetSrv
+        #    srv = txDevTelnetSrv.TelexTelnetSrv(**dev_param)
+        #    DEVICES.append(srv)
 
         if dev_param['type'] == 'i-Telex':
             import txDevITelexClient

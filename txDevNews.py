@@ -20,7 +20,7 @@ import txBase
 
 class TelexNews(txBase.TelexBase):
     class EventHandler(PatternMatchingEventHandler):
-        patterns = ["*.txt", "*.doc"]
+        patterns = ["*.txt", "*.rsstx", "*.news"]
         _last_path = ''
         _last_text = ''
 

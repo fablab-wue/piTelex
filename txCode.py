@@ -116,6 +116,7 @@ class BaudotMurrayCode:
         self._flip_bits = flip_bits
         self._loop_back = loop_back
         self._sync_layer = sync_layer
+        self._show_all_BuZi = True
         self._loop_back_eat_bytes = 0
         self._loop_back_expire_time = 0
         self._character_duration = character_duration
@@ -196,7 +197,8 @@ class BaudotMurrayCode:
                         self._ModeBM2A = mode
                         if self._loop_back or self._sync_layer:
                             self._ModeA2BM = self._ModeBM2A # on sending a sysmbol the machine switches itself to other symbol layer
-                        continue
+                        if not self._show_all_BuZi:
+                            continue
 
                 a = self._LUT_BM2A[self._ModeBM2A][b]
                 #if a == '\n':

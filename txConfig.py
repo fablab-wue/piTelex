@@ -87,9 +87,9 @@ def load():
         dest="itelex", default=-1, const=0, nargs='?', metavar='PORT', type=int,
         help="i-Telex Client and Server (if PORT>0)")
 
-    gg.add_argument("-T", "--telnet", 
-        dest="telnet", default=0, metavar='PORT', type=int,
-        help="Terminal Socket Server at Port Number")
+    #gg.add_argument("-T", "--telnet", 
+    #    dest="telnet", default=0, metavar='PORT', type=int,
+    #    help="Terminal Socket Server at Port Number")
 
     gg.add_argument("-N", "--news", 
         dest="news", default='', metavar="PATH",
@@ -182,8 +182,8 @@ def load():
             'zcarrier': False,
             }
 
-    if ARGS.telnet:
-        devices['telnet'] = {'type': 'telnet', 'enable': True, 'port': ARGS.telnet}
+    #if ARGS.telnet:
+    #    devices['telnet'] = {'type': 'telnet', 'enable': True, 'port': ARGS.telnet}
 
     if ARGS.itelex >= 0:
         devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex}
