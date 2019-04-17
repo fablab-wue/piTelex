@@ -61,7 +61,7 @@ class BaudotMurrayCode:
     _LUT_BMsw = [0x1F, 0x1B]
 
     # Baudot-Murray-Code valid ASCII table
-    _valid_char = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+/=().,:?\'~%$"!&;@#_*<|>[]{}\r\n'
+    _valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ~3\n- '87\r@4%,~:(5+)2~6019?~]./=[#"
     _replace_char = {
         '&': '(AND)',
         '€': '(EUR)',
@@ -77,6 +77,8 @@ class BaudotMurrayCode:
         '\t': '(TAB)',
         '\x1B': '(ESC)',
         '\x08': '(BACK)',
+        '<': '\r',
+        '|': '\n',
         }
 
     @staticmethod

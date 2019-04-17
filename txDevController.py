@@ -206,7 +206,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
 
 
         if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
-            self._rx_buffer.extend(list('\r\n' + self.device_id))   # send back device id
+            self._rx_buffer.extend(list('[\r\n' + self.device_id))   # send back device id
             return True
 
 

@@ -89,6 +89,7 @@ class TelexITelexCommon(txBase.TelexBase):
                     elif data[0] == 1 and plen == 1:
                         LOG('Direct Dial '+repr(data), 4)
                         self._rx_buffer.append('\x1bD'+str(data[2]))
+                        self.send_ack(s, received_counter)
 
                     # Baudot Data
                     elif data[0] == 2 and plen >= 1 and plen <= 50:
