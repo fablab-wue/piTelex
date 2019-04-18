@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 # -*- coding: future_fstrings -*-
 
 """
@@ -90,7 +89,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                         msg += '% '
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:') or not self.directed_only:
-                        if not last_date == time.gmtime(data["timestamp"]).tm_yday
+                        if last_date != time.gmtime(data["timestamp"]).tm_yday:
                             msg = f'{time.strftime("%A %d %B", time.gmtime(data["timestamp"]))}\n {msg}'
                             last_date = time.gmtime(data["timestamp"]).tm_yday
                         data = f'{time.strftime("%H:%M:%S", time.gmtime(data["timestamp"]))} {msg}\n'
