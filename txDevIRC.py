@@ -73,8 +73,8 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
         """
             IRC client handler
         """
-        while self.running:
         last_date = None
+        while self.running:
             try:
                 data = self.irc_client.get_msg()
                 if data is not None:
