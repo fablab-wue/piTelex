@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+
+# -*- coding: future_fstrings -*-
+
 """
 Fernschreiber IRC Client
 """
@@ -71,24 +74,28 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
             IRC client handler
         """
         while self.running:
+        last_date = None
             try:
                 data = self.irc_client.get_msg()
-
                 if data is not None:
+                    print(data)
                     if data['type'] == 'PRIVMSG':
-                        msg = f'[{data["channel"]}][{data["nick"]}]: {data["msg"]}'
+                        msg = f'={data["channel"][1:]} {data["nick"]}]: {data["msg"]}'
                     if data['type'] == 'ACTION':
-                        msg = f'[{data["channel"]}]: + {data["nick"]} {data["msg"]}'
+                        msg = f'={data["channel"][1:]} = {data["nick"]}] {data["msg"]}'
                     if data['type'] == 'TOPIC':
-                        msg = f'[{data["channel"]}]: TOPIC CHANGED by {data["nick"]}: {data["msg"]}'
+                        msg = f'={data["channel"][1:]} TOPIC CHANGED by {data["nick"]}: {data["msg"]}'
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:'):
-                        msg += '%'
+                        msg += '% '
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:') or not self.directed_only:
-                        data = f'{time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(data["timestamp"]))} | {msg}\n'
-
+                        if not last_date == time.gmtime(data["timestamp"]).tm_yday
+                            msg = f'{time.strftime("%A %d %B", time.gmtime(data["timestamp"]))}\n {msg}'
+                            last_date = time.gmtime(data["timestamp"]).tm_yday
+                        data = f'{time.strftime("%H:%M:%S", time.gmtime(data["timestamp"]))} {msg}\n'
                         data = bytes(data, 'utf8').decode('ASCII', errors='ignore').upper()
+                        print(data)
                         data = txCode.BaudotMurrayCode.translate(data)
                         for a in data:
                             self._rx_buffer.append(a)
