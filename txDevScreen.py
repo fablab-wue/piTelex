@@ -146,7 +146,7 @@ class TelexScreen(txBase.TelexBase):
                     return ''
 
                 if os.name == 'nt':
-                    c = k.decode('latin-1', errors='ignore')
+                    c = k.decode('cp850', errors='ignore')
                 else:
                     c = k
 
