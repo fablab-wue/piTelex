@@ -35,7 +35,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
         self.running = True
         self.chars_buffer = ''
 
-        self.irc_client = IRC_Client(params.get("irc_server", "irc.nerd2nerd.org"), params.get("irc_port", 6697), params.get("irc_nick", "telex"), params.get("irc_channel", "#tctesting"))
+        self.irc_client = IRC_Client(params.get("irc_server", "irc.nerd2nerd.org"), params.get("irc_port", 6697), params.get("irc_nick", "telex"), params.get("irc_channel", "#fablab"))
 
         self.thread = threading.Thread(target=self.thread_function, name='IRC_Handler')
         self.thread.start()
@@ -95,7 +95,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                             last_date = time.gmtime(data["timestamp"]).tm_yday
                         data = bytes(msg, 'utf8').decode('ASCII', errors='ignore').upper()
                         print(data)
-                        data = txCode.BaudotMurrayCode.translate(data)
+                        data = txCode.BaudotMurrayCode.translate(data, True)
                         for a in data:
                             self._rx_buffer.append(a)
 
