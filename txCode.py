@@ -50,6 +50,8 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import time
+import unicodedata
+#from unidecode import unidecode
 
 #######
 
@@ -61,12 +63,12 @@ class BaudotMurrayCode:
     _LUT_BMsw = [0x1F, 0x1B]
 
     # Baudot-Murray-Code valid ASCII table
-    _valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ~3\n- '87\r@4%,~:(5+)2~6019?~]./=[#"
-    _replace_char = {
+    #_valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ~3\n- '87\r@4%,~:(5+)2~6019?~]./=[#"
+    _valid_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r"
+    _LUT_convert_chars = {
         '&': '(AND)',
         '€': '(EUR)',
         '$': '(USD)',
-        '#': '(HASH)',
         '!': '(./)',
         'Ä': 'AE',
         'Ö': 'OE',
@@ -77,20 +79,48 @@ class BaudotMurrayCode:
         '\t': '(TAB)',
         '\x1B': '(ESC)',
         '\x08': '(BACK)',
-        '<': '\r',
-        '|': '\n',
+        '<': '(LT)',
+        '>': '(GT)',
+        '|': '(PIPE)',
+        '*': '(STAR)',
+        '#': '(HASH)',
+        '@': '(AT)',
+        '%': './.',
+        '[': '(',
+        ']': ')',
+        '{': '-(',
+        '}': ')-',
+        '\\': '/',
+        '_': '--',
         }
 
     @staticmethod
-    def translate(ansi:str) -> str:
-        ret = ''
-        ansi = ansi.upper()
+    def translate(text:str) -> str:
+        return BaudotMurrayCode.ascii_to_tty_text(text)
 
-        for a in ansi:
-            if a not in BaudotMurrayCode._valid_char:
-                a = BaudotMurrayCode._replace_char.get(a, '?')
-            ret += a
-        
+
+    @staticmethod
+    def ascii_to_tty_text(text:str) -> str:
+        ret = ''
+
+        text = text.upper()
+
+        for a in text:
+            try:
+                if a not in BaudotMurrayCode._valid_convert_chars:
+                    if a in BaudotMurrayCode._LUT_convert_chars:
+                        a = BaudotMurrayCode._LUT_convert_chars.get(a, '?')
+                    else:
+                        nkfd_norm = unicodedata.normalize('NFKD', a)
+                        a =  u"".join([c for c in nkfd_norm if not unicodedata.combining(c)])
+                        #a = unicodedata.normalize('NFD', a).encode('ascii', 'ignore')
+                        #a = unidecode(a)
+                        if a not in BaudotMurrayCode._valid_convert_chars:
+                            a = '?'
+                ret += a
+            except:
+                pass
+                        
         return ret
 
 

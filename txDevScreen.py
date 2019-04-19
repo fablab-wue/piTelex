@@ -33,15 +33,18 @@ else:
 #######
 
 class TelexScreen(txBase.TelexBase):
-    _replace_char = {
-        #'~': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',   # debug
+    _LUT_typed_special_chars = {
         '*': 'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
         '\r': '\r\n',
         '<': '\r',
         '|': '\n',
         '\x08': 'e e e ',
+        # pass through chars:
+        '#': '#',
+        '@': '@',
+        '~': '~',
         }
-    _replace_ctrl = {
+    _LUT_replace_windows_ctrl_chars = {
         b'H': '\x1bCU',   # Cursor up
         b'P': '\x1bCD',   # Cursor down
         b'K': '\x1bCL',   # Cursor left
@@ -53,7 +56,7 @@ class TelexScreen(txBase.TelexBase):
         b'I': '\x1bA',    # Page up
         b'Q': '\x1bZ',    # Page down
         }
-    _replace_escape = {
+    _LUT_replace_linux_escape_seqs = {
         '\x1b[a': '\x1bCU',    # Cursor up
         '\x1b[b': '\x1bCD',    # Cursor down
         '\x1b[d': '\x1bCL',    # Cursor left
@@ -131,7 +134,7 @@ class TelexScreen(txBase.TelexBase):
                 #print(int(k))
                 if k == b'\xe0':
                     k = self.getch()
-                    c = self._replace_ctrl.get(k, '')
+                    c = self._LUT_replace_windows_ctrl_chars.get(k, '')
                     if c:
                         print('\033[1;33;41m<'+c[1:]+'>\033[0m', end='', flush=True)
                         self._rx_buffer.append(c)
@@ -155,15 +158,17 @@ class TelexScreen(txBase.TelexBase):
                         self._escape = ''
                     else:
                         self._escape += c
-                        c = self._replace_escape.get(self._escape, '')
+                        c = self._LUT_replace_linux_escape_seqs.get(self._escape, '')
                         if c:
                             self._escape = c
                             self._rx_buffer.append(self._escape)
                             print('\033[0;92;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
                             self._escape = ''
                 else:
-                    c = self._replace_char.get(c, c)
-                    c = txCode.BaudotMurrayCode.translate(c)
+                    if c in self._LUT_typed_special_chars:
+                        c = self._LUT_typed_special_chars.get(c, '?')
+                    else:
+                        c = txCode.BaudotMurrayCode.ascii_to_tty_text(c)
 
                     for a in c:
                         self._rx_buffer.append(a)
