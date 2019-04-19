@@ -82,15 +82,21 @@ class BaudotMurrayCode:
         }
 
     @staticmethod
-    def translate(ansi:str) -> str:
+    def translate(ansi:str, escape_special:bool = False) -> str:
         ret = ''
         ansi = ansi.upper()
 
         for a in ansi:
+            if a == '#' and escape_special:
+                a = '='
+            if a == '|' and escape_special:
+                a = '-'
+            if a == '<':
+                a = '-'
             if a not in BaudotMurrayCode._valid_char:
                 a = BaudotMurrayCode._replace_char.get(a, '?')
             ret += a
-        
+
         return ret
 
 
