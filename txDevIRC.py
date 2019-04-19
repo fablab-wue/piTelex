@@ -90,9 +90,9 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:') or not self.directed_only:
                         if last_date != time.gmtime(data["timestamp"]).tm_yday:
-                            msg = f'{time.strftime("%A %d %B", time.gmtime(data["timestamp"]))}\n {msg}'
+                            msg = f'{time.strftime("%A %d %B", time.gmtime(data["timestamp"]))}\n\r {msg}'
                             last_date = time.gmtime(data["timestamp"]).tm_yday
-                        data = f'{time.strftime("%H:%M:%S", time.gmtime(data["timestamp"]))} {msg}\n'
+                        data = f'{time.strftime("%H:%M:%S", time.gmtime(data["timestamp"]))} {msg}\n\r'
                         data = bytes(data, 'utf8').decode('ASCII', errors='ignore').upper()
                         print(data)
                         data = txCode.BaudotMurrayCode.translate(data)
