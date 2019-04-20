@@ -74,7 +74,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                 self._time_delay = time.time() + 1
             return
     """
-    
+
     def read(self) -> str:
         if self._rx_buffer:
             return self._rx_buffer.pop(0)
@@ -82,7 +82,8 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
     def write(self, a: str, source: str):
         if len(a) != 1:
             return
-        self._tx_buffer.append(a)
+        if a not in "[]":
+            self._tx_buffer.append(a)
 
     def add_chars(self, chars):
         for char in chars:
