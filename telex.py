@@ -24,6 +24,7 @@ from argparse import ArgumentParser
 
 DEVICES = []
 TIME_20HZ = time.time()
+TIME_DELAY = None
 
 #######
 # -----
@@ -115,15 +116,23 @@ def exit():
 # =====
 
 def loop():
-    global TIME_20HZ
+    global TIME_20HZ, TIME_DELAY
 
-    for in_device in DEVICES:
-        c = in_device.read()
-        if c:
-            for out_device in DEVICES:
-                if out_device != in_device:
-                    if out_device.write(c, in_device.id):
-                        break
+    if TIME_DELAY and time.time() > TIME_DELAY:
+        TIME_DELAY = None
+
+    if not TIME_DELAY:
+        for in_device in DEVICES:
+            c = in_device.read()
+            if c:
+                for out_device in DEVICES:
+                    if out_device != in_device:
+                        ret = out_device.write(c, in_device.id)
+                        if ret is not None:
+                            if isinstance(ret, (int, float)):
+                                TIME_DELAY = time.time() + ret
+                            else:
+                                break
     
     for device in DEVICES:
         device.idle()
