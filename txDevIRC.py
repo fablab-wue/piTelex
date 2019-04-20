@@ -1,6 +1,13 @@
 #!/usr/bin/python3
+# -*- coding: future_fstrings -*-
+
 """
 Fernschreiber IRC Client
+
+requires python-fstrings
+pip3 install future-fstrings
+
+
 """
 __author__ = "TilCresonoator"
 __email__ = "tilcreator@tc-j.de, benjamin.kunz@gmail.com"
@@ -33,15 +40,40 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
         self.running = True
         self.chars_buffer = ''
 
-        self.irc_client = IRC_Client(params.get("irc_server", "irc.nerd2nerd.org"), params.get("irc_port", 6697), params.get("irc_nick", "telex"), params.get("irc_channel", "#tctesting"))
+        self.irc_client = IRC_Client(params.get("irc_server", "irc.nerd2nerd.org"), params.get("irc_port", 6697), params.get("irc_nick", "telextest"), params.get("irc_channel", "#tctesting"))
+
+        self._time_delay = None
 
         self.thread = threading.Thread(target=self.thread_function, name='IRC_Handler')
         self.thread.start()
+
 
     def exit(self):
         self.irc_client.stop()
         self.running = False
         self.thread.join()
+
+    """ jk's patched version
+    def read(self) -> str:
+        if self._rx_buffer:
+            if self._time_delay:
+                if time.time() > self._time_delay:
+                    return self._rx_buffer.pop(0)
+            else:
+                self._rx_buffer.append('\x1bA')
+                self._time_delay = time.time() + 1
+
+    def write(self, a: str, source: str):
+        if len(a) != 1:
+            if a == '\x1bA':
+                self._time_delay = time.time()
+            if a == '\x1bZ':
+                self._time_delay = None
+            if a == '\x1bWB':
+                self._rx_buffer.append('\x1bA')
+                self._time_delay = time.time() + 1
+            return
+    """
 
     def read(self) -> str:
         if self._rx_buffer:
@@ -50,8 +82,8 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
     def write(self, a: str, source: str):
         if len(a) != 1:
             return
-
-        self._tx_buffer.append(a)
+        if a not in "[]":
+            self._tx_buffer.append(a)
 
     def add_chars(self, chars):
         for char in chars:
@@ -70,27 +102,29 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
         """
             IRC client handler
         """
+        last_date = None
         while self.running:
             try:
                 data = self.irc_client.get_msg()
-
                 if data is not None:
+                    # TODO: wait for debian to catch up with real events
                     if data['type'] == 'PRIVMSG':
-                        msg = f'[{data["channel"]}][{data["nick"]}]: {data["msg"]}'
+                        msg = f'={data["channel"][1:]} {data["nick"]}: {data["msg"]}'
                     if data['type'] == 'ACTION':
-                        msg = f'[{data["channel"]}]: + {data["nick"]} {data["msg"]}'
+                        msg = f'={data["channel"][1:]} = {data["nick"]} {data["msg"]}'
                     if data['type'] == 'TOPIC':
-                        msg = f'[{data["channel"]}]: TOPIC CHANGED by {data["nick"]}: {data["msg"]}'
+                        msg = f'={data["channel"][1:]} TOPIC CHANGED by {data["nick"]}: {data["msg"]}'
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:'):
-                        msg += '%'
+                        self._rx_buffer.append(r'%')
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:') or not self.directed_only:
-                        data = f'{time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(data["timestamp"]))} | {msg}\n'
-
-                        data = bytes(data, 'utf8').decode('ASCII', errors='ignore').upper()
-                        data = txCode.BaudotMurrayCode.translate(data)
-                        for a in data:
+                        msg = f'{time.strftime("%H:%M:%S", time.gmtime(data["timestamp"]))} {msg}\n\r'
+                        if last_date != time.gmtime(data["timestamp"]).tm_yday:
+                            msg = f'{time.strftime("%A %d %B", time.gmtime(data["timestamp"]))}\n\r {msg}'
+                            last_date = time.gmtime(data["timestamp"]).tm_yday
+                        text = txCode.BaudotMurrayCode.ascii_to_tty_text(msg)
+                        for a in text:
                             self._rx_buffer.append(a)
 
                 if self._tx_buffer:
@@ -127,7 +161,7 @@ class IRC_Client():
 
         self._raw_send(f'USER {self.nick} 0 * :{self.nick}')
         self._raw_send(f'NICK {self.nick}')
-
+        # TODO: handle auto nick append when nick in use
         while not self.registered:
             pass
 

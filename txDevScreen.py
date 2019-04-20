@@ -35,7 +35,8 @@ else:
 class TelexScreen(txBase.TelexBase):
     _LUT_typed_special_chars = {
         '*': 'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
-        '\r': '\r\n',
+        '\r': '\r\n', # windows
+        '\n': '\r\n', # non-windows
         '<': '\r',
         '|': '\n',
         '\x08': 'e e e ',
@@ -116,10 +117,10 @@ class TelexScreen(txBase.TelexBase):
 
     def set_normal_term(self):
         ''' Resets to normal terminal.  On Windows this is a no-op. '''
-        
+
         if os.name == 'nt':
             pass
-        
+
         else:
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old_term)
 
@@ -127,7 +128,7 @@ class TelexScreen(txBase.TelexBase):
 
     def read(self) -> str:
         ret = ''
-        
+
         if self.kbhit():
             k = self.getch()
             if k:
@@ -221,7 +222,7 @@ class TelexScreen(txBase.TelexBase):
 
         else:
             dr, dw, de = select([sys.stdin], [], [], 0)
-            
+
             #dr, dw, de = select([self.fd], [], [], 0)
 
             return dr != []
