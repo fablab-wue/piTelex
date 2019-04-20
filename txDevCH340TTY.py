@@ -42,7 +42,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._counter_FIGS = 0
         self._counter_dial = 0
         self._time_last_dial = 0
-        self._cts_stable = True   # rxd=Low 
+        self._cts_stable = True   # rxd=Low
         self._cts_counter = 0
         self._time_squelch = 0
         self._is_enabled = False
@@ -107,6 +107,7 @@ class TelexCH340TTY(txBase.TelexBase):
         if mode.find('V.10') >= 0 or mode.find('V10') >= 0:
             self._use_cts = True
             self._inverse_cts = True
+            self._local_echo = True
             #self._inverse_dtr = True
 
     # -----
@@ -114,7 +115,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def __del__(self):
         self._tty.close()
         super().__del__()
-    
+
     # =====
 
     def read(self) -> str:
@@ -139,7 +140,7 @@ class TelexCH340TTY(txBase.TelexBase):
                     elif (b & 0x13) == 0x10:   # valid dial pulse - min 3 bits = 40ms, max 5 bits = 66ms
                         self._counter_dial += 1
                         self._time_last_dial = time.time()
-                
+
                 self._cts_counter = 0
 
                 if a:
@@ -157,7 +158,7 @@ class TelexCH340TTY(txBase.TelexBase):
         if len(a) != 1:
             self._check_commands(a)
             return
-            
+
         if a == '#':
             a = '@'   # ask teletype for hardware ID
 
@@ -232,7 +233,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def _set_pulse_dial(self, enable:bool):
         if not self._use_pulse_dial:
             return
-        
+
         if enable:
             self._tty.baudrate = 75   # fix baudrate to scan number switch
         else:
@@ -287,4 +288,3 @@ class TelexCH340TTY(txBase.TelexBase):
             self._set_enable(enable)
 
 #######
-
