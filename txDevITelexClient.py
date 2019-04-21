@@ -68,15 +68,12 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 self.disconnect_client()
 
             if a[:2] == '\x1b#':   # dial
-                self.connect_client(a[2:])
+                user = self.get_user(a[2:])
+                if user:
+                    self.connect_client(user)
 
             if a[:2] == '\x1b?':   # ask TNS
-                number = a[2:]
-                user = self.query_userlist(number)
-                if not user:
-                    user = self.query_TNS(number)
-                if not user and number[0] == '0':
-                    user = self.query_TNS(number[1:])
+                user = self.get_user(a[2:])
                 print(user)
             return
 
@@ -95,25 +92,14 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
     # =====
 
-    def connect_client(self, number:str):
-        Thread(target=self.thread_connect_as_client, name='iTelexC', args=(number.strip(),)).start()
+    def connect_client(self, user):
+        Thread(target=self.thread_connect_as_client, name='iTelexC', args=(user,)).start()
 
     # =====
 
-    def thread_connect_as_client(self, number):
+    def thread_connect_as_client(self, user):
         try:
             # get IP of given number from Telex-Number-Server (TNS)
-
-            user = self.query_userlist(number)
-            
-            if not user:
-                user = self.query_TNS(number)
-
-            if not user and number[0] == '0':
-                user = self.query_TNS(number[1:])
-
-            if not user:
-                return
                 
             is_ascii = user['Type'] in 'Aa'
 
@@ -140,6 +126,27 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         self._rx_buffer.append('\x1bZ')
 
     # =====
+
+    @classmethod
+    def get_user(cls, number:str):
+
+            number = number.replace('[', '')
+            number = number.replace(']', '')
+            number = number.replace(' ', '')
+
+            if len(number) < 2:
+                return
+
+            user = cls.query_userlist(number)
+            
+            if not user:
+                user = cls.query_TNS(number)
+
+            if not user and number[0] == '0':
+                user = cls.query_TNS(number[1:])
+
+            return user
+
 
     @classmethod
     def query_TNS(cls, number):

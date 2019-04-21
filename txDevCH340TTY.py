@@ -107,8 +107,8 @@ class TelexCH340TTY(txBase.TelexBase):
         if mode.find('V.10') >= 0 or mode.find('V10') >= 0:
             self._use_cts = True
             self._inverse_cts = True
-            self._local_echo = True
             #self._inverse_dtr = True
+            self._use_dedicated_line = False
 
     # -----
 
@@ -123,7 +123,8 @@ class TelexCH340TTY(txBase.TelexBase):
             a = ''
 
             bb = self._tty.read(1)
-            #self._tty.write(bb)
+            #if self._local_echo:
+            #    self._tty.write(bb)
 
             if bb and (not self._use_squelch or time.time() >= self._time_squelch):
                 if self._is_enabled or self._use_dedicated_line:
@@ -156,14 +157,14 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
-            self._check_commands(a)
-            return
+            return self._check_commands(a)
 
         if a == '#':
             a = '@'   # ask teletype for hardware ID
 
         if a:
-            self._tx_buffer.append(a)
+            if self._is_enabled or self._use_dedicated_line:
+                self._tx_buffer.append(a)
 
     # =====
 
@@ -286,5 +287,7 @@ class TelexCH340TTY(txBase.TelexBase):
 
         if enable is not None:
             self._set_enable(enable)
+            if enable:
+                return 1.0
 
 #######

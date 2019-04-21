@@ -9,7 +9,7 @@ __license__     = "GPL3"
 __version__     = "0.0.1"
 
 import txConfig
-import txDevController
+import txDevMCP
 
 import time
 import threading
@@ -37,7 +37,7 @@ def init():
 
     #mode = txConfig.CFG['mode'].strip()
 
-    ctrl = txDevController.TelexController(**txConfig.CFG)
+    ctrl = txDevMCP.TelexMCP(**txConfig.CFG)
     DEVICES.append(ctrl)
 
     for dev_name, dev_param in txConfig.CFG['devices'].items():
@@ -129,7 +129,7 @@ def loop():
                     if out_device != in_device:
                         ret = out_device.write(c, in_device.id)
                         if ret is not None:
-                            if isinstance(ret, (int, float)):
+                            if isinstance(ret, float):
                                 TIME_DELAY = time.time() + ret
                             else:
                                 break

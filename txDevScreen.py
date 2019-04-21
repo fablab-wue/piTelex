@@ -44,6 +44,9 @@ class TelexScreen(txBase.TelexBase):
         '#': '#',
         '@': '@',
         '~': '~',
+        '%': '%',
+        '[': '[',
+        ']': ']',
         }
     _LUT_replace_windows_ctrl_chars = {
         b'H': '\x1bCU',   # Cursor up
