@@ -39,10 +39,9 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
 
         self.running = True
         self.chars_buffer = ''
+        self._is_online = False
 
         self.irc_client = IRC_Client(params.get("irc_server", "irc.nerd2nerd.org"), params.get("irc_port", 6697), params.get("irc_nick", "telextest"), params.get("irc_channel", "#tctesting"))
-
-        self._time_delay = None
 
         self.thread = threading.Thread(target=self.thread_function, name='IRC_Handler')
         self.thread.start()
@@ -53,37 +52,29 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
         self.running = False
         self.thread.join()
 
-    """ jk's patched version
+    # =====
+
     def read(self) -> str:
         if self._rx_buffer:
-            if self._time_delay:
-                if time.time() > self._time_delay:
-                    return self._rx_buffer.pop(0)
-            else:
-                self._rx_buffer.append('\x1bA')
-                self._time_delay = time.time() + 1
+            if self._is_online:
+                return self._rx_buffer.pop(0)
+
 
     def write(self, a: str, source: str):
         if len(a) != 1:
             if a == '\x1bA':
-                self._time_delay = time.time()
+                self._is_online = True
             if a == '\x1bZ':
-                self._time_delay = None
+                self._is_online = False
             if a == '\x1bWB':
+                self._is_online = True
                 self._rx_buffer.append('\x1bA')
-                self._time_delay = time.time() + 1
             return
-    """
 
-    def read(self) -> str:
-        if self._rx_buffer:
-            return self._rx_buffer.pop(0)
-
-    def write(self, a: str, source: str):
-        if len(a) != 1:
-            return
         if a not in "[]":
             self._tx_buffer.append(a)
+
+    # =====
 
     def add_chars(self, chars):
         for char in chars:
@@ -97,6 +88,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                 self.chars_buffer = ''
                 continue
             self.chars_buffer += char
+
 
     def thread_function(self):
         """
@@ -116,7 +108,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                         msg = f'={data["channel"][1:]} TOPIC CHANGED by {data["nick"]}: {data["msg"]}'
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:'):
-                        self._rx_buffer.append(r'%')
+                        self._rx_buffer.append('\a')   # Bell
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:') or not self.directed_only:
                         msg = f'{time.strftime("%H:%M:%S", time.gmtime(data["timestamp"]))} {msg}\n\r'
@@ -139,6 +131,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
         logger.warn('end connection', 3)
         self._connected = False
 
+#######
 
 class IRC_Client():
     def __init__(self, server, port, nick, channel):

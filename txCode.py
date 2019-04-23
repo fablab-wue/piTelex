@@ -66,26 +66,31 @@ class BaudotMurrayCode:
     #_valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ~3\n- '87\r@4%,~:(5+)2~6019?~]./=[#"
     _valid_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r"
     _LUT_convert_chars = {
-        '&': '(AND)',
-        '€': '(EUR)',
-        '$': '(USD)',
-        '!': '(./)',
         'Ä': 'AE',
         'Ö': 'OE',
         'Ü': 'UE',
         'ß': 'SS',
-        ';': '.,',
-        '"': "'",
-        '\t': '(TAB)',
-        '\x1B': '(ESC)',
-        '\x08': '(BACK)',
+        '\a': '%',   # Bell
+        '\f': '(FF)',   # Form Feed
+        '\d': '(DEL)',   # Delete
+        '\t': '(TAB)',   # Tab
+        '\v': '(VT)',   # Vertical Tab
+        '\x1B': '(ESC)',   # Escape
+        '\b': '(BS)',   # Backspace
+        '\x08': '(BS)',   # Backspace
+        '&': '(AND)',
+        '€': '(EUR)',
+        '$': '(USD)',
         '<': '(LT)',
         '>': '(GT)',
         '|': '(PIPE)',
         '*': '(STAR)',
         '#': '(HASH)',
         '@': '(AT)',
-        '%': './.',
+        '"': "'",
+        ';': ',.',
+        '!': '(./)',
+        '%': '(./.)',
         '[': '(',
         ']': ')',
         '{': '-(',
