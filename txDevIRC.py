@@ -114,11 +114,12 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                         self._rx_buffer.append('\a')   # Bell
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:') or not self.directed_only:
-                        msg = f'{time.strftime("%H:%M:%S", time.gmtime(data["timestamp"]))} {msg}\n\r'
+                        msg = f'{time.strftime("%H:%M", time.gmtime(data["timestamp"]))} {msg}\n\r'
                         if last_date != time.gmtime(data["timestamp"]).tm_yday:
                             msg = f'{time.strftime("%A %d %B", time.gmtime(data["timestamp"]))}\n\r {msg}'
                             last_date = time.gmtime(data["timestamp"]).tm_yday
                         text = txCode.BaudotMurrayCode.ascii_to_tty_text(msg)
+                        # TODO: insert linebreak after 65 characters
                         for a in text:
                             self._rx_buffer.append(a)
 
