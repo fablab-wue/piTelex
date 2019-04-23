@@ -59,8 +59,8 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
             if self._is_online:
                 return self._rx_buffer.pop(0)
             else:
-                self._rx_buffer.append('\x1bA')
                 self._is_online = True
+                return '\x1bA'
 
 
     def write(self, a: str, source: str):
