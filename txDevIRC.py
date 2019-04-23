@@ -111,7 +111,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                         msg = f'={data["channel"][1:]} TOPIC CHANGED by {data["nick"]}: {data["msg"]}'
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:'):
-                        self._rx_buffer.append('\a')   # Bell
+                        msg = f'{msg}\a\a\a' # BEL
 
                     if data['msg'].startswith(f'{self.irc_client.nick}:') or not self.directed_only:
                         msg = f'{time.strftime("%H:%M", time.gmtime(data["timestamp"]))} {msg}\n\r'
