@@ -215,7 +215,7 @@ class IRC_Client():
     def thread_function(self):
         while self.running:
             data_raw = self.irc.recv(4096)
-            data = str(data_raw, 'utf8').replace('\n', '').split('\r')
+            data = str(data_raw, 'utf8', 'replace').replace('\n', '').split('\r')
 
             for line in data:
                 if line == '':
