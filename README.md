@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/Header.JPG" width="1024px">
 
-# piTelex
+# <img src="piTelexLogo.png" width="42px">- piTelex
 
 ### Control a historic Telex device with a Raspberry Pi (or PC) in Python 3.
 
