@@ -76,23 +76,23 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     d = s.recv(1)
                     data += d
-                    plen = d[0]
-                    if plen:
-                        data += s.recv(plen)
+                    packet_len = d[0]
+                    if packet_len:
+                        data += s.recv(packet_len)
 
                     # Heartbeat
-                    if data[0] == 0 and plen == 0:
+                    if data[0] == 0 and packet_len == 0:
                         #LOG('Heartbeat '+repr(data), 4)
                         pass
 
                     # Direct Dial
-                    elif data[0] == 1 and plen == 1:
+                    elif data[0] == 1 and packet_len == 1:
                         LOG('Direct Dial '+repr(data), 4)
                         self._rx_buffer.append('\x1bD'+str(data[2]))
                         self.send_ack(s, received_counter)
 
                     # Baudot Data
-                    elif data[0] == 2 and plen >= 1 and plen <= 50:
+                    elif data[0] == 2 and packet_len >= 1 and packet_len <= 50:
                         #LOG('Baudot data '+repr(data), 4)
                         aa = bmc.decodeBM2A(data[2:])
                         for a in aa:
@@ -103,12 +103,12 @@ class TelexITelexCommon(txBase.TelexBase):
                         self.send_ack(s, received_counter)
 
                     # End
-                    elif data[0] == 3 and plen == 0:
+                    elif data[0] == 3 and packet_len == 0:
                         LOG('End '+repr(data), 4)
                         break
 
                     # Reject
-                    elif data[0] == 4 and plen <= 20:
+                    elif data[0] == 4 and packet_len <= 20:
                         LOG('Reject '+repr(data), 4)
                         aa = bmc.translate(data[2:])
                         for a in aa:
@@ -116,31 +116,31 @@ class TelexITelexCommon(txBase.TelexBase):
                         break
 
                     # Acknowledge
-                    elif data[0] == 6 and plen == 1:
+                    elif data[0] == 6 and packet_len == 1:
                         #LOG('Acknowledge '+repr(data), 4)
                         unprinted = (sent_counter - int(data[2])) & 0xFF
                         #if unprinted < 0:
                         #    unprinted += 256
                         LOG(str(data[2])+'/'+str(sent_counter)+'='+str(unprinted), 4)
-                        if unprinted < 7:
+                        if unprinted < 7:   # about 1 sec
                             time_next_send = None
                         else:
-                            time_next_send = time.time() + (unprinted-1)*0.15
+                            time_next_send = time.time() + (unprinted-6)*0.15
                         pass
 
                     # Version
-                    elif data[0] == 7 and plen >= 1 and plen <= 20:
+                    elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
                         #LOG('Version '+repr(data), 4)
                         if not is_server or data[2] != 1:
                             self.send_version(s)
 
                     # Self test
-                    elif data[0] == 8 and plen >= 2:
+                    elif data[0] == 8 and packet_len >= 2:
                         LOG('Self test '+repr(data), 4)
                         pass
 
                     # Remote config
-                    elif data[0] == 9 and plen >= 3:
+                    elif data[0] == 9 and packet_len >= 3:
                         LOG('Remote config '+repr(data), 4)
                         pass
 
@@ -185,13 +185,13 @@ class TelexITelexCommon(txBase.TelexBase):
 
                         if self._tx_buffer:
                             if time_next_send and time.time() < time_next_send:
-                                LOG(str(time_next_send-time.time()), 4)
+                                LOG('Wait'+str(int(time_next_send-time.time())), 4)
                                 pass
                             else:
                                 sent = self.send_data_baudot(s, bmc)
                                 sent_counter += sent
                                 if sent > 7:
-                                    time_next_send = time.time() + (sent-1)*0.15
+                                    time_next_send = time.time() + (sent-6)*0.15
                         
                         elif (timeout_counter % 15) == 0:   # every 3 sec
                             self.send_heartbeat(s)

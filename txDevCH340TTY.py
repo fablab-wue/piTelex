@@ -32,7 +32,7 @@ class TelexCH340TTY(txBase.TelexBase):
         baudrate = params.get('baudrate', 50)
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
-        uscoding = params.get('uscoding', False)
+        coding = params.get('coding', False)
         loopback = params.get('loopback', None)
         self._local_echo = params.get('loc_echo', False)
 
@@ -70,7 +70,7 @@ class TelexCH340TTY(txBase.TelexBase):
         # init codec
         #character_duration = (bytesize + 1.0 + stopbits) / baudrate
         character_duration = (bytesize + 3.0 ) / baudrate   # CH340 sends always with 2 stop bits
-        self._mc = txCode.BaudotMurrayCode(self._loopback, us_coding=uscoding, character_duration=character_duration)
+        self._mc = txCode.BaudotMurrayCode(self._loopback, coding=coding, character_duration=character_duration)
 
         self._set_enable(False)
         self._set_online(False)

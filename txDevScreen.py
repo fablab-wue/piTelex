@@ -47,6 +47,8 @@ class TelexScreen(txBase.TelexBase):
         '%': '%',
         '[': '[',
         ']': ']',
+        '\t': '\t',
+        #'\t': '\x1bTAB',
         }
     _LUT_replace_windows_ctrl_chars = {
         b'H': '\x1bCU',   # Cursor up
@@ -174,14 +176,17 @@ class TelexScreen(txBase.TelexBase):
                     else:
                         c = txCode.BaudotMurrayCode.ascii_to_tty_text(c)
 
-                    for a in c:
-                        self._rx_buffer.append(a)
+                    if c[0] == '\x1b':
+                        self._rx_buffer.append(c)
+                    else:
+                        for a in c:
+                            self._rx_buffer.append(a)
 
-                        # local echo
-                        if a == '\r' or a == '\n':
-                            print(a, end='')
-                        else:
-                            print('\033[1;31m'+a+'\033[0m', end='', flush=True)
+                            # local echo
+                            if a == '\r' or a == '\n':
+                                print(a, end='')
+                            else:
+                                print('\033[1;31m'+a+'\033[0m', end='', flush=True)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)

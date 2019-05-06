@@ -57,7 +57,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         self._inv_rxd = params.get('inv_rxd', False)
         #self._inv_txd = params.get('inv_txd', False)
-        self._uscoding = params.get('uscoding', False)
+        self._coding = params.get('coding', False)
         self._loopback = params.get('loopback', True)
 
         self._tx_buffer = []
@@ -82,7 +82,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         # init codec
         character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate
-        self._mc = txCode.BaudotMurrayCode(self._loopback, us_coding=self._uscoding, character_duration=character_duration)
+        self._mc = txCode.BaudotMurrayCode(self._loopback, coding=self._coding, character_duration=character_duration)
         
         # init GPIOs
         pi.set_pad_strength(0, 8)

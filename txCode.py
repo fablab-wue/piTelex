@@ -99,6 +99,7 @@ class BaudotMurrayCode:
         '_': '--',
         }
 
+
     @staticmethod
     def translate(text:str) -> str:
         return BaudotMurrayCode.ascii_to_tty_text(text)
@@ -147,7 +148,7 @@ class BaudotMurrayCode:
         return ret
 
 
-    def __init__(self, loop_back:bool=False, us_coding=False, flip_bits=False, character_duration=0.15, sync_layer:bool=True):
+    def __init__(self, loop_back:bool=False, coding=False, flip_bits=False, character_duration=0.15, sync_layer:bool=True):
         self._ModeA2BM = None   # 0=LTRS 1=FIGS
         self._ModeBM2A = 0   # 0=LTRS 1=FIGS
         self._flip_bits = flip_bits
@@ -157,7 +158,7 @@ class BaudotMurrayCode:
         self._loop_back_eat_bytes = 0
         self._loop_back_expire_time = 0
         self._character_duration = character_duration
-        if us_coding:
+        if coding == 'US':
             self._LUT_BM2A = self._LUT_BM2A_US
         else:
             self._LUT_BM2A = self._LUT_BM2A_STD
@@ -242,6 +243,7 @@ class BaudotMurrayCode:
                 #    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
                 ret += a
             except:
+                ret += '!'   # debug
                 pass
 
         return ret

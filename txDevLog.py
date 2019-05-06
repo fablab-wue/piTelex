@@ -50,6 +50,8 @@ class TelexLog(txBase.TelexBase):
             a = '<'
         if a == '\n':
             a = '|'
+        if a == '\t':
+            a = '\\t'
         if len(a) > 1:
             a = '{' + a[1:] + '}'
 
@@ -73,7 +75,7 @@ class TelexLog(txBase.TelexBase):
             line += self._line
             line += add
 
-            with open(self._filename, 'a', encoding='latin-1') as fp:
+            with open(self._filename, 'a', encoding='UTF-8') as fp:
                 line += '\n'
                 fp.write(line)
 

@@ -63,7 +63,7 @@ class TelexMCP(txBase.TelexBase):
         self._mx_buffer = []
 
         self._font_mode = False
-        self._dial_mode = False
+        self._mode = 'Z'
         self._dial_number = ''
 
         self._wd = watchdog()
@@ -97,29 +97,42 @@ class TelexMCP(txBase.TelexBase):
         if len(a) != 1:
             if a == '\x1bAT':   # AT
                 self._rx_buffer.append('\x1bWB')   # send text
-                self._dial_mode = True
+                self._mode = 'WB'
                 self._dial_number = ''
                 self._wd.reset('ONLINE')
                 return True
 
             if a == '\x1bST':   # ST
                 self._rx_buffer.append('\x1bZ')   # send text
-                self._dial_mode = False
+                self._mode = 'Z'
                 self._wd.disable('ONLINE')
                 return True
 
             if a == '\x1bLT':   # LT
                 self._rx_buffer.append('\x1bA')   # send text
-                self._dial_mode = False
+                self._mode = 'A'
                 self._wd.reset('ONLINE')
                 return True
 
             if a == '\x1bZ':   # stop motor
-                self._dial_mode = False
+                self._mode = 'Z'
                 self._wd.disable('ONLINE')
             if a == '\x1bA':   # start motor
-                self._dial_mode = False
+                self._mode = 'A'
                 self._wd.reset('ONLINE')
+
+
+            if a == '\x1bTAB':   # next mode
+                if self._mode == 'Z':
+                    self._rx_buffer.append('\x1bWB')   # send text
+                    self._mode = 'WB'
+                elif self._mode == 'WB':
+                    self._rx_buffer.append('\x1bA')   # send text
+                    self._mode = 'A'
+                elif self._mode == 'A':
+                    self._rx_buffer.append('\x1bZ')   # send text
+                    self._mode = 'Z'
+                return True
 
 
             if a == '\x1bFONT':   # set to font mode
@@ -210,7 +223,20 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
             return True
 
 
-        if self._dial_mode:
+        if a == '\t':   # next mode
+            if self._mode == 'Z':
+                self._rx_buffer.append('\x1bWB')   # send text
+                self._mode = 'WB'
+            elif self._mode == 'WB':
+                self._rx_buffer.append('\x1bA')   # send text
+                self._mode = 'A'
+            elif self._mode == 'A':
+                self._rx_buffer.append('\x1bZ')   # send text
+                self._mode = 'Z'
+            return True
+
+
+        if self._mode == 'WB':
             #if a == '0':   # hack!!!! to test the pulse dial
             #    self._rx_buffer.append('\x1bA')   # send text
             self._dial_number += a
