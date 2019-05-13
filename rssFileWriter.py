@@ -16,16 +16,16 @@ h.ignore_tables = True
 def formatted_write(output_path, rss_entry):
     #outfilenames = glob(output_path + "*.rsstx")
     #outfilename = output_path + "entry-%d.rsstx" % (len(outfilenames) + 1)
-    outfilename = "NEWS-" + time.strftime("%Y-%m-%dT%H%M%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) + ".rsstx"
+    outfilename = output_path + "NEWS-" + time.strftime("%Y-%m-%dT%H%M%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) + ".rsstx"
     with open(outfilename, "w+") as outfile:
         # in case of HTML pull lever
         # text = html2text.html2text(html)
-        summary = h.handle(entry.summary)
+        summary = h.handle(rss_entry.summary)
         summary = summary.replace('\n', ' ')
         print(outfilename)
-        print(entry.title) # TODO: format this stuff
+        print(rss_entry.title) 
         print("    " + summary + "\n")
-        outfile.write(entry.title + "\n")
+        outfile.write(rss_entry.title + "\n")
         outfile.write("    " + summary )
 
 if __name__ == "__main__":
