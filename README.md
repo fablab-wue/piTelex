@@ -14,7 +14,7 @@ Our ambition is also to support all telex features as AT/ST buttons and pulse di
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="120px" align="right">
 
-One part of the project is the hardware to adapt the **current loop** for **TW39** to modern logic level ports. The 5V or 3.3V TTL lines can be connected directly to an USB-serial-adapter or the GPIO pins of a Raspberry Pi. The current loop is designed as an analog **40mA** current regulator in combination with the switching transistor.
+One part of the project is the hardware to adapt the **current loop** for **TW39** to modern logic level ports. The 5V or 3.3V TTL lines can be connected directly to an USB-serial-adapter or the GPIO pins of a Raspberry Pi. <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/RPiPCB.JPG" width="120px" align="right">The current loop is designed as an analog **40mA** current regulator in combination with the switching transistor.
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/V.10.JPG" width="120px" align="right">
 
