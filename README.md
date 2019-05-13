@@ -2,10 +2,9 @@
 
 # <img src="piTelexLogo.png" width="42px">- piTelex
 
-
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/RPiTW39.JPG" width="240px" align="right">
 
-### Control a historic Telex device with a Raspberry Pi or PC in Python 3.
+### Control a historic Telex device with a Raspberry Pi or PC in Python 3
 
 The goal is to connect a historic telex device (teletype) with **TW39** protocol on a **current loop** to a modern **Windows/Linux-PC** (over USB) or a **Raspberry Pi** (over GPIO) with minimal hardware.
 
@@ -15,11 +14,13 @@ Our ambition is also to support all telex features as AT/ST buttons and pulse di
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="120px" align="right">
 
-One part of the project is the hardware to adapt the **40mA current loop** for **TW39** to modern logic level ports. The 5V or 3.3V TTL lines can be connected directly to an USB-adapter or the GPIO pins of a Raspberry Pi.
+One part of the project is the hardware to adapt the **current loop** for **TW39** to modern logic level ports. The 5V or 3.3V TTL lines can be connected directly to an USB-serial-adapter or the GPIO pins of a Raspberry Pi.
+
+The current loop is designed as an analog 40mA current regulator in combination with the switching transistor.
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/V.10.JPG" width="120px" align="right">
 
-As side effect teletypes with **V.10 interface** (like TeKaDe FS200 / FS220) can also be connected to USB-to-RS232-adapter with a DIY adapter cable. The interface is completely handled by the software. (No FAG200 is needed)
+As side effect teletypes with **V.10 interface** (like TeKaDe FS200 / FS220) can also be connected to USB-to-RS232-adapter with a DIY adapter cable. The V.10 interface is completely handled by the software. (No FAG200 is needed)
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/ED1000SC.JPG" width="120px" align="right">
 
