@@ -14,9 +14,7 @@ Our ambition is also to support all telex features as AT/ST buttons and pulse di
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="120px" align="right">
 
-One part of the project is the hardware to adapt the **current loop** for **TW39** to modern logic level ports. The 5V or 3.3V TTL lines can be connected directly to an USB-serial-adapter or the GPIO pins of a Raspberry Pi.
-
-The current loop is designed as an analog 40mA current regulator in combination with the switching transistor.
+One part of the project is the hardware to adapt the **current loop** for **TW39** to modern logic level ports. The 5V or 3.3V TTL lines can be connected directly to an USB-serial-adapter or the GPIO pins of a Raspberry Pi. The current loop is designed as an analog **40mA** current regulator in combination with the switching transistor.
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/V.10.JPG" width="120px" align="right">
 
@@ -30,7 +28,7 @@ Another playground is the **ED1000 interface** used by (more) modern teletypes (
 
 The other part is the Python software to send and receive the serial data (50 baud, 5 data-bits) and decode the "**Baudot-Murray-Code**" character set (also called "CCITT-2" or "ITA2") to ASCII.
 
-With the characters arrived in the PC/RPi the data can be routed to an internet services like [i-Telex](https://www.i-telex.net), Telnet, eMail or IRC. The teletype can also be (miss-) used as a steampunk printer or keyboard.
+With the characters arrived in the PC / RPi the data can be routed to an internet services like [i-Telex](https://www.i-telex.net), Telnet, eMail, RSS or IRC. The teletype can also be (miss-) used as a steampunk printer or keyboard.
 
 The software supports also a connection to another telex device in the **[i-Telex Network](https://www.i-telex.net)** over TCP/IP.
 
