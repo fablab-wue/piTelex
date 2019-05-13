@@ -10,7 +10,7 @@ The goal is to connect a historic telex device (teletype) with **TW39** protocol
 
 Our ambition is also to support all telex features as AT/ST buttons and pulse dialing for handling the teletype like in the good old days.
 
-##### Hardware
+#### Hardware
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="120px" align="right">
 
@@ -20,13 +20,13 @@ The current loop is designed as an analog 40mA current regulator in combination 
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/V.10.JPG" width="120px" align="right">
 
-As side effect teletypes with **V.10 interface** (like TeKaDe FS200 / FS220) can also be connected to USB-to-RS232-adapter with a DIY adapter cable. The V.10 interface is completely handled by the software. (No FAG200 is needed)
+As side effect teletypes with **V.10 interface** (like TeKaDe FS200Z / FS220Z) can also be connected to a USB-to-RS232-adapter with a simple DIY adapter cable. The V.10 interface control lines are completely handled by the software (No FAG200 is needed).
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/ED1000SC.JPG" width="120px" align="right">
 
 Another playground is the **ED1000 interface** used by (more) modern teletypes (like Siemens T1000, T1200 or SEL Lo2000, Lo3000). It is based on frequency-shift-keying (FSK) and is handled by a USB sound card, a few passive components and a lot of software.
 
-##### Software
+#### Software
 
 The other part is the Python software to send and receive the serial data (50 baud, 5 data-bits) and decode the "**Baudot-Murray-Code**" character set (also called "CCITT-2" or "ITA2") to ASCII.
 
@@ -34,7 +34,7 @@ With the characters arrived in the PC/RPi the data can be routed to an internet 
 
 The software supports also a connection to another telex device in the **[i-Telex Network](https://www.i-telex.net)** over TCP/IP.
 
-##### Documentation
+#### Documentation
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/TW39Call7.png" width="180px" align="right">
 
