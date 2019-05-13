@@ -17,9 +17,7 @@ def formatted_write(output_path, rss_entry):
     #outfilenames = glob(output_path + "*.rsstx")
     #outfilename = output_path + "entry-%d.rsstx" % (len(outfilenames) + 1)
     outfilename = output_path + "NEWS-" + time.strftime("%Y-%m-%dT%H%M%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) + ".rsstx"
-    with open(outfilename, "w+") as outfile:
-        # in case of HTML pull lever
-        # text = html2text.html2text(html)
+    with open(outfilename, "a+") as outfile:
         summary = h.handle(rss_entry.summary)
         summary = summary.replace('\n', ' ')
         print(outfilename)
