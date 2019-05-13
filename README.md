@@ -2,30 +2,45 @@
 
 # <img src="piTelexLogo.png" width="42px">- piTelex
 
-### Control a historic Telex device with a Raspberry Pi (or PC) in Python 3.
 
-<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/RPiTW39.JPG" width="200px" align="right">
+<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/RPiTW39.JPG" width="240px" align="right">
 
-The goal is to connect a historic telex device (teletype) with **TW39** protocol on a **current loop** to a modern **Windows/Linux-PC** (over USB) and/or a **Raspberry Pi** (over GPIO) with minimal hardware.
+### Control a historic Telex device with a Raspberry Pi or PC in Python 3.
 
-<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="200px" align="right">
+The goal is to connect a historic telex device (teletype) with **TW39** protocol on a **current loop** to a modern **Windows/Linux-PC** (over USB) or a **Raspberry Pi** (over GPIO) with minimal hardware.
 
-One part of the project is the hardware to adapt the **current loop** for **TW39** to modern logic level ports.
+Our ambition is also to support all telex features as AT/ST buttons and pulse dialing for handling the teletype like in the good old days.
+
+##### Hardware
+
+<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="120px" align="right">
+
+One part of the project is the hardware to adapt the **40mA current loop** for **TW39** to modern logic level ports. The 5V or 3.3V TTL lines can be connected directly to an USB-adapter or the GPIO pins of a Raspberry Pi.
+
+<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/V.10.JPG" width="120px" align="right">
+
+As side effect teletypes with **V.10 interface** (like TeKaDe FS200 / FS220) can also be connected to USB-to-RS232-adapter with a DIY adapter cable. The interface is completely handled by the software. (No FAG200 is needed)
+
+<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/ED1000SC.JPG" width="120px" align="right">
+
+Another playground is the **ED1000 interface** used by (more) modern teletypes (like Siemens T1000, T1200 or SEL Lo2000, Lo3000). It is based on frequency-shift-keying (FSK) and is handled by a USB sound card, a few passive components and a lot of software.
+
+##### Software
 
 The other part is the Python software to send and receive the serial data (50 baud, 5 data-bits) and decode the "**Baudot-Murray-Code**" character set (also called "CCITT-2" or "ITA2") to ASCII.
 
-With the characters arrived in the PC/RPi the data can be routed to [i-Telex](https://www.i-telex.net), eMail or IRC. The telex can also be (miss-) used as printer or keyboard.
+With the characters arrived in the PC/RPi the data can be routed to an internet services like [i-Telex](https://www.i-telex.net), Telnet, eMail or IRC. The teletype can also be (miss-) used as a steampunk printer or keyboard.
 
-The software supports also a connection to an other [i-Telex](https://www.i-telex.net) device over internet.
+The software supports also a connection to another telex device in the **[i-Telex Network](https://www.i-telex.net)** over TCP/IP.
 
-<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/V.10.JPG" width="200px" align="right">
+##### Documentation
 
-As side effect teletypes with **V.10** inteface (like TeKaDe FS200 / FS220) can also be connected to USB-to-RS232-adapter with a DIY adapter cable. The protocol is completely handled by the software. (No FAG200 is needed)
+<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/TW39Call7.png" width="180px" align="right">
 
-<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/ED1000SC.JPG" width="200px" align="right">
+For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.
 
-An other playground is the ED1000 interface used by (more) modern teletypes. It is based on frequency-shift-keying (FSK) and will be handled by a USB sound card, a few passive components and a lot of software.
+<hr>
 
-> The software and hardware is still in BETA state. First test releases are out in the field...
+> The software and hardware are still in BETA state. First test releases are out in the field...
 
 [**For more informations see the WIKI pages**](https://github.com/fablab-wue/piTelex/wiki)
