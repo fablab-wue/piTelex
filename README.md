@@ -26,6 +26,8 @@ Another playground is the **ED1000 interface** used by (more) modern teletypes (
 
 #### Software
 
+<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/SW_Modules.png" width="240px" align="right">
+
 The other part is the Python software to send and receive the serial data (50 baud, 5 data-bits) and decode the "**Baudot-Murray-Code**" character set (also called "CCITT-2" or "ITA2") to ASCII.
 
 With the characters arrived in the PC / RPi the data can be routed to an internet services like [i-Telex](https://www.i-telex.net), Telnet, eMail, RSS or IRC. The teletype can also be (miss-) used as a steampunk printer or keyboard.
@@ -34,7 +36,7 @@ The software supports also a connection to another telex device in the **[i-Tele
 
 #### Documentation
 
-<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/TW39Call7.png" width="180px" align="right">
+<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/TW39Call8.png" width="180px" align="right">
 
 For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.
 
