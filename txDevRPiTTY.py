@@ -31,6 +31,60 @@ if not pi.connected:
     raise(Exception('no connection to remote RPi'))
 
 #######
+
+class LED_PWM():
+    def __init__(self, pin):
+        #super().__init__()
+
+        self._pin = pin
+        self._dst = 0
+        self._val = 0
+        self._prv = -1
+        pi.set_mode(pin, pigpio.OUTPUT)   # output
+        pi.write(pin, 0)   # off
+        pi.set_PWM_frequency(pin, 200)   # 200Hz
+        pi.set_PWM_range(pin, 400)   # 0...20²
+        pi.set_PWM_dutycycle(pin, 0)   # off
+
+    def process_fade(self):
+        if self._val > self._dst:
+            self._val -= 1
+        if self._val < self._dst:
+            self._val += 1
+        val = self._val
+        if val < 0:
+            val = 0
+        if val > 20:
+            val = 20
+        if self._prv != val:
+            self._prv = val
+            pi.set_PWM_dutycycle(self._pin, val*val)   # output with gamma
+
+    def set_fade_dest(self, dst:int, val:int=None):
+        self._dst = dst
+        if self._val is not None:
+            self._val = val
+
+    def set_fade_value(self, val:int):
+        self._val = val
+
+    def add_fade_value(self, val:int):
+        self._val += val
+
+#######
+
+class Button():
+    def __init__(self, pin, callback):
+        #super().__init__()
+
+        self._pin = pin
+        pi.set_mode(pin, pigpio.INPUT)
+        pi.set_pull_up_down(pin, pigpio.PUD_UP)
+        pi.set_glitch_filter(pin, 50000)   # 50ms
+        pi.callback(pin, pigpio.FALLING_EDGE, callback)
+
+#######
+
 class TelexRPiTTY(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
@@ -54,6 +108,8 @@ class TelexRPiTTY(txBase.TelexBase):
         self._pin_fsg_at = params.get('pin_fsg_at', 8)   # button AT optional
         self._pin_fsg_st = params.get('pin_fsg_st', 7)   # button ST optional
         self._pin_fsg_lt = params.get('pin_fsg_lt', 0)   # button LT optional
+        self._pin_status_r = params.get('pin_status_r', 23)   # LED red
+        self._pin_status_g = params.get('pin_status_g', 24)   # LED green
 
         self._inv_rxd = params.get('inv_rxd', False)
         #self._inv_txd = params.get('inv_txd', False)
@@ -105,21 +161,17 @@ class TelexRPiTTY(txBase.TelexBase):
         pi.set_mode(self._pin_dir, pigpio.OUTPUT)   # direction of comminication
         pi.write(self._pin_dir, 0)   # 1=transmitting
 
+        if self._pin_status_r and self._pin_status_g:
+            self._status_LED_r = LED_PWM(self._pin_status_r)
+            self._status_LED_g = LED_PWM(self._pin_status_g)
+            self.status('INIT')
+
         if self._pin_fsg_at:
-            pi.set_mode(self._pin_fsg_at, pigpio.INPUT)
-            pi.set_pull_up_down(self._pin_fsg_at, pigpio.PUD_UP)
-            pi.set_glitch_filter(self._pin_fsg_at, 50000)   # 50ms
-            pi.callback(self._pin_fsg_at, pigpio.FALLING_EDGE, self._callback_button_at)
+            self._button_at = Button(self._pin_fsg_at, self._callback_button_at)
         if self._pin_fsg_st:
-            pi.set_mode(self._pin_fsg_st, pigpio.INPUT)
-            pi.set_pull_up_down(self._pin_fsg_st, pigpio.PUD_UP)
-            pi.set_glitch_filter(self._pin_fsg_st, 50000)   # 50ms
-            pi.callback(self._pin_fsg_st, pigpio.FALLING_EDGE, self._callback_button_st)
+            self._button_st = Button(self._pin_fsg_st, self._callback_button_st)
         if self._pin_fsg_lt:
-            pi.set_mode(self._pin_fsg_lt, pigpio.INPUT)
-            pi.set_pull_up_down(self._pin_fsg_lt, pigpio.PUD_UP)
-            pi.set_glitch_filter(self._pin_fsg_lt, 50000)   # 50ms
-            pi.callback(self._pin_fsg_lt, pigpio.FALLING_EDGE, self._callback_button_lt)
+            self._button_lt = Button(self._pin_fsg_lt, self._callback_button_lt)
 
         self._set_enable(False)
         self._set_online(False)
@@ -151,6 +203,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def read(self) -> str:
         if self._rx_buffer:
+            self.status('C')
             return self._rx_buffer.pop(0)
 
     # -----
@@ -165,6 +218,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         if a:
             self._tx_buffer.append(a)
+            self.status('C')
 
     # =====
 
@@ -205,6 +259,10 @@ class TelexRPiTTY(txBase.TelexBase):
             
             self._rxd_counter = 0
 
+        if self._status_LED_r:
+            self._status_LED_r.process_fade()
+            self._status_LED_g.process_fade()
+
     # -----
 
     def idle(self):
@@ -224,6 +282,7 @@ class TelexRPiTTY(txBase.TelexBase):
             self._set_pulse_dial(False)
             self._set_online(True)
             enable = True
+            self.status('A')
 
         if a == '\x1bZ':
             self._tx_buffer = []    # empty write buffer...
@@ -232,6 +291,7 @@ class TelexRPiTTY(txBase.TelexBase):
             enable = False   #self._use_dedicated_line
             if not enable and self._use_squelch:
                 self._set_time_squelch(1.5)
+            self.status('Z')
 
         if a == '\x1bWB':
             self._set_online(True)
@@ -244,6 +304,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 enable = False
             else:   # dedicated line, TWM, V.10
                 enable = True
+            self.status('WB')
 
         if enable is not None:
             self._set_enable(enable)
@@ -332,8 +393,10 @@ class TelexRPiTTY(txBase.TelexBase):
                 #self._rx_buffer += str(self._pulse_dial_count)
                 self._rx_buffer.append(str(self._pulse_dial_count))
                 self._pulse_dial_count = 0
+                self.status('PE')
         elif level == pigpio.LOW:
             self._pulse_dial_count += 1
+            self.status('P')
 
     # -----
 
@@ -345,6 +408,39 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def _callback_button_lt(self, gpio, level, tick):
         self._rx_buffer.append('\x1bLT')
+
+    # =====
+
+    def status(self, status:str):
+        if not self._status_LED_r:
+            return
+
+        if status == 'Z':
+            self._status_LED_r.set_fade_dest(1, 20)
+            self._status_LED_g.set_fade_dest(0, 0)
+
+        if status == 'A':
+            self._status_LED_r.set_fade_dest(0, 0)
+            self._status_LED_g.set_fade_dest(10, 20)
+
+        if status == 'WB':
+            self._status_LED_r.set_fade_dest(8, 16)
+            self._status_LED_g.set_fade_dest(12, 20)
+
+        if status == 'C':
+            self._status_LED_r.add_fade_value(3)
+
+        if status == 'P':
+            self._status_LED_r.add_fade_value(2)
+            self._status_LED_g.add_fade_value(-2)
+
+        if status == 'PE':
+            self._status_LED_r.set_fade_value(0)
+            self._status_LED_g.set_fade_value(15)
+
+        if status == 'INIT':
+            self._status_LED_r.set_fade_dest(1, 25)
+            self._status_LED_g.set_fade_dest(0, 25)
 
 #######
 
