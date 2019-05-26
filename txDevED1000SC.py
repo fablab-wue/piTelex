@@ -138,7 +138,7 @@ class TelexED1000SC(txBase.TelexBase):
             waves.append(struct.pack('%sh' % Fpb, *samples))   # 16 bit
 
         audio = pyaudio.PyAudio()
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex)
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex, input_device_index=devindex)
 
         #a = stream.get_write_available()
 

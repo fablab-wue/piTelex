@@ -33,16 +33,6 @@ CFG = {}
 def load():
     global ARGS, CFG
 
-    try:
-        with open('txConfig.json', 'r') as fp:
-            CFG = json.load(fp)
-    except:
-        CFG = {}
-
-    if not CFG['devices']:
-        CFG['devices'] = {}
-
-
     parser = ArgumentParser(
         prog='telex', 
         conflict_handler='resolve', 
@@ -99,6 +89,10 @@ def load():
         dest="irc", default='', metavar="CHANNEL",
         help="IRC Client")
 
+    gg.add_argument("-R", "--REST", 
+        dest="rest", default='', metavar="TEMPLATE",
+        help="REST Client")
+
     gg.add_argument("-Z", "--eliza",
         dest="eliza", default=False, action="store_true", 
         help="Eliza chat bot")
@@ -114,6 +108,10 @@ def load():
         dest="debug", default=2, metavar='LEVEL', type=int,
         help="Debug level")
 
+
+    parser.add_argument("-c", "--config", 
+        dest="cnf", default='txConfig.json', metavar="FILE",
+        help="Load Config File (JSON)")
 
     parser.add_argument("-k", "--id", "--KG", 
         dest="wru_id", default='', metavar="ID",
@@ -133,6 +131,15 @@ def load():
 
 
     ARGS = parser.parse_args()
+
+    try:
+        with open(ARGS.cnf, 'r') as fp:
+            CFG = json.load(fp)
+    except:
+        CFG = {}
+
+    if not CFG.get('devices', None):
+        CFG['devices'] = {}
 
     devices = CFG['devices']
     
@@ -194,6 +201,9 @@ def load():
     if ARGS.irc:
         devices['IRC'] = {'type': 'IRC', 'enable': True, 'channel': ARGS.irc.strip()}
 
+    if ARGS.rest:
+        devices['REST'] = {'type': 'REST', 'enable': True, 'template': ARGS.rest.strip()}
+
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}
 
@@ -216,7 +226,7 @@ def load():
 
 
     if ARGS.save:
-        with open('txConfig.json', 'w') as fp:
+        with open(ARGS.cnf, 'w') as fp:
             json.dump(CFG, fp, indent=2)
 
 #######

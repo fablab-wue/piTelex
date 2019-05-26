@@ -93,6 +93,11 @@ def init():
             news = txDevIRC.TelexIRC(**dev_param)
             DEVICES.insert(0,news)
 
+        if dev_param['type'] == 'REST':
+            import txDevREST
+            news = txDevREST.TelexREST(**dev_param)
+            DEVICES.insert(0,news)
+
         if dev_param['type'] == 'eliza':
             import txDevEliza
             eliza = txDevEliza.TelexEliza(**dev_param)
