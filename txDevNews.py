@@ -49,7 +49,7 @@ class TelexNews(txBase.TelexBase):
                         self._last_text = text
                         if text:
                             path = path[:-4].replace('\\', '/')
-                            text = path + '\r\n' + '='*len(path) + '\r\n' + text + '\r\n'
+                            text = path + '\r\n' + '='*len(path) + '\r\n' + text
                             self._news_buffer.append(text)
             except:
                 pass
