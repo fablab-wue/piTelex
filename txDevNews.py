@@ -69,7 +69,7 @@ class TelexNews(txBase.TelexBase):
 
         self._rx_buffer = []
         self._news_buffer = []
-        self._state_counter = 0
+        self._state_counter = 1
 
         self._observer = Observer()
         self._observer.schedule(self.EventHandler(self._news_buffer), path=self._newspath, recursive=True)
