@@ -24,7 +24,7 @@ def formatted_write(output_path, rss_entry, visible_name):
         print(visible_name + rss_entry.title) 
         print("    " + summary + "\n")
         outfile.write(visible_name + rss_entry.title + "\n")
-        outfile.write("    " + summary )
+        outfile.write("    " + summary + "\n")
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Scan an RSS feed and write the summy to files in a telex-friendly format")
