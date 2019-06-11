@@ -43,17 +43,16 @@ if __name__ == "__main__":
         for entry in feed.entries:
             formatted_write(argp.output_path, entry)
 
-    feed_ids = [entry.id for entry in feed.entries]
+    known_ids = [entry.id for entry in feed.entries]
 
     while True:
         time.sleep(argp.timeout)
-        new_feed = feedparser.parse(argp.feedurl)
-        new_feed_ids = [entry.id for entry in new_feed.entries]
-        new_ids = set(new_feed_ids) - set(feed_ids)
+        feed = feedparser.parse(argp.feedurl)
+        feed_ids = [entry.id for entry in feed.entries]
+        new_ids = set(feed_ids) - set(known_ids)
 
         if new_ids is not None:
-            entries = filter(lambda x: x.id in new_ids, new_feed.entries)
+            entries = filter(lambda x: x.id in new_ids, feed.entries)
             for entry in entries:
                 formatted_write(argp.output_path, entry)
-            feed = new_feed
-            feed_ids = new_feed_ids
+            known_ids = known_ids + list(new_ids)
