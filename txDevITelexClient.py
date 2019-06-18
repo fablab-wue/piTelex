@@ -114,7 +114,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
                 if not is_ascii:
                     self.send_version(s)
-                    self.send_direct_dial(s, user['ENum'])
+                    self.send_direct_dial(s, user['ENum'], 0)
 
                 self.process_connection(s, False, is_ascii)
 

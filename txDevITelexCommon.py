@@ -86,8 +86,11 @@ class TelexITelexCommon(txBase.TelexBase):
                         pass
 
                     # Direct Dial
-                    elif data[0] == 1 and packet_len == 1:
+                    elif data[0] == 1 and (1 <= packet_len <= 10):
                         LOG('Direct Dial '+repr(data), 4)
+                        if packet_len >= 5:
+                            id = (data[3] << 24) | (data[4] << 16) | (data[5] << 8) | (data[6])
+                            print(id)
                         self._rx_buffer.append('\x1bD'+str(data[2]))
                         self.send_ack(s, received_counter)
 
@@ -226,9 +229,9 @@ class TelexITelexCommon(txBase.TelexBase):
         s.sendall(send)
 
 
-    def send_direct_dial(self, s, dial:str):
+    def send_direct_dial(self, s, dial:str, id):
         '''Send direct dial packet (1)'''
-        data = bytearray([1, 1])   # Direct Dial
+        data = bytearray([1, 5])   # Direct Dial
         if not dial.isnumeric():
             number = 0
         elif len(dial) == 2:
@@ -241,7 +244,11 @@ class TelexITelexCommon(txBase.TelexBase):
                 number = 110
         else:
             number = 0
-        data.append(number)
+        data.append(number)   # direct dial number
+        data.append(1)    # id, 32 bit
+        data.append(2)
+        data.append(3)
+        data.append(4)
         s.sendall(data)
 
 
