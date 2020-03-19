@@ -16,31 +16,29 @@ __license__ = "CC0"
 __version__ = "0.0.0"
 
 
-import logging
 import threading
 import time
 import queue
 import twitter
+import json
 
 import txDevITelexCommon
 import txCode
 
+import log
 
-logging.basicConfig(level=logging.WARN)
-logger = logging.getLogger(__name__)
+
+def LOG(text:str, level:int=3):
+    log.LOG('\033[5;30;46m<'+text+'>\033[0m', level)
 
 
 class TelexTwitter(txDevITelexCommon.TelexITelexCommon):
     def __init__(self, **params):
         super().__init__()
-
-
         self.running = True
         self.chars_buffer = ''
         self._is_online = False
-
         self.twitter_client = Twitter_Client(params.get("consumer_key", ""), params.get("consumer_secret", ""), params.get("access_token_key", ""), params.get("access_token_secret", ""), params.get("users", []))
-
         self.thread = threading.Thread(target=self.thread_function, name='Twitter_Handler')
         self.thread.start()
 
@@ -101,12 +99,14 @@ class TelexTwitter(txDevITelexCommon.TelexITelexCommon):
                     msg = f'={data["user"]["name"]} = {data["text"]}'
                     #if data['msg'].startswith(f'{self.irc_client.nick}:'):
                     #    msg = f'{msg}\a\a\a' # BEL
+                    LOG(data["user"]["name"])
 
-                    if data['user'] in self.twitter_client.users:
-                        msg = f'{time.strftime("%H:%M", time.gmtime(data["created_at"]))} {msg}\n\r'
-                        if last_date != time.gmtime(data["created_at"]).tm_yday:
-                            msg = f'{time.strftime("%A %d %B", time.gmtime(data["created_at"]))}\n\r {msg}'
-                            last_date = time.gmtime(data["created_at"]).tm_yday
+                    if '@' + data["user"]["name"] in self.twitter_client.users:
+                        t =  time.strptime(data["created_at"], '%a %b %d %H:%M:%S %z %Y')
+                        msg = f'{time.strftime("%H:%M", t)} {msg}\n\r'
+                        if last_date != t.tm_yday:
+                            msg = f'{time.strftime("%A %d %B", t)}\n\r {msg}'
+                            last_date = t.tm_yday
                         text = txCode.BaudotMurrayCode.ascii_to_tty_text(msg)
                         # TODO: insert linebreak after 65 characters
                         for a in text:
@@ -116,11 +116,10 @@ class TelexTwitter(txDevITelexCommon.TelexITelexCommon):
                     a = self._tx_buffer.pop(0)
                     data = str(a.encode('ASCII'), 'utf8').lower()
                     self.add_chars(data)
-
             except twitter.error.TwitterError as e:
-               logger.error(e)
+               LOG(str(e),1)
 
-        logger.warn('end connection')
+        LOG('end connection', 2)
         self._connected = False
 
 
@@ -136,16 +135,11 @@ class Twitter_Client():
                   access_token_secret,
                   sleep_on_rate_limit=True)
         except twitter.error.TwitterError as e:
-           logger.error(e)
-
+           LOG(str(e),1)
         self.q = queue.Queue()
-
         self.users = users
-
-        self.registered = False
-
         self.running = True
-        self.thread = threading.Thread(target=self.thread_function, name='IRC_Client')
+        self.thread = threading.Thread(target=self.thread_function, name='Twitter_Client')
         self.thread.start()
 
 
@@ -154,12 +148,12 @@ class Twitter_Client():
         try:
            status = self.api.PostUpdate(msg)
         except UnicodeDecodeError:
-           logger.error("Your message could not be encoded.  Perhaps it contains non-ASCII characters? ")
-           logger.error("Try explicitly specifying the encoding with the --encoding flag")
+           LOG("Your message could not be encoded.  Perhaps it contains non-ASCII characters? ",1)
+           LOG("Try explicitly specifying the encoding with the --encoding flag",1)
         except twitter.error.TwitterError as e:
-           logger.error(e)
+           LOG(str(e),1)
 
-        logger.debug(f'TWEET: {data}')
+        LOG(f'TWEET: {msg}', 3)
 
     def stop(self, quit_msg='Wah!'):
         self.running = False
@@ -176,11 +170,11 @@ class Twitter_Client():
     def thread_function(self):
         while self.running:
            try:
-             for line in self.api.GetStreamFilter(track=self.users, languages=Twitter_Client.LANGUAGES):
-                if line == '':
+             self.idl = [ str(self.api.GetUser(screen_name=u).id) for u in self.users ]
+             for line in self.api.GetStreamFilter(follow=self.idl, languages=Twitter_Client.LANGUAGES):
+                if line == None:
                    continue
-
-                logger.debug(f'IN: {json.dumps(line)}')
+                LOG(f'IN: {json.dumps(line)}')
                 self.q.put(line)
            except twitter.error.TwitterError as e:
-              logger.error(e)
+              LOG(str(e), 1)
