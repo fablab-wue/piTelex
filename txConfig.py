@@ -81,6 +81,10 @@ def load():
     #    dest="telnet", default=0, metavar='PORT', type=int,
     #    help="Terminal Socket Server at Port Number")
 
+    gg.add_argument("-T", "--twitter", 
+        dest="twitter", default='', nargs='?', metavar='CONSUMER_KEY:CONSUMER_SECRET:API_KEY:API_SECRET',
+        help="Twitter client")
+
     gg.add_argument("-N", "--news", 
         dest="news", default='', metavar="PATH",
         help="News from File")
@@ -117,6 +121,13 @@ def load():
         dest="wru_id", default='', metavar="ID",
         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
+    parser.add_argument("--invert_dtr",
+        dest="invert_dtr", default=False, action="store_true",
+        help="Invert DTR")
+
+    parser.add_argument("-u", "--users", nargs='*',
+        dest="users", metavar="USERS", help="User list")
+
     #parser.add_argument("-m", "--mode", 
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
@@ -128,7 +139,6 @@ def load():
     parser.add_argument("-s", "--save",
         dest="save", default=False, action="store_true", 
         help="Save command line args to config file (txConfig.json)")
-
 
     ARGS = parser.parse_args()
 
@@ -145,18 +155,20 @@ def load():
     
     if ARGS.screen:
         devices['screen'] = {'type': 'screen', 'enable': True}
+    else:
+        del devices['screen']
 
     if ARGS.CH340:
         devices['CH340'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340.strip(), 'mode': '', 'baudrate': 50, 'loopback': True}
 
     if ARGS.CH340_TW39:
-        devices['CH340_TW39'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TW39.strip(), 'mode': 'TW39', 'baudrate': 50, 'loopback': True}
+        devices['CH340_TW39'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TW39.strip(), 'mode': 'TW39', 'baudrate': 50, 'loopback': True, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.CH340_TWM:
-        devices['CH340_TWM'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TWM.strip(), 'mode': 'TWM', 'baudrate': 50, 'loopback': True}
+        devices['CH340_TWM'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TWM.strip(), 'mode': 'TWM', 'baudrate': 50, 'loopback': True, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.CH340_V10:
-        devices['CH340_V10'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_V10.strip(), 'mode': 'V10', 'baudrate': 50, 'loopback': False}
+        devices['CH340_V10'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_V10.strip(), 'mode': 'V10', 'baudrate': 50, 'loopback': False, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.RPiTTY:
         devices['RPiTTY'] = {
@@ -206,6 +218,10 @@ def load():
 
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}
+
+    if ARGS.twitter:
+        twit_creds = ARGS.twitter.split(":") 
+        devices['twitter'] = { 'type': 'twitter', 'enable'  : True, 'consumer_key' : twit_creds [0], 'consumer_secret' : twit_creds [1], 'access_token_key' : twit_creds [2], 'access_token_secret' : twit_creds [3] , "users" : ARGS.users}
 
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
