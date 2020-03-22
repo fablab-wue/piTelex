@@ -113,7 +113,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         self._inv_rxd = params.get('inv_rxd', False)
         #self._inv_txd = params.get('inv_txd', False)
-        self._coding = params.get('coding', False)
+        self._coding = params.get('coding', 0)
         self._loopback = params.get('loopback', True)
 
         self._tx_buffer = []

@@ -32,7 +32,7 @@ class TelexCH340TTY(txBase.TelexBase):
         baudrate = params.get('baudrate', 50)
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
-        coding = params.get('coding', False)
+        coding = params.get('coding', 0)
         loopback = params.get('loopback', None)
         self._local_echo = params.get('loc_echo', False)
 
@@ -51,6 +51,9 @@ class TelexCH340TTY(txBase.TelexBase):
         self._set_mode(params['mode'])
         if loopback is not None:
             self._loopback = loopback
+
+        self._inverse_dtr = params.get('inverse_dtr', self._inverse_dtr)
+        self._inverse_rts = params.get('inverse_rts', self._inverse_rts)
 
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
@@ -100,7 +103,7 @@ class TelexCH340TTY(txBase.TelexBase):
         if mode.find('TWM') >= 0:
             self._loopback = True
             self._use_cts = True
-            self._use_pulse_dial = True
+            self._use_pulse_dial = False
             self._use_squelch = True
             self._use_dedicated_line = False
 

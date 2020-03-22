@@ -1,44 +1,43 @@
-#!/usr/bin/python3
+#!python3
 """
 Telex Code Conversion
 Baudot-Code = CCITT-1
 Baudot-Murray-Code = CCITT-2
-
 CCITT-2:
-543.21      LTRS    FIGS
-======      ==========================
-000.00	    undef	undef -> ~
-000.01	    E   	3
-000.10	    <LF>    <LF>
-000.11	    A   	-
-001.00	    <SPACE> <SPACE>
-001.01	    S   	'
-001.10	    I   	8
-001.11	    U   	7
-010.00	    <CR>    <CR>
-010.01	    D   	WRU? -> @
-010.10	    R   	4
-010.11	    J   	BELL <BEL> -> %
-011.00	    N   	,
-011.01	    F   	undef, $, Ä, %
-011.10	    C   	:
-011.11	    K   	(
-100.00	    T   	5
-100.01	    Z   	+
-100.10	    L   	)
-100.11	    W   	2
-101.00	    H   	undef, #, Ü, Pound
-101.01	    Y   	6
-101.10	    P   	0
-101.11	    Q   	1
-110.00	    O   	9
-110.01	    B   	?
-110.10	    G   	undef, &, Ö, @
-110.11	    FIGS    FIGS -> ]
-111.00	    M   	.
-111.01	    X   	/
-111.10	    V   	=
-111.11	    LTRS    LTRS -> [
+| 543.21 | 12.345 | A | 1 | PA| P1| 
+===================================
+| 000.00 | 00.000 | ▨ | ▨ | ~ | ~ | 
+| 000.01 | 10.000 | E | 3 | Е | 3 | 
+| 000.10 | 01.000 | ≡ | ≡ | ≡ | ≡ | ≡=<LF>
+| 000.11 | 11.000 | A | - | А | - | 
+| 001.00 | 00.100 | ⎵ | ⎵ | ⎵ | ⎵ | ⎵=<SPACE>
+| 001.01 | 10.100 | S | ' | С | ' | 
+| 001.10 | 01.100 | I | 8 | И | 8 | 
+| 001.11 | 11.100 | U | 7 | У | 7 | 
+| 010.00 | 00.010 | ❮ | ❮ | ❮ | ❮ | ❮=<CR>
+| 010.01 | 10.010 | D | ✠ | Д | ✠ | ✠=WRU? -> @
+| 010.10 | 01.010 | R | 4 | Р | 4 | 
+| 010.11 | 11.010 | J | ⍾ | Й | Ю | ⍾=BELL <BEL> -> %
+| 011.00 | 00.110 | N | , | Н | , | 
+| 011.01 | 10.110 | F | ▨ | Ф | Э | 
+| 011.10 | 01.110 | C | : | Ц | : | 
+| 011.11 | 11.110 | K | ( | К | ( | 
+| 100.00 | 00.001 | T | 5 | Т | 5 | 
+| 100.01 | 10.001 | Z | + | З | + | 
+| 100.10 | 01.001 | L | ) | Л | ) | 
+| 100.11 | 11.001 | W | 2 | В | 2 | 
+| 101.00 | 00.101 | H | ▨ | Х | Щ | 
+| 101.01 | 10.101 | Y | 6 | Ы | 6 | 
+| 101.10 | 01.101 | P | 0 | П | 0 | 
+| 101.11 | 11.101 | Q | 1 | Я | 1 | 
+| 110.00 | 00.011 | O | 9 | О | 9 | 
+| 110.01 | 10.011 | B | ? | Б | ? | 
+| 110.10 | 01.011 | G | ▨ | Г | Ш | 
+| 110.11 | 11.011 | ] | ] | ] | ] | FIGS -> ]
+| 111.00 | 00.111 | M | . | М | . | 
+| 111.01 | 10.111 | X | / | Ь | / | 
+| 111.10 | 01.111 | V | = | Ж | = | 
+| 111.11 | 11.111 | [ | [ | [ | [ | LTRS -> [
 
 http://rabbit.eng.miami.edu/info/baudot.html   <<< wrong figs order!
 http://www.baudot.net/docs/smith--teletype-codes.pdf
@@ -47,7 +46,7 @@ __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
 __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "0.0.2"
 
 import time
 import unicodedata
@@ -57,10 +56,23 @@ import unicodedata
 
 class BaudotMurrayCode:
     # Baudot-Murray-Code to ASCII table
-    _LUT_BM2A_STD = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- '87\r@4%,~:(5+)2~6019?~]./=["]
-    _LUT_BM2A_US  = ["~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", "~3\n- %87\r$4',!:(5\")2@6019?&]./;["]
+    _LUT_BM2A_ITA2 = (
+        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", 
+        "~3\n- '87\r@4%,~:(5+)2~6019?~]./=["
+    )
+    _LUT_BM2A_US = (
+        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", 
+        "~3\n- %87\r$4',!:(5\")2@6019?&]./;["
+    )
+    _LUT_BM2A_MKT2 = (
+        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG]MXV[", 
+        "~3\n- '87\r@4Ю,Э:(5+)2Щ6019?Ш]./=[",
+        "~Е\nА СИУ\rДРЙНФЦКТЗЛВХЫПЯОБГ]МЬЖ["
+    )
     # Baudot-Murray-Code mode switch codes
-    _LUT_BMsw = [0x1F, 0x1B]
+    _LUT_BMsw_ITA2 = (0x1F, 0x1B)
+    _LUT_BMsw_US = (0x1F, 0x1B)
+    _LUT_BMsw_MKT2 = (0x1F, 0x1B, 0x00)
 
     # Baudot-Murray-Code valid ASCII table
     #_valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ~3\n- '87\r@4%,~:(5+)2~6019?~]./=[#"
@@ -99,11 +111,17 @@ class BaudotMurrayCode:
         '_': '--',
         }
 
+    CODING_ITA2 = 0
+    CODING_US = 1
+    CODING_MKT2 = 2
+
+    # =====
 
     @staticmethod
     def translate(text:str) -> str:
         return BaudotMurrayCode.ascii_to_tty_text(text)
 
+    # -----
 
     @staticmethod
     def ascii_to_tty_text(text:str) -> str:
@@ -129,76 +147,100 @@ class BaudotMurrayCode:
                         
         return ret
 
+    # -----
 
     @staticmethod
-    def do_flip_bits(val:int) -> int:
-        ret = 0
+    def do_flip_bits(code: bytes) -> bytes:
+        ret = bytearray()
 
-        if val & 1:
-            ret |= 16
-        if val & 2:
-            ret |= 8
-        if val & 4:
-            ret |= 4
-        if val & 8:
-            ret |= 2
-        if val & 16:
-            ret |= 1
+        for b in code:
+            rb = 0
+            if b & 1:
+                rb |= 16
+            if b & 2:
+                rb |= 8
+            if b & 4:
+                rb |= 4
+            if b & 8:
+                rb |= 2
+            if b & 16:
+                rb |= 1
+            ret.append(rb)
 
         return ret
 
+    # =====
 
-    def __init__(self, loop_back:bool=False, coding=False, flip_bits=False, character_duration=0.15, sync_layer:bool=True):
-        self._ModeA2BM = None   # 0=LTRS 1=FIGS
-        self._ModeBM2A = 0   # 0=LTRS 1=FIGS
+    def __init__(self, loop_back:bool=False, coding:int=0, flip_bits=False, character_duration=0.15, show_BuZi:int=2):
+        self._mode = None   # 0=LTRS 1=FIGS
         self._flip_bits = flip_bits
         self._loop_back = loop_back
-        self._sync_layer = sync_layer
-        self._show_all_BuZi = True
+        self._show_all_BuZi = show_BuZi
         self._loop_back_eat_bytes = 0
         self._loop_back_expire_time = 0
         self._character_duration = character_duration
-        if coding == 'US':
+        if coding == self.CODING_US:
             self._LUT_BM2A = self._LUT_BM2A_US
+            self._LUT_BMsw = self._LUT_BMsw_US
+        elif coding == self.CODING_MKT2:
+            self._LUT_BM2A = self._LUT_BM2A_MKT2
+            self._LUT_BMsw = self._LUT_BMsw_MKT2
         else:
-            self._LUT_BM2A = self._LUT_BM2A_STD
+            self._LUT_BM2A = self._LUT_BM2A_ITA2
+            self._LUT_BMsw = self._LUT_BMsw_ITA2
 
+    # -----
 
     def reset(self):
         self._ModeA2BM = None   # 0=LTRS 1=FIGS
 
+    # -----
 
-    def encodeA2BM(self, ascii:str) -> list:
+    def encodeA2BM(self, ascii:str) -> bytes:
         ''' convert an ASCII string to a list of baudot-murray-coded bytes '''
-        ret = []
+        ret = bytearray()
+
+        if not isinstance(ascii, str):
+            ascii = str(ascii)
 
         ascii = ascii.upper()
 
-        if self._ModeA2BM == None:
-            self._ModeA2BM = 0   # letters
-            ret.append(self._LUT_BMsw[self._ModeA2BM])
+        if self._mode is None:
+            self._mode = 0  # letters
+            ret.append(self._LUT_BMsw[self._mode])
 
         for a in ascii:
-            try: # symbol in current layer?
-                b = self._LUT_BM2A[self._ModeA2BM].index(a)
-                if b in self._LUT_BMsw:   # explicit Bu or Zi
-                    self._ModeA2BM = self._LUT_BMsw.index(b)
+            try:  # symbol in current layer?
+                nm = self._mode
+                b = self._LUT_BM2A[nm].index(a)
                 ret.append(b)
-            except:
-                try: # symbol in other layer?
-                    b = self._LUT_BM2A[1-self._ModeA2BM].index(a)
-                    self._ModeA2BM = 1 - self._ModeA2BM
-                    ret.append(self._LUT_BMsw[self._ModeA2BM])
+                if b in self._LUT_BMsw:  # explicit Bu or Zi
+                    self._mode = self._LUT_BMsw.index(b)
+            except ValueError:
+                try:  # symbol in other layer?
+                    nm += 1
+                    if nm >= len(self._LUT_BM2A):
+                        nm = 0
+                    b = self._LUT_BM2A[nm].index(a)
+                    ret.append(self._LUT_BMsw[nm])
                     ret.append(b)
-                except: # symbol not found -> ignore
-                    pass
-
-        if self._sync_layer:
-            self._ModeBM2A = self._ModeA2BM
+                    self._mode = nm
+                except ValueError:
+                    try:  # symbol in other layer?
+                        nm += 1
+                        if nm >= len(self._LUT_BM2A):
+                            nm = 0
+                        b = self._LUT_BM2A[nm].index(a)
+                        ret.append(self._LUT_BMsw[nm])
+                        ret.append(b)
+                        self._mode = nm
+                    except:  # symbol not found -> ignore
+                        pass
+            except:  # unknown -> ignore
+                pass
 
         if ret and self._flip_bits:
-            for i, b in enumerate(ret):
-                ret[i] = self.do_flip_bits(b)
+            ret = self.do_flip_bits(ret)
 
         if self._loop_back:
             l = len(ret)
@@ -210,10 +252,14 @@ class BaudotMurrayCode:
 
         return ret
 
+    # -----
 
-    def decodeBM2A(self, code:list) -> str:
+    def decodeBM2A(self, code:bytes) -> str:
         ''' convert a list/bytearray of baudot-murray-coded bytes to an ASCII string '''
         ret = ''
+
+        if self._flip_bits:
+            code = self.do_flip_bits(code)
 
         for b in code:
             if self._loop_back and self._loop_back_eat_bytes:
@@ -225,26 +271,27 @@ class BaudotMurrayCode:
                     #    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
                     continue
 
-            if self._flip_bits:
-                b = self.do_flip_bits(b)
-
             try:
                 if b in self._LUT_BMsw:
                     mode = self._LUT_BMsw.index(b)
-                    if self._ModeBM2A != mode:
-                        self._ModeBM2A = mode
-                        if self._loop_back or self._sync_layer:
-                            self._ModeA2BM = self._ModeBM2A # on sending a sysmbol the machine switches itself to other symbol layer
-                        if not self._show_all_BuZi:
+                    if self._mode != mode:
+                        self._mode = mode
+                        if self._show_BuZi == 0: # no BuZi
                             continue
+                    if self._show_BuZi <= 1: # explicit BuZi
+                        continue
 
-                a = self._LUT_BM2A[self._ModeBM2A][b]
-                #if a == '\n':
-                #    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
-                ret += a
+                if b >= 0x20:
+                    ret += '{#' + hex(b)[2:] + '}'
+                elif self._mode is None:
+                    ret += '{?'
+                    ret += self._LUT_BM2A[0][b]
+                    ret += self._LUT_BM2A[1][b]
+                    ret += '}'
+                else:
+                    ret += self._LUT_BM2A[self._mode][b]
             except:
-                ret += '!'   # debug
-                pass
+                ret += '{!}'  # debug
 
         return ret
 

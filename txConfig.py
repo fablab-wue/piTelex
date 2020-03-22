@@ -172,7 +172,7 @@ def load():
             'pin_sta': 23,
             'baudrate': 50, 
             'inv_rxd': False, 
-            'uscoding': False,
+            'coding': 0,
             'loopback': True,
             }
 
@@ -183,7 +183,8 @@ def load():
             'send_f0': 500, 
             'send_f1': 700, 
             'recv_f0': 2250, 
-            'recv_f1': 3150, 
+            'recv_f1': 3150,
+            'recv_squelch': 100,
             'baudrate': 50, 
             'devindex': None, 
             'zcarrier': False,

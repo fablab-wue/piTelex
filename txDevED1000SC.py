@@ -44,10 +44,12 @@ class TelexED1000SC(txBase.TelexBase):
         self._rx_buffer = []
         self._is_online = False
 
+        self.recv_squelch = self.params.get('recv_squelch', 100)
+        self.recv_debug = self.params.get('recv_debug', True)
+
         recv_f0 = self.params.get('recv_f0', 2250)
         recv_f1 = self.params.get('recv_f1', 3150)
         recv_f = [recv_f0, recv_f1]
-
         self._recv_decode_init(recv_f)
 
         self.run = True
@@ -101,7 +103,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         if a == '\x1bWB':
             self._tx_buffer = []
-            self._tx_buffer.append('§W')   # signaling type A - ready for dial
+            self._tx_buffer.append('§W')   # signaling type W - ready for dial
             self._set_online(True)
 
     # -----
@@ -141,22 +143,24 @@ class TelexED1000SC(txBase.TelexBase):
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex, input_device_index=devindex)
 
         #a = stream.get_write_available()
+        try:
 
-        while self.run:
-            if self._is_online:
-                if self._tx_buffer:
-                    a = self._tx_buffer.pop(0)
-                    if a == '§W':
-                        bb = [0xF9FFFFFF]
-                        nbit = 32
-                    elif a == '§A':
-                        bb = [0xFFC0]
-                        nbit = 16
-                    else:
-                        bb = self._mc.encodeA2BM(a)
-                        nbit = 5
-                    
-                    if bb:
+            while self.run:
+                if self._is_online:
+                    if self._tx_buffer:
+                        a = self._tx_buffer.pop(0)
+                        if a == '§W':
+                            bb = (0xF9FFFFFF,)
+                            nbit = 32
+                        elif a == '§A':
+                            bb = (0xFFC0,)
+                            nbit = 16
+                        else:
+                            bb = self._mc.encodeA2BM(a)
+                            if not bb:
+                                continue
+                            nbit = 5
+                        
                         for b in bb:
                             bits = [0]*nbit
                             mask = 1
@@ -170,22 +174,30 @@ class TelexED1000SC(txBase.TelexBase):
                                 wavecomp.extend(waves[bit])
                             wavecomp.extend(waves[1])
                             wavecomp.extend(waves[1])
-                            stream.write(bytes(wavecomp), Fpw)   # blocking
+ 
+                            if nbit == 5:
+                                frames = Fpw
+                            else:
+                                frames = len(wavecomp)
+                            stream.write(bytes(wavecomp), frames)   # blocking
 
-                else:   # nothing to send
-                    stream.write(waves[1], Fpb)   # blocking
+                    else:   # nothing to send
+                        stream.write(waves[1], Fpb)   # blocking
 
-            else:   # offline
-                if zcarrier:
-                    stream.write(waves[0], Fpb)   # blocking
-                else:
-                    time.sleep(0.100)
+                else:   # offline
+                    if zcarrier:
+                        stream.write(waves[0], Fpb)   # blocking
+                    else:
+                        time.sleep(0.100)
 
-            time.sleep(0.001)
+                time.sleep(0.001)
 
+        except Exception as e:
+            print(e)
 
-        stream.stop_stream()  
-        stream.close()
+        finally:
+            stream.stop_stream()  
+            stream.close()
 
     # =====
 
@@ -212,6 +224,7 @@ class TelexED1000SC(txBase.TelexBase):
 
             bit = self._recv_decode(data)
 
+            #if bit is None and self._is_online:
             #print(bit, val)
 
             if bit:
@@ -232,10 +245,9 @@ class TelexED1000SC(txBase.TelexBase):
                     slice_counter = 1
 
             else:
-                if slice_counter == 2:   # middle of start step
-                    if bit:
+                if slice_counter in (1, 2):   # middle of start step
+                    if bit: # check if correct start bit
                         slice_counter = -1
-                    pass
                 if slice_counter == 6:   # middle of step 1
                     if bit:
                         symbol |= 1
@@ -283,7 +295,7 @@ class TelexED1000SC(txBase.TelexBase):
             self._filters.append(filter_bp)
 
         return   # debug - remove to plot spectrum
-
+    '''
         plt.figure()
         plt.ylim(-100, 5)
         plt.xlim(0, 5500)
@@ -302,7 +314,7 @@ class TelexED1000SC(txBase.TelexBase):
         plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
         plt.show()
         pass
-
+    '''
     # -----
 
     # IIR-filter
@@ -311,11 +323,17 @@ class TelexED1000SC(txBase.TelexBase):
         for i in range(2):
             fdata = signal.sosfilt(self._filters[i], data)
             fdata = np.abs(fdata)   # rectifier - instead of envelope curve
-            val[i] = np.average(fdata)   # get energy for each frequency band
+            val[i] = int(np.average(fdata))   # get energy for each frequency band
 
         bit = val[0] < val[1]   # compare energy of each frequency band
-        if (val[0] + val[1]) < 100:   # no carrier
+        if (val[0] + val[1]) < self.recv_squelch:   # no carrier
             bit = None
+
+        if self.recv_debug:
+            with open('recv_debug.log', 'a') as fp:
+                line = '{},{}\n'.format(val[0], val[1])
+                fp.write(line)
+
         return bit
 
     # =====
@@ -330,7 +348,7 @@ class TelexED1000SC(txBase.TelexBase):
             self._filters.append(filter_bp)
 
         return
-
+    '''
         plt.figure()
         plt.ylim(-60, 5)
         plt.xlim(0, 5500)
@@ -350,6 +368,7 @@ class TelexED1000SC(txBase.TelexBase):
         plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
         plt.show()
         pass
+    '''
 
     # -----
 
@@ -362,7 +381,7 @@ class TelexED1000SC(txBase.TelexBase):
             val[i] = np.average(fdata)
 
         bit = val[0] < val[1]
-        if (val[0] + val[1]) < 100:   # no carrier
+        if (val[0] + val[1]) < self.recv_squelch:   # no carrier
             bit = None
         return bit
 
