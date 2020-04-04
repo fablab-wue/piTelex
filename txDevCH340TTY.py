@@ -56,7 +56,7 @@ class TelexCH340TTY(txBase.TelexBase):
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
 
-        if baudrate not in self._tty.BAUDRATES:
+        if baudrate != 45 and baudrate not in self._tty.BAUDRATES:
             raise Exception('Baudrate not supported')
         if bytesize not in self._tty.BYTESIZES:
             raise Exception('Databits not supported')
