@@ -125,8 +125,24 @@ def load():
         dest="invert_dtr", default=False, action="store_true",
         help="Invert DTR")
 
-    parser.add_argument("-u", "--users", nargs='*',
-        dest="users", metavar="USERS", help="User list")
+    parser.add_argument("-t", "--track", nargs='*',
+        dest="track", metavar="USERS", help="User list")
+
+    parser.add_argument("-f", "--follow", nargs='*',
+        dest="follow", metavar="USER", help="User list")
+
+    
+    parser.add_argument("-u", "--url", nargs='?',
+        dest="url", metavar="URL", help="URL for twitivity")
+
+    parser.add_argument("-h", "--host", nargs='?',
+        dest="host", metavar="HOST", help="Host for twitivity")
+
+    parser.add_argument("-p", "--port", nargs='?',
+        dest="port", metavar="PORT", help="Port for twitivity")
+
+    parser.add_argument("-l", "--languages", nargs='*',
+        dest="languages", metavar="LANGUAGE", help="Language list")
 
     #parser.add_argument("-m", "--mode", 
     #    dest="mode", default='', metavar="MODE",
@@ -221,7 +237,9 @@ def load():
 
     if ARGS.twitter:
         twit_creds = ARGS.twitter.split(":") 
-        devices['twitter'] = { 'type': 'twitter', 'enable'  : True, 'consumer_key' : twit_creds [0], 'consumer_secret' : twit_creds [1], 'access_token_key' : twit_creds [2], 'access_token_secret' : twit_creds [3] , "users" : ARGS.users}
+        os.environ['consumer_key'] = ARGS.consumer_key
+        os.environ['consumer_secret'] = ARGS.consumer_secret
+        devices['twitter'] = { 'type': 'twitter', 'enable'  : True, 'consumer_key' : twit_creds [0], 'consumer_secret' : twit_creds [1], 'access_token_key' : twit_creds [2], 'access_token_secret' : twit_creds [3] , 'track' : ARGS.track, 'follow': ARGS.follow, 'languages' : ARGS.languages, 'url' : ARGS.url, 'host' : ARGS.host, 'port' : ARGS.port }
 
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}

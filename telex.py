@@ -103,6 +103,12 @@ def init():
             eliza = txDevEliza.TelexEliza(**dev_param)
             DEVICES.append(eliza)
 
+        if dev_param['type'] == 'twitter':
+            import txDevTwitter
+            twitter = txDevTwitter.TelexTwitter(**dev_param)
+            DEVICES.append(twitter)
+
+
         if dev_param['type'] == 'log':
             import txDevLog
             log = txDevLog.TelexLog(**dev_param)
