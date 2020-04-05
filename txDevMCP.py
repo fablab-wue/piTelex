@@ -132,6 +132,7 @@ class TelexMCP(txBase.TelexBase):
                 elif self._mode == 'A':
                     self._rx_buffer.append('\x1bZ')   # send text
                     self._mode = 'Z'
+                self._wd.reset('ONLINE')
                 return True
 
 
@@ -208,7 +209,10 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 raise(SystemExit('EXIT'))
 
 
-        self._wd.reset('ONLINE')
+        else:   # single char
+
+            self._wd.reset('ONLINE')
+
 
         if self._font_mode:   # 
             f = self._fontstr.get(a, None)
@@ -239,8 +243,11 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
         if self._mode == 'WB':
             #if a == '0':   # hack!!!! to test the pulse dial
             #    self._rx_buffer.append('\x1bA')   # send text
-            self._dial_number += a
-            self._rx_buffer.append('\x1b#'+self._dial_number)   # send text
+            if a.isdigit():
+                self._dial_number += a
+                self._rx_buffer.append('\x1b#'+self._dial_number)   # send text
+            else:
+                return True
 
 
     # -----

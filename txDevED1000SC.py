@@ -176,9 +176,9 @@ class TelexED1000SC(txBase.TelexBase):
                             wavecomp.extend(waves[1])
  
                             if nbit == 5:
-                                frames = Fpw
+                                frames = Fpw   # 7.5 bits
                             else:
-                                frames = len(wavecomp)
+                                frames = len(wavecomp) // 2   # 16 bit words
                             stream.write(bytes(wavecomp), frames)   # blocking
 
                     else:   # nothing to send

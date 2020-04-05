@@ -175,7 +175,7 @@ class BaudotMurrayCode:
         self._mode = None   # 0=LTRS 1=FIGS
         self._flip_bits = flip_bits
         self._loop_back = loop_back
-        self._show_all_BuZi = show_BuZi
+        self._show_BuZi = show_BuZi
         self._loop_back_eat_bytes = 0
         self._loop_back_expire_time = 0
         self._character_duration = character_duration
