@@ -105,7 +105,7 @@ def load():
         help="Log to File")
 
     gd.add_argument("-d", "--debug", 
-        dest="debug", default=2, metavar='LEVEL', type=int,
+        dest="debug", default=0, metavar='LEVEL', type=int,
         help="Debug level")
 
 
@@ -222,8 +222,9 @@ def load():
     #if mode:
     #    CFG['mode'] = mode
 
-    CFG['debug'] = ARGS.debug
-    log.set_log_level(ARGS.debug)
+    if ARGS.debug:
+        CFG['debug'] = ARGS.debug
+    log.set_log_level(CFG.get('debug', 0))
 
 
     if ARGS.save:

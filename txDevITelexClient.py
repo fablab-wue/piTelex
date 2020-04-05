@@ -106,9 +106,9 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             # connect to destination Telex
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                LOG('connected to '+user['Name'], 3)
                 address = (user['Host'], int(user['Port']))
                 s.connect(address)
+                LOG('connected to '+user['Name'], 3)
 
                 self._rx_buffer.append('\x1bA')
 
