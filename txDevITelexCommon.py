@@ -256,7 +256,9 @@ class TelexITelexCommon(txBase.TelexBase):
         '''Send ASCII data direct'''
         a = ''
         while self._tx_buffer and len(a) < 250:
-            a += self._tx_buffer.pop(0)
+            b = self._tx_buffer.pop(0)
+            if b not in '[]~%':
+                a += b
         data = a.encode('ASCII')
         s.sendall(data)
         return len(data)

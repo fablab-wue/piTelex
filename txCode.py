@@ -76,7 +76,7 @@ class BaudotMurrayCode:
 
     # Baudot-Murray-Code valid ASCII table
     #_valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ~3\n- '87\r@4%,~:(5+)2~6019?~]./=[#"
-    _valid_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r"
+    _valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r@~"
     _LUT_convert_chars = {
         'Ä': 'AE',
         'Ö': 'OE',
@@ -131,7 +131,7 @@ class BaudotMurrayCode:
 
         for a in text:
             try:
-                if a not in BaudotMurrayCode._valid_convert_chars:
+                if a not in BaudotMurrayCode._valid_ASCII_convert_chars:
                     if a in BaudotMurrayCode._LUT_convert_chars:
                         a = BaudotMurrayCode._LUT_convert_chars.get(a, '?')
                     else:
@@ -139,7 +139,7 @@ class BaudotMurrayCode:
                         a =  u"".join([c for c in nkfd_norm if not unicodedata.combining(c)])
                         #a = unicodedata.normalize('NFD', a).encode('ascii', 'ignore')
                         #a = unidecode(a)
-                        if a not in BaudotMurrayCode._valid_convert_chars:
+                        if a not in BaudotMurrayCode._valid_ASCII_convert_chars:
                             a = '?'
                 ret += a
             except:
