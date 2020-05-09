@@ -1,0 +1,19 @@
+# systemd service file to start piTelex
+
+[Unit]
+Description=piTelex
+Requires=network.target
+After=network.target
+Documentation=https://github.com/fablab-wue/piTelex/wiki/
+
+[Service]
+Type=forking
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/piTelex/
+ExecStart=/usr/bin/byobu-screen -d -m -S piTelex /home/pi/piTelex/telex.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

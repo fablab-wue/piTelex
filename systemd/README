@@ -1,0 +1,44 @@
+Service installation (tested on Raspbian buster):
+
+1. Make sure byobu is installed:
+
+   sudo apt install byobu
+
+2. Adapt pitelex.service to configure piTelex path (WorkingDirectory=,
+   ExecStart=) and user (User=), if needed
+
+3. Install service file:
+
+   sudo cp pitelex.service /lib/systemd/system/
+
+4. Execute on boot:
+
+   sudo systemctl enable pitelex.service
+
+5. Start service now:
+
+   sudo systemctl daemon-reload && sudo systemctl start pitelex.service
+
+6. Test:
+
+   systemctl status pitelex.service
+
+   ... should say active (running).
+
+   byobu-screen -list
+
+   ... should show the piTelex session as "detached".
+
+If everything worked, piTelex is now running transparently in the background.
+Connect to the console at any time using
+
+byobu-screen
+
+Detach using F6, piTelex will continue to run.
+
+Start, restart and stop piTelex using systemd service commands:
+
+sudo systemctl <cmd> pitelex.service
+
+Inside byobu, piTelex can also be terminated using CTRL-C, CTRL-C. The byobu
+session will also quit. systemd will restart everything after 10 s.
