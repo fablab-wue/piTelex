@@ -3,7 +3,8 @@
     "screen": {
       "type": "screen",
       "enable": true,
-      "lowercase": true
+      "lowercase": true,
+      "suppress_shifts": true
     },
     "log": {
       "type": "log",

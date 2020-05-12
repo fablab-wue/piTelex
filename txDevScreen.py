@@ -87,6 +87,8 @@ class TelexScreen(txBase.TelexBase):
 
         self.lowercase = self.params.get('lowercase', False)
 
+        self.suppress_shifts = self.params.get('suppress_shifts', False)
+
         if os.name == 'nt':
             pass
 
@@ -207,6 +209,9 @@ class TelexScreen(txBase.TelexBase):
 
         if a == '\r' or a == '\n':
             print(a, end='')
+        elif a in '[]' and self.suppress_shifts:
+            # Don't print letter/figure shift
+            pass
         else:
             if source == '^':
                 print('\033[0;33m'+a+'\033[0m', end='', flush=True)

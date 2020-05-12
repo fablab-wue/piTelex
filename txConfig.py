@@ -144,7 +144,7 @@ def load():
     devices = CFG['devices']
     
     if ARGS.screen:
-        screen_args = {'type': 'screen', 'enable': True, 'lowercase': False}
+        screen_args = {'type': 'screen', 'enable': True, 'lowercase': False, 'suppress_shifts': False}
         try:
             screen_args.update(devices['screen'])
         except KeyError:
