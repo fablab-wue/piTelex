@@ -19,7 +19,7 @@ import txBase
 import log
 
 def LOG(text:str, level:int=3):
-    log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
+    log.LOG('\033[30;43m<'+text+'>\033[0m', level)
 
 if os.name == 'nt':   # debug on windows PC
     REMOTE_IP = '10.23.42.234'   # IP of the remote RPi with its GPIO
