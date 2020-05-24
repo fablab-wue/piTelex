@@ -17,6 +17,7 @@ from threading import Thread
 import socket
 import time
 import csv
+import datetime
 import random
 random.seed()
 
@@ -33,6 +34,20 @@ tns_addresses = [
     "tlnserv3.teleprinter.net",
     "telexgateway.de"
 ]
+
+# i-Telex epoch has been defined as 1900-01-00 00:00:00 (sic)
+# What's probably meant is          1900-01-01 00:00:00
+# Even more probable is UTC, because naive evaluation during a trial gave a 2 h
+# offset during CEST. If needed, this must be expanded for local timezone
+# evaluation.
+itx_epoch = datetime.datetime(
+    year = 1900,
+    month = 1,
+    day = 1,
+    hour = 0,
+    minute = 0,
+    second = 0
+)
 
 def choose_tns_address():
     """
@@ -148,13 +163,105 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             user = cls.query_userlist(number)
             
             if not user:
-                user = cls.query_TNS(number)
+                user = cls.query_TNS_bin(number)
 
             if not user and number[0] == '0':
-                user = cls.query_TNS(number[1:])
+                user = cls.query_TNS_bin(number[1:])
 
             return user
 
+    @classmethod
+    def query_TNS_bin(cls, number):
+        """
+        Query TNS for member contact information (hostname/ip address, port) by
+        telex number
+
+        For details, see implementation and i-Telex Communication Specification
+        (r874).
+        """
+        try:
+            # Sanitise subscriber number so it will fit the Peer_query
+            number = int(number)
+            if number < 0 or number > 0xffffffff:
+                raise ValueError("Invalid subscriber number")
+            number = number.to_bytes(length=4, byteorder="little")
+
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(3.0)
+                s.connect((choose_tns_address(), cls._tns_port))
+                # Peer_query packet:
+                #                Code  Len
+                qry = bytearray([0x03, 0x05])
+                # Number
+                qry.extend(number)
+                # Version
+                qry.append(0x01)
+                s.sendall(qry)
+                data = s.recv(1024)
+                s.close()
+            if data[0] == 0x04: # Peer_not_found
+                return None
+            elif data[0] == 0x05: # Peer_reply_v1
+                if not data[1] == 0x64:
+                    raise ValueError("Peer_reply_v1 should have length 0x64, bus has 0x{0:x} instead".format(data[1]))
+                # telex number of entry
+                number_recv = str(int.from_bytes(data[2:6], byteorder="little", signed=False))
+                # name of entry holder
+                name = data[6:46].decode("ISO8859-1").rstrip('\x00')
+                # flags, ignored as per spec
+                flags = data[46:48]
+                # entry type; see below
+                entry_type_raw = data[48]
+                # hostname
+                hostname = data[49:89].decode("ISO8859-1").rstrip('\x00')
+                # IP address
+                ip_address = ".".join([str(i) for i in data[89:93]])
+                # TCP port
+                port = int.from_bytes(data[93:95], byteorder="little", signed=False)
+                # local dialling extension
+                extension = data[95]
+                # No real requirement, just to get equal results compared with
+                # text protocol. As per the specs, the text protocol should
+                # send "0" on no extension, but it sends a dash instead.
+                if extension == 0:
+                    extension = '-'
+                # PIN: ignored as per spec
+                pin = data[96:98]
+                # last changed date: caution, UTC! ignored as of now.
+                date_secs_since_itx_epoch = int.from_bytes(data[98:], byteorder="little", signed=False)
+                date = itx_epoch + datetime.timedelta(seconds=date_secs_since_itx_epoch)
+
+                if entry_type_raw in [1, 2, 5]:
+                    # Baudot type
+                    entry_type = 'I'
+                elif entry_type_raw in [3, 4]:
+                    # ASCII type
+                    entry_type = 'A'
+                else:
+                    # non-supported type (0: deleted; 6: e-mail)
+                    return None
+
+                if entry_type_raw in [1, 3]:
+                    # fixed hostname given
+                    host = hostname
+                else:
+                    # IP address given
+                    host = ip_address
+
+                user = {
+                    'TNum': number_recv,
+                    'ENum': extension,
+                    'Name': name,
+                    'Type': entry_type,
+                    'Host': host,
+                    'Port': port
+                }
+                LOG('Found user in TNS '+str(user), 4)
+                return user
+
+        except Exception as e:
+            LOG(str(e))
+            return None
 
     @classmethod
     def query_TNS(cls, number):
