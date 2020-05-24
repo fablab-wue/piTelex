@@ -17,19 +17,29 @@ from threading import Thread
 import socket
 import time
 import csv
+import random
+random.seed()
 
 import txCode
 import txBase
 import log
 import txDevITelexCommon
 
-# TNS-servers:
-# sonnibs.no-ip.org
-# tlnserv.teleprinter.net
-# tlnserv3.teleprinter.net
-# telexgateway.de
+# List of TNS addresses as of 2020-04-21
+# <https://telexforum.de/viewtopic.php?f=6&t=2504&p=17795#p17795>
+tns_addresses = [
+    "sonnibs.no-ip.org",
+    "tlnserv.teleprinter.net",
+    "tlnserv3.teleprinter.net",
+    "telexgateway.de"
+]
 
-#######
+def choose_tns_address():
+    """
+    Return randomly chosen TNS (Telex number server) address, for load
+    distribution.
+    """
+    return random.choice(tns_addresses)
 
 def LOG(text:str, level:int=3):
     log.LOG('\033[5;30;46m<'+text+'>\033[0m', level)
@@ -37,7 +47,6 @@ def LOG(text:str, level:int=3):
 
 class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
     USERLIST = []   # cached list of user dicts of file 'userlist.csv'
-    _tns_host = ''
     _tns_port = 0
     _userlist = ''
 
@@ -47,7 +56,6 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         self.id = '>'
         self.params = params
 
-        TelexITelexClient._tns_host = params.get('tns_host', 'sonnibs.no-ip.org')
         TelexITelexClient._tns_port = params.get('tns_port', 11811)
         TelexITelexClient._userlist = params.get('userlist', 'userlist.csv')
 
@@ -155,7 +163,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
-                s.connect((cls._tns_host, cls._tns_port))
+                s.connect((choose_tns_address(), cls._tns_port))
                 qry = bytearray('q{}\r\n'.format(number), "ASCII")
                 s.sendall(qry)
                 data = s.recv(1024)
