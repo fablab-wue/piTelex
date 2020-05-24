@@ -45,7 +45,7 @@ class TelexED1000SC(txBase.TelexBase):
         self._is_online = False
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
-        self.recv_debug = self.params.get('recv_debug', True)
+        self.recv_debug = self.params.get('recv_debug', False)
 
         recv_f0 = self.params.get('recv_f0', 2250)
         recv_f1 = self.params.get('recv_f1', 3150)

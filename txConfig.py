@@ -189,6 +189,7 @@ def load():
             'recv_f0': 2250, 
             'recv_f1': 3150,
             'recv_squelch': 100,
+            'recv_debug': False,
             'baudrate': 50, 
             'devindex': None, 
             'zcarrier': False,
