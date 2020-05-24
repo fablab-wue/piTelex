@@ -123,7 +123,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
     def thread_connect_as_client(self, user):
         try:
             # get IP of given number from Telex-Number-Server (TNS)
-                
+
             is_ascii = user['Type'] in 'Aa'
 
             # connect to destination Telex
@@ -144,7 +144,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         except Exception as e:
             LOG(str(e))
             self.disconnect_client()
-        
+
         s.close()
         self._rx_buffer.append('\x1bZ')
 
@@ -161,7 +161,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 return
 
             user = cls.query_userlist(number)
-            
+
             if not user:
                 user = cls.query_TNS_bin(number)
 
@@ -296,7 +296,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
         except:
             pass
-            
+
         return None
 
 

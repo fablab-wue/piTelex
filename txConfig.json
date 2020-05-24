@@ -14,7 +14,9 @@
     "i-Telex": {
       "type": "i-Telex",
       "enable": true,
-      "port": 2342
+      "port": 2342,
+      "number": 0,
+      "tns-pin": 12345
     }
   },
   "verbose": true,
