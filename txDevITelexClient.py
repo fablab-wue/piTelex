@@ -18,43 +18,11 @@ import socket
 import time
 import csv
 import datetime
-import random
-random.seed()
 
 import txCode
 import txBase
 import log
 import txDevITelexCommon
-
-# List of TNS addresses as of 2020-04-21
-# <https://telexforum.de/viewtopic.php?f=6&t=2504&p=17795#p17795>
-tns_addresses = [
-    "sonnibs.no-ip.org",
-    "tlnserv.teleprinter.net",
-    "tlnserv3.teleprinter.net",
-    "telexgateway.de"
-]
-
-# i-Telex epoch has been defined as 1900-01-00 00:00:00 (sic)
-# What's probably meant is          1900-01-01 00:00:00
-# Even more probable is UTC, because naive evaluation during a trial gave a 2 h
-# offset during CEST. If needed, this must be expanded for local timezone
-# evaluation.
-itx_epoch = datetime.datetime(
-    year = 1900,
-    month = 1,
-    day = 1,
-    hour = 0,
-    minute = 0,
-    second = 0
-)
-
-def choose_tns_address():
-    """
-    Return randomly chosen TNS (Telex number server) address, for load
-    distribution.
-    """
-    return random.choice(tns_addresses)
 
 def LOG(text:str, level:int=3):
     log.LOG('\033[30;46m<'+text+'>\033[0m', level)
@@ -188,7 +156,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
-                s.connect((choose_tns_address(), cls._tns_port))
+                s.connect((cls.choose_tns_address(), cls._tns_port))
                 # Peer_query packet:
                 #                Code  Len
                 qry = bytearray([0x03, 0x05])
@@ -229,7 +197,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 pin = data[96:98]
                 # last changed date: caution, UTC! ignored as of now.
                 date_secs_since_itx_epoch = int.from_bytes(data[98:], byteorder="little", signed=False)
-                date = itx_epoch + datetime.timedelta(seconds=date_secs_since_itx_epoch)
+                date = cls.itx_epoch + datetime.timedelta(seconds=date_secs_since_itx_epoch)
 
                 if entry_type_raw in [1, 2, 5]:
                     # Baudot type
@@ -270,7 +238,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
-                s.connect((choose_tns_address(), cls._tns_port))
+                s.connect((cls.choose_tns_address(), cls._tns_port))
                 qry = bytearray('q{}\r\n'.format(number), "ASCII")
                 s.sendall(qry)
                 data = s.recv(1024)

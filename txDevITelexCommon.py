@@ -11,6 +11,9 @@ __version__     = "0.0.1"
 from threading import Thread
 import socket
 import time
+import datetime
+import random
+random.seed()
 
 import txCode
 import txBase
@@ -298,6 +301,38 @@ class TelexITelexCommon(txBase.TelexBase):
         #self._rx_buffer.append('#')
         #self._rx_buffer.append('@')
         self._rx_buffer.append('\x1bI')
+
+    # i-Telex epoch has been defined as 1900-01-00 00:00:00 (sic)
+    # What's probably meant is          1900-01-01 00:00:00
+    # Even more probable is UTC, because naive evaluation during a trial gave a 2 h
+    # offset during CEST. If needed, this must be expanded for local timezone
+    # evaluation.
+    itx_epoch = datetime.datetime(
+        year = 1900,
+        month = 1,
+        day = 1,
+        hour = 0,
+        minute = 0,
+        second = 0
+    )
+
+    # List of TNS addresses as of 2020-04-21
+    # <https://telexforum.de/viewtopic.php?f=6&t=2504&p=17795#p17795>
+    _tns_addresses = [
+        "sonnibs.no-ip.org",
+        "tlnserv.teleprinter.net",
+        "tlnserv3.teleprinter.net",
+        "telexgateway.de"
+    ]
+
+    @classmethod
+    def choose_tns_address(cls):
+        """
+        Return randomly chosen TNS (Telex number server) address, for load
+        distribution.
+        """
+        return random.choice(cls._tns_addresses)
+
 
 
 #######

@@ -272,7 +272,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
                 self._tns_port = 11811
-                s.connect((choose_tns_address(), self._tns_port))
+                s.connect((self.choose_tns_address(), self._tns_port))
                 # client_update packet:
                 #                Code  Len
                 qry = bytearray([0x01, 0x08])
