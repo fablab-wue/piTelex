@@ -59,12 +59,9 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         #print("Waiting for connection...")
         Thread(target=self.thread_srv_accept_incoming_connections, name='iTelexSaic').start()
 
-        # State of connection self-test, wherein we verify if we can connect to
-        # ourselves by our external IP address.
-        # - 0: need to update TNS, current own public IP address unknown
-        # - 1: connection not ok or untested, own public IP address known
-        # - 2: connection ok
-        self.connection_test_state = 0
+        # Record number of failed tests and TNS updates
+        self.update_tns_fail = 0
+        self.test_connection_fail = 0
 
         # Own public IP address; updated by TNS queries
         self.ip_address = None
@@ -146,43 +143,89 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         For details, see implementation and i-Telex Communication Specification
         (r874).
+
+        Some things aren't in the specs, but were obtained by personal
+        communication with i-Telex programmer Fred Sonnenrein. i-Telex does it
+        like this:
+
+        1. Depending on configuration, do self-test every 45 s (not too often
+           because self test blocks other connections).
+        2. If self-test fails, retry two times. On success, go to 1. If three
+           consecutive self tests fail, continue.
+        3. Trigger client_update to TNS and reset timer (see 6).
+        4. If this yielded data, retry self-test at most three times. On
+           success, go to 1. Continue otherwise.
+        5. Log error and wait until client_update successful, in this case go
+           to 1.
+        6. The previous items nonwithstanding, retry client_update every 60
+           min. If client_update is triggered elsewhere, reset timer.
+
+        Modifications for piTelex, to KISS:
+
+        - Run everything from single thread. Instead of precise timings, use
+          sleep in-between calls.
+        - Do self-test every 20 s (no problem as we don't block "real"
+          clients), rinse and repeat. Retry up to six times on fail.
+        - After first six fails, trigger client_update. Retry self-test another
+          six times. If it fails another six times, stop self-tests and keep
+          trying client_update. Restart self-tests if successful.
+        - The only gap: If TNS updates don't succeed but self-tests do, there
+          is no advance warning. If eventually the IP address changed and the TNS
+          update still cannot be performed, the self test will fail and the
+          problem will be noticed only then.
+
         """
         while self.run:
-            if self.connection_test_state <= 0:
-                # Current own public address unknown, need to update with TNS
-                # servers. They'll send us our public address in the
-                # address_confirm packet.
-                #
-                # Sleep for a while if unsuccessful to prevent spamming them.
-                if self.update_tns_record():
-                    # We successfully updated the TNS record and got our public IP
-                    self.connection_test_state = 1
-                    LOG("self-test status => 1", level=5)
-                else:
-                    # An error occurred: Wait before retrying
-                    time.sleep(60)
+            # Update TNS record on startup to obtain own IP address. After
+            # that, update on hourly schedule (roughly).
+            if self.update_tns_record():
+                self.update_tns_fail = 0
+                # If update succeeded, restart self-test
+                if self.test_connection_fail == 666:
+                    LOG("self-test: TNS update successful, resuming self-test", level=1)
+                    self.test_connection_fail = 0
+                LOG("self-test: TNS update successful", level=5)
+            else:
+                self.update_tns_fail += 1
+                LOG("self-test: TNS update failed {}x".format(self.update_tns_fail), level=1)
 
-            elif self.connection_test_state == 1:
-                # Connection status not ok or unknown. Need to verify now.
+            # Startup: As long as own IP address not known, self-test not
+            # possible. Retry.
+            if not self.ip_address:
+                LOG("self-test: IP address unknown, connection test impossible, retrying in 60 min", level=5)
+                time.sleep(3600)
+                continue
+
+            for _ in range(180):
+                # Self-test every 20 s for about one hour, then exit this loop
+                # and restart while loop, updating TNS record.
+                time.sleep(20)
+
+                # If 2*6 self-tests fail consecutively, cease self-testing and
+                # only retry TNS update hourly.
+                if self.test_connection_fail >= 12:
+                    if self.test_connection_fail == 12:
+                        LOG("self-test: too many connection tests failed, retrying after next TNS update", level=1)
+                        # TODO print error with date
+                    # cheap trick to only log and print the error once, and
+                    # allow proper resetting above
+                    self.test_connection_fail = 666
+                    continue
+
+                # OTOH, if self-test failed six times, but less than 12,
+                # continue self-testing no matter if the TNS update succeeded.
+
+                # Do connection self-test. Count failures, reset on success.
                 if self.test_connection():
-                    self.connection_test_state = 2
-                    LOG("self-test status => 2", level=5)
+                    self.test_connection_fail = 0
+                    LOG("self-test: connection test successful", level=5)
                 else:
-                    # Two possibilities here:
-                    # - Our IP address has changed: Need to update TNS record!
-                    # - Our internet connection is borked: No general solution
-                    #   available, unfortunately. Fall back to TNS update.
-                    # But wait a few seconds before updating, maybe the
-                    # DSL/Wifi reappears until then.
-                    self.connection_test_state = 0
-                    LOG("self-test status => 0", level=2)
-                    time.sleep(10)
+                    self.test_connection_fail += 1
+                    LOG("self-test: connection test failed {}x".format(self.test_connection_fail), level=5)
 
-            elif self.connection_test_state >= 2:
-                # Connection tested ok. Wait until rechecking.
-                time.sleep(200) # Specs suggest 200 s
-                self.connection_test_state = 1
-                LOG("self-test status => 1", level=5)
+                if self.test_connection_fail == 6:
+                    # After six failed tries, update TNS immediately.
+                    break
 
     def test_connection(self):
         """
