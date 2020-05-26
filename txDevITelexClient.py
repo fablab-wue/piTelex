@@ -71,8 +71,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         if source in '<>':
             return
 
-        #if not self._connected:
-        #    return
+        if not self._connected:
+            return
 
         self._tx_buffer.append(a)
         #return True   #debug
