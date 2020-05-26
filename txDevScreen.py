@@ -189,6 +189,10 @@ class TelexScreen(txBase.TelexBase):
                             # local echo
                             if a == '\r' or a == '\n':
                                 print(a, end='')
+
+                                # Print line ending cue for new lines
+                                if a == '\n':
+                                    print('\033[70G'+'|'+'\033[0G'+'\033[0m', end='', flush=True)
                             else:
                                 print('\033[1;31m'+(a.lower() if self.lowercase else a)+'\033[0m', end='', flush=True)
 
@@ -209,6 +213,10 @@ class TelexScreen(txBase.TelexBase):
 
         if a == '\r' or a == '\n':
             print(a, end='')
+
+            # Print line ending cue for new lines
+            if a == '\n':
+                print('\033[70G'+'|'+'\033[0G'+'\033[0m', end='', flush=True)
         elif a in '[]' and self.suppress_shifts:
             # Don't print letter/figure shift
             pass
