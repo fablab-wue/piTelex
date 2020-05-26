@@ -53,6 +53,11 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         self.clients = {}
 
         self.SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Set socket option to bind in spite of TIME_WAIT connections. This is
+        # to facilitate rapid restarting if necessary (rapid meaning < 2*MSL or
+        # < 240 s).
+        # https://stackoverflow.com/questions/5040491/python-socket-doesnt-close-connection-properly
+        self.SERVER.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.SERVER.bind(('', self._port))
 
         self.SERVER.listen(2)
