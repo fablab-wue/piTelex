@@ -245,7 +245,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         """
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(1.0)
+                s.settimeout(3.0)
                 s.connect((self.ip_address, self._port))
                 qry = selftest_packet
                 # Reset selftest event before sending in case it was
