@@ -108,7 +108,22 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     def thread_srv_accept_incoming_connections(self):
         """Sets up handling for incoming clients."""
         while self.run:
-            client, client_address = self.SERVER.accept()
+            try:
+                client, client_address = self.SERVER.accept()
+            except ConnectionAbortedError as e:
+                # This exception results from ECONNABORT from "under the hood".
+                # It happens if the client resets the connection after it is
+                # established, but before accept is called:
+                #
+                # - C => S: SYN
+                # - C <= S: SYN, ACK
+                # - C => S: ACK
+                # - C => S: RST
+                # - accept called now: ConnectionAbortedError!
+                #
+                # The only reasonable thing to do is to ignore it.
+                LOG(str(e), level=2)
+                continue
             # Recognise self-tests early and mute them
             if client_address[0] == self.ip_address:
                 data = client.recv(128)
