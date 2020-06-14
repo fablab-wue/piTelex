@@ -179,13 +179,15 @@ class TelexED1000SC(txBase.TelexBase):
                                     bits[i] = 1
                                 mask <<= 1
                             wavecomp = bytearray()
-                            wavecomp.extend(waves[0])
                             for bit in bits:
                                 wavecomp.extend(waves[bit])
-                            wavecomp.extend(waves[1])
-                            wavecomp.extend(waves[1])
  
                             if nbit == 5:
+                                # Single Baudot character: add start and stop bits
+                                wavecomp[0:0] = waves[0]
+                                wavecomp.extend(waves[1])
+                                wavecomp.extend(waves[1])
+                                # Limit send length (only 1.5 stop bits)
                                 frames = Fpw   # 7.5 bits
                             else:
                                 frames = len(wavecomp) // 2   # 16 bit words
