@@ -14,7 +14,7 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
-from threading import Thread
+from threading import Thread, Event
 import time
 import pyaudio
 import math
@@ -42,7 +42,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         self._tx_buffer = []
         self._rx_buffer = []
-        self._is_online = False
+        self._is_online = Event()
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
@@ -86,7 +86,7 @@ class TelexED1000SC(txBase.TelexBase):
         if a == '#':
             a = '@'   # ask teletype for hardware ID
 
-        if a and self._is_online:
+        if a and self._is_online.is_set():
             self._tx_buffer.append(a)
 
     # =====
@@ -109,7 +109,10 @@ class TelexED1000SC(txBase.TelexBase):
     # -----
 
     def _set_online(self, online:bool):
-        self._is_online = online
+        if online:
+            self._is_online.set()
+        else:
+            self._is_online.clear()
 
     # =====
 
@@ -146,7 +149,7 @@ class TelexED1000SC(txBase.TelexBase):
         try:
 
             while self.run:
-                if self._is_online:
+                if self._is_online.is_set():
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
                         if a == '§W':
@@ -224,13 +227,13 @@ class TelexED1000SC(txBase.TelexBase):
 
             bit = self._recv_decode(data)
 
-            #if bit is None and self._is_online:
+            #if bit is None and self._is_online.is_set():
             #print(bit, val)
 
             if bit:
                 _bit_counter_0 = 0
                 _bit_counter_1 += 1
-                if _bit_counter_1 == 20 and not self._is_online:   # 0.1sec
+                if _bit_counter_1 == 20 and not self._is_online.is_set():   # 0.1sec
                     self._rx_buffer.append('\x1bAT')
             else:
                 _bit_counter_0 += 1
