@@ -204,7 +204,8 @@ class TelexScreen(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
-            if a[0] == '\x1b':
+            if a[0] == '\x1b' and not a[1:] == "WELCOME":
+                # Print all commands, except WELCOME (internal use)
                 print('\033[0;30;47m<'+a[1:]+'>\033[0m', end='', flush=True)
             return
 

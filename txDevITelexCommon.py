@@ -35,7 +35,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
         self._rx_buffer = []
         self._tx_buffer = []
-        self._connected = False
+        self._connected = 0
 
 
     def __del__(self):
@@ -44,13 +44,13 @@ class TelexITelexCommon(txBase.TelexBase):
     
 
     def exit(self):
-        self._connected = False
+        self._connected = 0
 
     # =====
 
     def disconnect_client(self):
         self._tx_buffer = []
-        self._connected = False
+        self._connected = 0
 
     # =====
 
@@ -64,9 +64,36 @@ class TelexITelexCommon(txBase.TelexBase):
 
         s.settimeout(0.2)
 
-        self._connected = True
+        # Connection states:
+        # 0: disconnected
+        # 1: connected, but printer not yet started
+        # 2: connected, printer has been started, welcome banner hasn't been
+        #    fully received yet
+        # 3: connected, welcome banner has been received completely
+        self._connected = 1
 
-        while self._connected:
+        # The rationale here is to, after starting the printer, first print the
+        # complete welcome banner. Received data must only by printed *after*
+        # this.
+        #
+        # The typical sequence is as follows:
+        #
+        # - After printable data is received for the first time, we decide on
+        #   the connection type (Baudot or ASCII), queue some commands (start
+        #   printer, MCP output welcome banner) and also queue the received
+        #   data afterwards. (state 2)
+        #
+        # - Main loop read()-s us. Our read method is filtered (based on state
+        #   2) so that only commands are read, printable data is retained for
+        #   later perusal.
+        #
+        # - Eventually, MCP receives the welcome banner command. It sends the
+        #   banner, which is writ[e]()-ten to us. After the banner, it sends
+        #   the ESC-WELCOME command which tells us the banner has been written
+        #   completely. On this command, our read method is unlocked and
+        #   previously received data is available for main loop. (state 3)
+
+        while self._connected > 0:
             try:
                 data = s.recv(1)
                 
@@ -100,12 +127,26 @@ class TelexITelexCommon(txBase.TelexBase):
                             id = (data[3] << 24) | (data[4] << 16) | (data[5] << 8) | (data[6])
                             print(id)
                         self._rx_buffer.append('\x1bD'+str(data[2]))
+                        if self._connected < 2:
+                            # Start printer and send welcome banner
+                            self._rx_buffer.append('\x1bA')
+                            self._connected = 2
+                            if is_server:
+                                self._tx_buffer = []
+                                received_counter += self.send_welcome(s)
                         self.send_ack(s, received_counter)
 
                     # Baudot Data
                     elif data[0] == 2 and packet_len >= 1 and packet_len <= 50:
                         #LOG('Baudot data '+repr(data), 4)
                         aa = bmc.decodeBM2A(data[2:])
+                        if self._connected < 2:
+                            # Start printer and send welcome banner
+                            self._rx_buffer.append('\x1bA')
+                            self._connected = 2
+                            if is_server:
+                                self._tx_buffer = []
+                                received_counter += self.send_welcome(s)
                         for a in aa:
                             if a == '@':
                                 a = '#'
@@ -168,6 +209,13 @@ class TelexITelexCommon(txBase.TelexBase):
                 else:
                     #LOG('Other', repr(data), 4)
                     is_ascii = True
+                    if self._connected < 2:
+                        # Start printer and send welcome banner
+                        self._rx_buffer.append('\x1bA')
+                        self._connected = 2
+                        if is_server:
+                            self._tx_buffer = []
+                            received_counter += self.send_welcome(s)
                     data = data.decode('ASCII', errors='ignore').upper()
                     data = txCode.BaudotMurrayCode.translate(data)
                     for a in data:
@@ -176,14 +224,10 @@ class TelexITelexCommon(txBase.TelexBase):
                         self._rx_buffer.append(a)
                         received_counter += 1
 
-
             except socket.timeout:
                 #LOG('.', 4)
-                if is_ascii is not None:   # unknown if ASCII or baudot
+                if is_ascii is not None:   # either ASCII or baudot connection detected
                     timeout_counter += 1
-                    if is_server and timeout_counter == 1:
-                        self._tx_buffer = []
-                        self.send_welcome(s)
                     
                     if is_ascii:
                         if self._tx_buffer:
@@ -216,7 +260,7 @@ class TelexITelexCommon(txBase.TelexBase):
         if not is_ascii:
             self.send_end(s)
         LOG('end connection', 3)
-        self._connected = False
+        self._connected = 0
 
 
     def send_heartbeat(self, s):
@@ -306,6 +350,7 @@ class TelexITelexCommon(txBase.TelexBase):
         #self._rx_buffer.append('#')
         #self._rx_buffer.append('@')
         self._rx_buffer.append('\x1bI')
+        return 24 # fixed length of welcome banner, see txDevMCP
 
     # i-Telex epoch has been defined as 1900-01-00 00:00:00 (sic)
     # What's probably meant is          1900-01-01 00:00:00

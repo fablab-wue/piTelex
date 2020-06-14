@@ -88,7 +88,14 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
     def read(self) -> str:
         if self._rx_buffer:
-            return self._rx_buffer.pop(0)
+            if self._connected == 2:
+                # Welcome banner hasn't been sent yet. Pop only non-printable
+                # items.
+                for nr, item in enumerate(self._rx_buffer):
+                    if item.startswith('\x1b'):
+                        return self._rx_buffer.pop(nr)
+            else:
+                return self._rx_buffer.pop(0)
 
 
 
@@ -96,9 +103,15 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         if len(a) != 1:
             if a == '\x1bZ':   # end session
                 self.disconnect_client()
+            if self._connected == 2 and a == '\x1bWELCOME' and source == '^':
+                # MCP says: Welcome banner has been received completely. Enable
+                # non-command reads in read method so that normal communication
+                # can begin.
+                self._connected = 3
             return
 
         if source in '<>':
+            # Don't send back data from ITelexClient/Srv
             return
 
         self._tx_buffer.append(a)
@@ -145,8 +158,6 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     def thread_srv_handle_client(self, s):  # Takes client socket as argument.
         """Handles a single client connection."""
         try:
-            self._rx_buffer.append('\x1bA')
-
             self.process_connection(s, True, None)
 
         except Exception as e:

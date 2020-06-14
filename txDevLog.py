@@ -52,7 +52,8 @@ class TelexLog(txBase.TelexBase):
             a = '|'
         if a == '\t':
             a = '\\t'
-        if len(a) > 1:
+        if len(a) > 1 and not a[1:] == "WELCOME":
+            # Print all commands, except WELCOME (internal use)
             a = '{' + a[1:] + '}'
 
         if source == self._last_source and a == '|':

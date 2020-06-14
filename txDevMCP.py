@@ -196,12 +196,18 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 return True
 
             if a == '\x1bI':   # welcome as server
+                # The welcome banner itself has a fixed total length of 24 characters:
                 text = '[[[\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
                 #if self.device_id:
                 #    text += self.device_id   # send back device id
                 #else:
                 #    text += '#'
                 self._rx_buffer.extend(list(text))   # send text
+                if source == '<':
+                    # Send command to inform ITelexSrv that the welcome banner has
+                    # been queued completely (unlocks non-command reads from
+                    # ITelexSrv)
+                    self._rx_buffer.append('\x1bWELCOME')
                 return True
 
 
