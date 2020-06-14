@@ -160,8 +160,8 @@ class TelexED1000SC(txBase.TelexBase):
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
                         if a == '§W':
-                            bb = (0xF9FFFFFF,)
-                            nbit = 32
+                            bb = (0xFFC0,)
+                            nbit = 16
                         elif a == '§A':
                             bb = (0xFFC0,)
                             nbit = 16
