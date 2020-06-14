@@ -22,12 +22,14 @@ import struct
 #import scipy.signal.signaltools as sigtool
 from scipy import signal
 import numpy as np
-import matplotlib.pyplot as plt
 
 import txCode
 import txBase
 
 sample_f = 48000       # sampling rate, Hz, must be integer
+
+# Set to plot receive filters' spectra
+plot_spectrum = False
 
 #######
 
@@ -320,8 +322,10 @@ class TelexED1000SC(txBase.TelexBase):
                         analog=False, ftype='butter', fs=sample_f, output='sos')
             self._filters.append(filter_bp)
 
-        return   # debug - remove to plot spectrum
-    '''
+        if not plot_spectrum:
+            return
+
+        import matplotlib.pyplot as plt
         plt.figure()
         plt.ylim(-100, 5)
         plt.xlim(0, 5500)
@@ -339,8 +343,7 @@ class TelexED1000SC(txBase.TelexBase):
         plt.plot((500,500), (10, -100), color='blue', linestyle='dashed')
         plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
         plt.show()
-        pass
-    '''
+
     # -----
 
     # IIR-filter
@@ -373,8 +376,10 @@ class TelexED1000SC(txBase.TelexBase):
             filter_bp = signal.remez(80, [0, f-fbw[i], f, f, f+fbw[i], sample_f/2], [0,1,0], fs=sample_f, maxiter=100)
             self._filters.append(filter_bp)
 
-        return
-    '''
+        if not plot_spectrum:
+            return
+
+        import matplotlib.pyplot as plt
         plt.figure()
         plt.ylim(-60, 5)
         plt.xlim(0, 5500)
@@ -393,8 +398,6 @@ class TelexED1000SC(txBase.TelexBase):
         plt.plot((500,500), (10, -100), color='blue', linestyle='dashed')
         plt.plot((700,700), (10, -100), color='blue', linestyle='dashed')
         plt.show()
-        pass
-    '''
 
     # -----
 
