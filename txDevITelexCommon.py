@@ -19,6 +19,11 @@ import txCode
 import txBase
 import log
 
+# i-Telex allowed package types for Baudot texting mode
+# (everything else triggers ASCII texting mode)
+from itertools import chain
+allowed_types = lambda: chain(range(0x00, 0x09+1), range(0x10, 0x1f+1))
+
 #######
 
 def LOG(text:str, level:int=3):
@@ -74,7 +79,7 @@ class TelexITelexCommon(txBase.TelexBase):
                     d = s.recv(2)   # skip next 2 bytes from telnet command
 
                 # i-Telex packet
-                elif data[0] < 10:
+                elif data[0] in allowed_types():
                     packet_error = False
 
                     d = s.recv(1)
