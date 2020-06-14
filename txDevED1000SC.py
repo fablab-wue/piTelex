@@ -100,7 +100,9 @@ class TelexED1000SC(txBase.TelexBase):
             self._set_online(True)
 
         if a == '\x1bZ':
-            self._tx_buffer = []
+            # When going offline, *don't* empty the tx buffer so the tx thread
+            # can write out the rest. Critical for ASCII services that send
+            # faster than 50 Bd.
             self._set_online(False)
 
         if a == '\x1bWB':
@@ -151,7 +153,10 @@ class TelexED1000SC(txBase.TelexBase):
         try:
 
             while self.run:
-                if self._is_online.is_set():
+                # Process buffer if we're online or if something's left in it
+                # after going offline. Critical for ASCII services that send
+                # faster than 50 Bd.
+                if self._is_online.is_set() or self._tx_buffer:
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
                         if a == '§W':
