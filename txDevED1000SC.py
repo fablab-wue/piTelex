@@ -191,7 +191,9 @@ class TelexED1000SC(txBase.TelexBase):
                     if zcarrier:
                         stream.write(waves[0], Fpb)   # blocking
                     else:
-                        time.sleep(0.100)
+                        # If there's absolutely nothing to do, block until
+                        # we're going online again
+                        self._is_online.wait()
 
                 time.sleep(0.001)
 
@@ -214,6 +216,7 @@ class TelexED1000SC(txBase.TelexBase):
         devindex = self.params.get('devindex', None)
         baudrate = self.params.get('baudrate', 50)
 
+        # One slice is a quarter of a bit or 5 ms
         FpS = int(sample_f / baudrate / 4 + 0.5)   # Frames per slice
 
         time.sleep(1.5)
@@ -222,6 +225,17 @@ class TelexED1000SC(txBase.TelexBase):
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
 
         while self.run:
+            # Don't waste processor cycles while offline; wait up to 5 s before
+            # next tone decode. If we come online during the wait, we
+            # immediately scan for the next bit.
+            #
+            # This delay probably shouldn't be raised much. On one hand, the
+            # worst-case reaction time will grow.  Moreover, the receive IIR
+            # filter also seems to introduce a delay.  In trials under optimal
+            # circumstances, after pressing AT on the teletypewriter, it took
+            # the filter two cycles to recognise the change.
+            self._is_online.wait(2)
+
             bdata = stream.read(FpS, exception_on_overflow=False)   # blocking
             data = np.frombuffer(bdata, dtype=np.int16)
 
@@ -233,8 +247,17 @@ class TelexED1000SC(txBase.TelexBase):
             if bit:
                 _bit_counter_0 = 0
                 _bit_counter_1 += 1
-                if _bit_counter_1 == 20 and not self._is_online.is_set():   # 0.1sec
+                # In offline state, we wait quite a bit to save CPU cycles.
+                # Before, we waited until the counter had increased to 20,
+                # which means 100 ms.
+                #
+                # So react to the first "high" and go online.
+                if _bit_counter_1 == 1 and not self._is_online.is_set():
                     self._rx_buffer.append('\x1bAT')
+                    # Reset symbol recognition, otherwise we might
+                    # inadvertently decode a symbol like AAAAZ, AAAZZ, AAZZZ,
+                    # AZZZZ
+                    slice_counter = 0
             else:
                 _bit_counter_0 += 1
                 _bit_counter_1 = 0
