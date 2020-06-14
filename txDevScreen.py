@@ -85,6 +85,8 @@ class TelexScreen(txBase.TelexBase):
         self._rx_buffer = []
         self._escape = ''
 
+        self.lowercase = self.params.get('lowercase', False)
+
         if os.name == 'nt':
             pass
 
@@ -186,7 +188,7 @@ class TelexScreen(txBase.TelexBase):
                             if a == '\r' or a == '\n':
                                 print(a, end='')
                             else:
-                                print('\033[1;31m'+a+'\033[0m', end='', flush=True)
+                                print('\033[1;31m'+(a.lower() if self.lowercase else a)+'\033[0m', end='', flush=True)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
@@ -199,6 +201,9 @@ class TelexScreen(txBase.TelexBase):
             if a[0] == '\x1b':
                 print('\033[0;30;47m<'+a[1:]+'>\033[0m', end='', flush=True)
             return
+
+        if self.lowercase:
+            a = a.lower()
 
         if a == '\r' or a == '\n':
             print(a, end='')

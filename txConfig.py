@@ -144,7 +144,11 @@ def load():
     devices = CFG['devices']
     
     if ARGS.screen:
-        devices['screen'] = {'type': 'screen', 'enable': True}
+        screen_args = {'type': 'screen', 'enable': True, 'lowercase': False}
+        try:
+            screen_args.update(devices['screen'])
+        except KeyError:
+            devices['screen'] = screen_args
 
     if ARGS.CH340:
         devices['CH340'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340.strip(), 'mode': '', 'baudrate': 50, 'loopback': True}

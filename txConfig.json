@@ -2,7 +2,8 @@
   "devices": {
     "screen": {
       "type": "screen",
-      "enable": true
+      "enable": true,
+      "lowercase": true
     },
     "log": {
       "type": "log",
