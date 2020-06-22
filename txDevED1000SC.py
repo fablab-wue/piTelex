@@ -221,6 +221,7 @@ class TelexED1000SC(txBase.TelexBase):
         _bit_counter_0 = 0
         _bit_counter_1 = 0
         slice_counter = 0
+        properly_online = False
         
         devindex = self.params.get('devindex', None)
         baudrate = self.params.get('baudrate', 50)
@@ -263,16 +264,56 @@ class TelexED1000SC(txBase.TelexBase):
                 # So react to the first "high" and go online.
                 if _bit_counter_1 == 1 and not self._is_online.is_set():
                     self._rx_buffer.append('\x1bAT')
-                    # Reset symbol recognition, otherwise we might
-                    # inadvertently decode a symbol like AAAAZ, AAAZZ, AAZZZ,
-                    # AZZZZ
-                    slice_counter = 0
             else:
                 _bit_counter_0 += 1
                 _bit_counter_1 = 0
                 if _bit_counter_0 == 100:   # 0.5sec
                     self._rx_buffer.append('\x1bST')
 
+            # Suppress symbol recognition until we're "properly online", i.e.
+            # piTelex is in online state and at least one Z has been received
+            # from the teletypewriter.
+            #
+            # If we don't wait for a stable Z, we might spuriously decode one
+            # of these symbols (start bit, 5x character bit, stop bits):
+            #
+            # ScccccSs
+            # ========
+            # AAAAAAZZ: NULL (~ in piTelex)
+            # AAAAAZZZ: T
+            # AAAAZZZZ: O
+            # AAAZZZZZ: M
+            # AAZZZZZZ: V
+            # AZZZZZZZ: letter shift ([ in piTelex)
+            #
+            # We must not detect any A level that only results from the earlier
+            # offline state -- this would be the start bit triggering one of
+            # the above characters. For the two possible ways of going online
+            # this means:
+            #
+            # - AT is pressed: All ok, we've got a stable Z level already,
+            #   that's why we went online in the first place.
+            #
+            # - Incoming connection: We send Z first, the teletypewriter
+            #   acknowledges this by switching from A to Z after some time.
+            #
+            # The second case is critical: We have to wait for the
+            # teletypewriter to send a Z; only after this we are "properly
+            # online".
+            if self._is_online.is_set():
+                # If we're online and receive Z, set "properly online" status
+                # to start reading characters
+                if (not properly_online) and bit:
+                    properly_online = True
+                    slice_counter = 0
+            else:
+                properly_online = False
+                continue
+
+            # If we haven't received a Z yet, skip character recognition until
+            # we do
+            if not properly_online:
+                continue
 
             if slice_counter == 0:
                 if not bit:   # found start step
@@ -325,7 +366,7 @@ class TelexED1000SC(txBase.TelexBase):
         self._filters = []
         for i in range(2):
             f = recv_f[i]
-            filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='band',
+            filter_bp = signal.iirfilter(4, [f/1.05, f*1.05], rs=40, btype='bandpass',
                         analog=False, ftype='butter', fs=sample_f, output='sos')
             self._filters.append(filter_bp)
 
