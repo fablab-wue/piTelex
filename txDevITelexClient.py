@@ -64,7 +64,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                     self.connect_client(user)
 
             if a[:2] == '\x1b?':   # ask TNS
-                user = self.get_user(a[2:])
+                user = self.get_user(a[2:], tns_force = True)
                 print(user)
             return
 
@@ -119,24 +119,27 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
     # =====
 
     @classmethod
-    def get_user(cls, number:str):
+    def get_user(cls, number:str, tns_force:bool = False):
+        # For details about dialling logic, see txDevMCP in thread_dial.
+        number = number.replace('[', '')
+        number = number.replace(']', '')
+        number = number.replace(' ', '')
 
-            number = number.replace('[', '')
-            number = number.replace(']', '')
-            number = number.replace(' ', '')
+        if len(number) < 1:
+            return None
 
-            if len(number) < 2:
-                return
+        # Query locally
+        user = cls.query_userlist(number)
 
-            user = cls.query_userlist(number)
+        # With at least 5 digits, also query remotely
+        if not user and (len(number) >= 5 or tns_force):
+            user = cls.query_TNS_bin(number)
 
-            if not user:
-                user = cls.query_TNS_bin(number)
-
+            # Also accept leading zero for compatibility reasons
             if not user and number[0] == '0':
                 user = cls.query_TNS_bin(number[1:])
 
-            return user
+        return user
 
     @classmethod
     def query_TNS_bin(cls, number):

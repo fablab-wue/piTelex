@@ -8,15 +8,19 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
-from threading import Thread
+from threading import Thread, Event
 import time
 
+import log
 import txBase
 
 # Timeout in ready-to-dial state in s
 WB_TIMEOUT = 45.0
 
 #######
+
+def LOG(text:str, level:int=3):
+    log.LOG('\033[30;46m<'+text+'>\033[0m', level)
 
 class watchdog():
     def __init__(self):
@@ -68,6 +72,21 @@ class TelexMCP(txBase.TelexBase):
         self._font_mode = False
         self._mode = 'Z'
         self._dial_number = ''
+        # Default dial timeout to 2.0 s like i-Telex; set to '+' for plus
+        # dialling
+        dial_timeout = params.get('dial_timeout', 2.0)
+        if dial_timeout == '+':
+            dial_timeout = None
+        else:
+            try:
+                dial_timeout = float(dial_timeout)
+            except (ValueError, TypeError):
+                dial_timeout = 2.0
+            if not 0.0 < dial_timeout < WB_TIMEOUT:
+                LOG("Invalid dialling timeout, falling back to default: " + repr(dial_timeout), level=2)
+                dial_timeout = 2.0
+        self._dial_timeout = dial_timeout
+        self._dial_change = Event()
 
         self._wd = watchdog()
         self._wd.init('ONLINE', 180, self._rx_buffer, '\x1bZ')
@@ -76,6 +95,9 @@ class TelexMCP(txBase.TelexBase):
         self._run = True
         self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
         self._tx_thread.start()
+
+        self._dial_thread = Thread(target=self.thread_dial, name='Dialler')
+        self._dial_thread.start()
 
 
     def __del__(self):
@@ -259,9 +281,12 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
         if self._mode == 'WB':
             #if a == '0':   # hack!!!! to test the pulse dial
             #    self._rx_buffer.append('\x1bA')   # send text
-            if a.isdigit():
+
+            # A digit or + is being dialled; record digit and trigger dial
+            # thread to check
+            if a.isdigit() or (self._dial_timeout is None and a == '+'):
                 self._dial_number += a
-                self._rx_buffer.append('\x1b#'+self._dial_number)   # send text
+                self._dial_change.set()
             else:
                 return True
 
@@ -281,5 +306,76 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 self._rx_buffer.append(a)
             time.sleep(0.15)
         
+    def thread_dial(self):
+        # This thread monitors the number-to-dial and initiates the dial
+        # command depending on the set mode (timeout dialling or plus dialling)
+        #
+        # Timeout dialling behaviour is based on i-Telex r874 (as documented in
+        # the comments at trunk/iTelex/iTelex.c:4586) and simplified:
+        #
+        # 1. After each digit, the local user list is searched in i-Telex.
+        #    In piTelex, we don't, because in the current architecture it would
+        #    complicate things quite a bit.
+        # 2. TNS server is queried if at least five digits have been dialled
+        #    and no further digit is dialled for two seconds
+        # 3. If there is a positive result from a local or TNS query, try to
+        #    establish a connection
+        # 4. Dialling is cancelled if a connection attempt in 3. failed or if
+        #    nothing further is dialled for 15 seconds
+        #
+        # Plus dialling simply waits for digits and dials if '+' is entered.
+
+        # change holds the return value of _dial_change.wait: False if returning by
+        # timeout, True otherwise
+        change = True
+
+        while self._run:
+            if (not self._dial_number) or self._mode != 'WB':
+                # Number empty or not in dial mode -- wait indefinitely for
+                # next change and recheck afterwards
+                change = self._dial_change.wait()
+                self._dial_change.clear()
+                continue
+
+            while True:
+                # There is a number being dialled. This loop runs once for
+                # every digit dialled and checks if the dial condition is
+                # fulfilled:
+                #
+                # - '+' dialling: number complete when finished by +
+                # - timeout dialling: number complete when timeout occurs
+                #
+                # On dial, we break out of the loop and queue the dial command,
+                # which is executed by txDevMCP. For details see
+                # txDevMCP.get_user.
+
+                if change:
+                    # A change in self._dial_number has occurred 
+                    if self._dial_timeout is None:
+                        # We are in + dial mode: Check if the last change was a
+                        # plus, otherwise ignore
+                        if self._dial_number[-1] == '+':
+                            # Remove trailing + and dial
+                            self._dial_number = self._dial_number[:-1]
+                            break
+                    else:
+                        # We are in timeout dial mode, just save the digit and
+                        # continue
+                        pass
+                else:
+                    # No change in dialled number; wait method timed out. This
+                    # can only happen in timeout dialling mode and if at least
+                    # one digit has been dialled. Dial now.
+                    break
+
+                # Before the next iteration, wait on the next change
+                change = self._dial_change.wait(self._dial_timeout)
+                self._dial_change.clear()
+
+            # We've got a "go" for dialling, either by timeout or by +
+            self._rx_buffer.append('\x1b#' + self._dial_number)
+            self._dial_number = ''
+            # TODO have dial command always print an error on fail
+
 #######
 
