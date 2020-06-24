@@ -19,6 +19,25 @@ WB_TIMEOUT = 45.0
 
 #######
 
+# Error messages, based on r874 of i-Telex source and personal conversation
+# with Fred
+#
+# Types:
+# - A: printed at the calling party during keyboard dial
+# - B: sent as reject packet payload by called party
+#
+# Error Type    Description
+# bk    A       dial failure (called party not found in TNS)
+# nc    A       cannot establish TCP connection to called party
+# abs   A/B     line disabled
+# occ   B       line occupied
+# der   B       derailed: line connected, but called teletypewriter not
+#               starting up
+# na    B       called extension not allowed
+#
+# A type errors are handled here, B type errors in txDevITelexCommon (see
+# send_reject).
+
 def LOG(text:str, level:int=3):
     log.LOG('\033[30;46m<'+text+'>\033[0m', level)
 

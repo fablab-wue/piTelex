@@ -146,8 +146,9 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 client.close()
                 continue
             LOG("%s:%s has connected" % client_address, 3)
-            if self.clients:   # one client is active!
-                self.send_reject(client)
+            if self.clients:
+                # our line is occupied (occ)
+                self.send_reject(client, "occ")
                 client.close()
                 continue
             self.clients[client] = client_address

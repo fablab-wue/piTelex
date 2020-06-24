@@ -337,9 +337,17 @@ class TelexITelexCommon(txBase.TelexBase):
         s.sendall(send)
 
 
-    def send_reject(self, s):
+    # Types of reject packets (see txDevMCP):
+    #
+    # - abs   line disabled
+    # - occ   line occupied
+    # - der   derailed: line connected, but called teletypewriter not starting
+    #         up
+    # - na    called extension not allowed
+    def send_reject(self, s, msg = "abs"):
         '''Send reject packet (4)'''
-        send = bytearray([4, 3, ord('o'), ord('c'), ord('c')])   # Reject
+        send = bytearray([4, len(msg)])   # Reject
+        send.extend([ord(i) for i in msg])
         s.sendall(send)
 
 
