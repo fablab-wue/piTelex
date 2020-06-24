@@ -13,6 +13,9 @@ import time
 
 import txBase
 
+# Timeout in ready-to-dial state in s
+WB_TIMEOUT = 45.0
+
 #######
 
 class watchdog():
@@ -68,6 +71,7 @@ class TelexMCP(txBase.TelexBase):
 
         self._wd = watchdog()
         self._wd.init('ONLINE', 180, self._rx_buffer, '\x1bZ')
+        self._wd.init('WB', WB_TIMEOUT, self._rx_buffer, '\x1bZ')
 
         self._run = True
         self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
@@ -99,36 +103,42 @@ class TelexMCP(txBase.TelexBase):
                 self._rx_buffer.append('\x1bWB')   # send text
                 self._mode = 'WB'
                 self._dial_number = ''
-                self._wd.reset('ONLINE')
+                self._wd.reset('WB')
                 return True
 
             if a == '\x1bST':   # ST
                 self._rx_buffer.append('\x1bZ')   # send text
                 self._mode = 'Z'
                 self._wd.disable('ONLINE')
+                self._wd.disable('WB')
                 return True
 
             if a == '\x1bLT':   # LT
                 self._rx_buffer.append('\x1bA')   # send text
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
+                self._wd.disable('WB')
                 return True
 
             if a == '\x1bZ':   # stop motor
                 self._mode = 'Z'
                 self._wd.disable('ONLINE')
+                self._wd.disable('WB')
             if a == '\x1bA':   # start motor
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
+                self._wd.disable('WB')
 
 
             if a == '\x1bTAB':   # next mode
                 if self._mode == 'Z':
                     self._rx_buffer.append('\x1bWB')   # send text
                     self._mode = 'WB'
+                    self._wd.reset('WB')
                 elif self._mode == 'WB':
                     self._rx_buffer.append('\x1bA')   # send text
                     self._mode = 'A'
+                    self._wd.disable('WB')
                 elif self._mode == 'A':
                     self._rx_buffer.append('\x1bZ')   # send text
                     self._mode = 'Z'
