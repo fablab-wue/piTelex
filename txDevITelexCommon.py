@@ -29,6 +29,25 @@ allowed_types = lambda: chain(range(0x00, 0x09+1), range(0x10, 0x1f+1))
 def LOG(text:str, level:int=3):
     log.LOG('\033[30;44m<'+text+'>\033[0m', level)
 
+def decode_ext_from_direct_dial(ext:int) -> str:
+    """
+    Decode integer extension from direct dial packet and return as str.
+
+    See i-Telex specification, r874.
+    """
+    ext = int(ext)
+    if ext == 0:
+        return None
+    elif 1 <= ext <= 100:
+        # Two-digit extension (leading zero if applicable)
+        return "{:02d}".format(ext%100)
+    elif 101 <= ext <= 110:
+        # single-digit extension
+        return str(ext%10)
+    else:
+        # invalid!
+        return "invalid"
+
 class TelexITelexCommon(txBase.TelexBase):
     def __init__(self):
         super().__init__()
@@ -61,6 +80,7 @@ class TelexITelexCommon(txBase.TelexBase):
         received_counter = 0
         timeout_counter = -1
         time_next_send = None
+        error = False
 
         s.settimeout(0.2)
 
@@ -121,25 +141,38 @@ class TelexITelexCommon(txBase.TelexBase):
                         pass
 
                     # Direct Dial
-                    elif data[0] == 1 and (1 <= packet_len <= 10):
+                    elif data[0] == 1 and packet_len == 1:
                         LOG('Direct Dial '+repr(data), 4)
-                        if packet_len >= 5:
-                            id = (data[3] << 24) | (data[4] << 16) | (data[5] << 8) | (data[6])
-                            print(id)
-                        self._rx_buffer.append('\x1bD'+str(data[2]))
-                        if self._connected < 2:
-                            # Start printer and send welcome banner
-                            self._rx_buffer.append('\x1bA')
-                            self._connected = 2
-                            if is_server:
-                                self._tx_buffer = []
-                                received_counter += self.send_welcome(s)
-                        self.send_ack(s, received_counter)
+
+                        # Disable emitting "direct dial" command, since it's
+                        # currently not acted upon anywhere.
+                        #self._rx_buffer.append('\x1bD'+str(data[2]))
+
+                        # Instead, only accept extension 0 (i-Telex default)
+                        # and None, and reject all others.
+                        ext = decode_ext_from_direct_dial(data[2])
+                        if not ext in ('0', None):
+                            self.send_reject(s, 'na')
+                            error = True
+                            break
+                        else:
+                            # TODO: Start up printer properly and fail if it
+                            # doesn't work.
+                            if self._connected < 2:
+                                # Start printer and send welcome banner
+                                self._rx_buffer.append('\x1bA')
+                                self._connected = 2
+                                if is_server:
+                                    self._tx_buffer = []
+                                    received_counter += self.send_welcome(s)
+                            self.send_ack(s, received_counter)
 
                     # Baudot Data
                     elif data[0] == 2 and packet_len >= 1 and packet_len <= 50:
                         #LOG('Baudot data '+repr(data), 4)
                         aa = bmc.decodeBM2A(data[2:])
+                        # TODO: Start up printer properly and fail if it
+                        # doesn't work.
                         if self._connected < 2:
                             # Start printer and send welcome banner
                             self._rx_buffer.append('\x1bA')
@@ -209,6 +242,8 @@ class TelexITelexCommon(txBase.TelexBase):
                 else:
                     #LOG('Other', repr(data), 4)
                     is_ascii = True
+                    # TODO: Start up printer properly and fail if it
+                    # doesn't work.
                     if self._connected < 2:
                         # Start printer and send welcome banner
                         self._rx_buffer.append('\x1bA')
@@ -258,7 +293,10 @@ class TelexITelexCommon(txBase.TelexBase):
 
 
         if not is_ascii:
-            self.send_end(s)
+            # In an error condition, a specific reject package has already been
+            # sent. Don't send an end package additionally.
+            if not error:
+                self.send_end(s)
         LOG('end connection', 3)
         self._connected = 0
 
