@@ -11,22 +11,19 @@ __version__     = "0.0.1"
 from threading import Thread, Event
 import socket
 import time
+import sys
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
 
 import txCode
 import txBase
-import log
 import txDevITelexCommon
 
 #                        Code  Len   Data ...
 selftest_packet = bytes([0x08, 0x04, 0xDE, 0xCA, 0xFB, 0xAD])
 
 #######
-
-def LOG(text:str, level:int=3):
-    log.LOG('\033[30;44m<'+text+'>\033[0m', level)
 
 class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     def __init__(self, **params):
@@ -41,14 +38,14 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         if self._number <= 0 or self._number > 0xffffffff:
             # Own number no valid integer inside 32 bit; client_update requires
             # this though, so ignore
-            LOG("Invalid own number, ignored: " + repr(self._number), level=2)
+            l.warning("Invalid own number, ignored: " + repr(self._number))
             self._number = None
 
         self._tns_pin = params.get('tns-pin', None)
         if self._tns_pin < 0 or self._tns_pin > 0xffff:
             # TNS pin no valid integer inside 16 bit; client_update requires
             # this though, so ignore
-            LOG("Invalid TNS pin, ignored: " + repr(self._tns_pin), level=2)
+            l.warning("Invalid TNS pin, ignored: " + repr(self._tns_pin))
             self._number = None
             self._tns_pin = None
 
@@ -126,7 +123,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         while self.run:
             try:
                 client, client_address = self.SERVER.accept()
-            except ConnectionAbortedError as e:
+            except ConnectionAbortedError:
                 # This exception results from ECONNABORT from "under the hood".
                 # It happens if the client resets the connection after it is
                 # established, but before accept is called:
@@ -138,7 +135,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # - accept called now: ConnectionAbortedError!
                 #
                 # The only reasonable thing to do is to ignore it.
-                LOG(str(e), level=2)
+                l.info("Exception caught:", exc_info = sys.exc_info())
                 continue
             # Recognise self-tests early and mute them
             if client_address[0] == self.ip_address:
@@ -148,7 +145,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                     self.selftest_event.set()
                 client.close()
                 continue
-            LOG("%s:%s has connected" % client_address, 3)
+            l.info("%s:%s has connected" % client_address)
             if self.clients:
                 # our line is occupied (occ)
                 self.send_reject(client, "occ")
@@ -164,8 +161,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         try:
             self.process_connection(s, True, None)
 
-        except Exception as e:
-            LOG(str(e))
+        except Exception:
+            l.error("Exception caught:", exc_info = sys.exc_info())
             self.disconnect_client()
 
         s.close()
@@ -217,17 +214,18 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 self.update_tns_fail = 0
                 # If update succeeded, restart self-test
                 if self.test_connection_fail == 666:
-                    LOG("self-test: TNS update successful, resuming self-test", level=1)
+                    l.info("self-test: TNS update successful, resuming self-test")
                     self.test_connection_fail = 0
-                LOG("self-test: TNS update successful", level=5)
+                else:
+                    l.info("self-test: TNS update successful")
             else:
                 self.update_tns_fail += 1
-                LOG("self-test: TNS update failed {}x".format(self.update_tns_fail), level=1)
+                l.warning("self-test: TNS update failed {}x".format(self.update_tns_fail))
 
             # Startup: As long as own IP address not known, self-test not
             # possible. Retry.
             if not self.ip_address:
-                LOG("self-test: IP address unknown, connection test impossible, retrying in 60 min", level=5)
+                l.error("self-test: IP address unknown, connection test impossible, retrying in 60 min")
                 time.sleep(3600)
                 continue
 
@@ -240,7 +238,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # only retry TNS update hourly.
                 if self.test_connection_fail >= 12:
                     if self.test_connection_fail == 12:
-                        LOG("self-test: too many connection tests failed, retrying after next TNS update", level=1)
+                        l.error("self-test: too many connection tests failed, retrying after next TNS update")
                         # TODO print error with date
                     # cheap trick to only log and print the error once, and
                     # allow proper resetting above
@@ -253,10 +251,10 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # Do connection self-test. Count failures, reset on success.
                 if self.test_connection():
                     self.test_connection_fail = 0
-                    LOG("self-test: connection test successful", level=5)
+                    l.debug("self-test: connection test successful")
                 else:
                     self.test_connection_fail += 1
-                    LOG("self-test: connection test failed {}x".format(self.test_connection_fail), level=5)
+                    l.warning("self-test: connection test failed {}x".format(self.test_connection_fail))
 
                 if self.test_connection_fail == 6:
                     # After six failed tries, update TNS immediately.
@@ -288,8 +286,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 self.selftest_event.clear()
                 return ret
 
-        except Exception as e:
-            LOG(str(e) + ", {}:{}".format(self.ip_address, self._port), level=2)
+        except Exception:
+            l.warning("Exception caught:", exc_info = sys.exc_info())
             return False
 
     def update_tns_record(self):
@@ -336,8 +334,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 content = data[2:]
                 raise Exception("Unexpected answer to Address_confirm: type 0x{0:x}, content: ".format(msg_type), repr(content))
 
-        except Exception as e:
-            LOG(str(e), level=2)
+        except Exception:
+            l.error("Exception caught:", exc_info = sys.exc_info())
             return False
 
 #######

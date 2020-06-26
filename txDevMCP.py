@@ -14,7 +14,6 @@ import time
 import logging
 l = logging.getLogger("piTelex." + __name__)
 
-import log
 import txBase
 
 # Timeout in ready-to-dial state in s
@@ -40,9 +39,6 @@ WB_TIMEOUT = 45.0
 #
 # A type errors are handled here, B type errors in txDevITelexCommon (see
 # send_reject).
-
-def LOG(text:str, level:int=3):
-    log.LOG('\033[30;46m<'+text+'>\033[0m', level)
 
 class watchdog():
     def __init__(self):
@@ -105,7 +101,7 @@ class TelexMCP(txBase.TelexBase):
             except (ValueError, TypeError):
                 dial_timeout = 2.0
             if not 0.0 < dial_timeout < WB_TIMEOUT:
-                LOG("Invalid dialling timeout, falling back to default: " + repr(dial_timeout), level=2)
+                l.warning("Invalid dialling timeout, falling back to default: " + repr(dial_timeout))
                 dial_timeout = 2.0
         self._dial_timeout = dial_timeout
         self._dial_change = Event()
@@ -322,7 +318,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
     
     def thread_memory(self):
         while self._run:
-            #LOG('.')
+            l.debug('.')
             if self._mx_buffer:
                 a = self._mx_buffer.pop(0)
                 self._rx_buffer.append(a)

@@ -18,17 +18,14 @@ import socket
 import time
 import csv
 import datetime
+import sys
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
 
 import txCode
 import txBase
-import log
 import txDevITelexCommon
-
-def LOG(text:str, level:int=3):
-    log.LOG('\033[30;46m<'+text+'>\033[0m', level)
 
 
 class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
@@ -102,7 +99,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 address = (user['Host'], int(user['Port']))
                 s.connect(address)
-                LOG('connected to '+user['Name'], 3)
+                l.info('connected to '+user['Name'])
 
                 self._rx_buffer.append('\x1bA')
 
@@ -112,8 +109,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
                 self.process_connection(s, False, is_ascii)
 
-        except Exception as e:
-            LOG(str(e))
+        except Exception:
+            l.error("Exception caught:", exc_info = sys.exc_info())
             self.disconnect_client()
 
         s.close()
@@ -230,11 +227,11 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                     'Host': host,
                     'Port': port
                 }
-                LOG('Found user in TNS '+str(user), 4)
+                l.info('Found user in TNS '+str(user))
                 return user
 
-        except Exception as e:
-            LOG(str(e))
+        except Exception:
+            l.error("Exception caught:", exc_info = sys.exc_info())
             return None
 
     @classmethod
@@ -265,7 +262,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                     'Host': items[4],
                     'Port': int(items[5]),
                 }
-                LOG('Found user in TNS '+str(user), 4)
+                l.info('Found user in TNS '+str(user))
                 return user
 
         except:
@@ -290,7 +287,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
             for user in TelexITelexClient.USERLIST:
                 if number == user['Nick'] or number == user['TNum']:
-                    LOG('Found user '+repr(user), 4)
+                    l.info('Found user '+repr(user))
                     return user
 
         except:

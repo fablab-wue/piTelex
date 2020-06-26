@@ -12,6 +12,7 @@ from threading import Thread
 import socket
 import time
 import datetime
+import sys
 import random
 random.seed()
 
@@ -20,7 +21,6 @@ l = logging.getLogger("piTelex." + __name__)
 
 import txCode
 import txBase
-import log
 
 # i-Telex allowed package types for Baudot texting mode
 # (everything else triggers ASCII texting mode)
@@ -28,9 +28,6 @@ from itertools import chain
 allowed_types = lambda: chain(range(0x00, 0x09+1), range(0x10, 0x1f+1))
 
 #######
-
-def LOG(text:str, level:int=3):
-    log.LOG('\033[30;44m<'+text+'>\033[0m', level)
 
 def decode_ext_from_direct_dial(ext:int) -> str:
     """
@@ -140,12 +137,12 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Heartbeat
                     if data[0] == 0 and packet_len == 0:
-                        #LOG('Heartbeat '+repr(data), 4)
+                        l.debug('Heartbeat '+repr(data))
                         pass
 
                     # Direct Dial
                     elif data[0] == 1 and packet_len == 1:
-                        LOG('Direct Dial '+repr(data), 4)
+                        l.info('Direct Dial '+repr(data))
 
                         # Disable emitting "direct dial" command, since it's
                         # currently not acted upon anywhere.
@@ -172,7 +169,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Baudot Data
                     elif data[0] == 2 and packet_len >= 1 and packet_len <= 50:
-                        #LOG('Baudot data '+repr(data), 4)
+                        l.debug('Baudot data '+repr(data))
                         aa = bmc.decodeBM2A(data[2:])
                         # TODO: Start up printer properly and fail if it
                         # doesn't work.
@@ -192,12 +189,12 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # End
                     elif data[0] == 3 and packet_len == 0:
-                        LOG('End '+repr(data), 4)
+                        l.info('End '+repr(data))
                         break
 
                     # Reject
                     elif data[0] == 4 and packet_len <= 20:
-                        LOG('Reject '+repr(data), 4)
+                        l.info('Reject '+repr(data))
                         aa = bmc.translate(data[2:])
                         for a in aa:
                             self._rx_buffer.append(a)
@@ -205,11 +202,11 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Acknowledge
                     elif data[0] == 6 and packet_len == 1:
-                        #LOG('Acknowledge '+repr(data), 4)
+                        l.debug('Acknowledge '+repr(data))
                         unprinted = (sent_counter - int(data[2])) & 0xFF
                         #if unprinted < 0:
                         #    unprinted += 256
-                        LOG(str(data[2])+'/'+str(sent_counter)+'='+str(unprinted), 4)
+                        l.debug(str(data[2])+'/'+str(sent_counter)+'='+str(unprinted))
                         if unprinted < 7:   # about 1 sec
                             time_next_send = None
                         else:
@@ -218,23 +215,23 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
-                        #LOG('Version '+repr(data), 4)
+                        l.debug('Version '+repr(data))
                         if not is_server or data[2] != 1:
                             self.send_version(s)
 
                     # Self test
                     elif data[0] == 8 and packet_len >= 2:
-                        LOG('Self test '+repr(data), 4)
+                        l.debug('Self test '+repr(data))
                         pass
 
                     # Remote config
                     elif data[0] == 9 and packet_len >= 3:
-                        LOG('Remote config '+repr(data), 4)
+                        l.info('Remote config '+repr(data))
                         pass
 
                     # Wrong packet - will resync at next socket.timeout
                     else:
-                        LOG('ERROR Packet '+repr(data), 3)
+                        l.warning('ERROR Packet '+repr(data))
                         packet_error = True
 
                     if not packet_error:
@@ -243,7 +240,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                 # ASCII character(s)
                 else:
-                    #LOG('Other', repr(data), 4)
+                    l.debug('Other', repr(data))
                     is_ascii = True
                     # TODO: Start up printer properly and fail if it
                     # doesn't work.
@@ -263,7 +260,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         received_counter += 1
 
             except socket.timeout:
-                #LOG('.', 4)
+                l.debug('.')
                 if is_ascii is not None:   # either ASCII or baudot connection detected
                     timeout_counter += 1
                     
@@ -278,7 +275,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                         if self._tx_buffer:
                             if time_next_send and time.time() < time_next_send:
-                                LOG('Wait'+str(int(time_next_send-time.time())), 4)
+                                l.debug('Wait'+str(int(time_next_send-time.time())))
                                 pass
                             else:
                                 sent = self.send_data_baudot(s, bmc)
@@ -291,7 +288,7 @@ class TelexITelexCommon(txBase.TelexBase):
                     
 
             except socket.error:
-                LOG('ERROR socket', 2)
+                l.error("Exception caught:", exc_info = sys.exc_info())
                 break
 
 
@@ -300,7 +297,7 @@ class TelexITelexCommon(txBase.TelexBase):
             # sent. Don't send an end package additionally.
             if not error:
                 self.send_end(s)
-        LOG('end connection', 3)
+        l.info('end connection')
         self._connected = 0
 
 
