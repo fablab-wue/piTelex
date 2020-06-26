@@ -11,6 +11,9 @@ __version__     = "0.0.1"
 from threading import Thread
 from socket import socket, AF_INET, SOCK_STREAM
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 

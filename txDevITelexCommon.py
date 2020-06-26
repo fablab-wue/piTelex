@@ -15,6 +15,9 @@ import datetime
 import random
 random.seed()
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 import log
@@ -363,10 +366,10 @@ class TelexITelexCommon(txBase.TelexBase):
             if bb:
                 for b in bb:
                     data.append(b)
-        l = len(data) - 2
-        data[1] = l
+        length = len(data) - 2
+        data[1] = length
         s.sendall(data)
-        return l
+        return length
 
 
     def send_end(self, s):

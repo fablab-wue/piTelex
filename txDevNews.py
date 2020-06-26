@@ -13,6 +13,9 @@ import time
 from watchdog.observers import Observer  
 from watchdog.events import PatternMatchingEventHandler  
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 

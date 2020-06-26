@@ -13,6 +13,8 @@ from argparse import ArgumentParser
 import json
 
 import log
+import logging
+l = logging.getLogger("piTelex." + __name__)
 
 #######
 # definitions and configuration

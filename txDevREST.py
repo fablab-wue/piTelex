@@ -15,6 +15,9 @@ import socket
 import time
 import json
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 import log

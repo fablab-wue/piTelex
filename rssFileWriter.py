@@ -7,6 +7,9 @@ from argparse import ArgumentParser
 from glob import glob
 import html2text   # pip install html2text
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 h = html2text.HTML2Text()
 h.ignore_links = True
 h.ignore_images = True

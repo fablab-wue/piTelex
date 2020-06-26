@@ -10,6 +10,9 @@ __version__     = "0.0.1"
 
 import os
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txBase
 import txCode
 

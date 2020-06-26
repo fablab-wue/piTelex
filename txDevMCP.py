@@ -11,6 +11,9 @@ __version__     = "0.0.1"
 from threading import Thread, Event
 import time
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import log
 import txBase
 

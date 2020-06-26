@@ -14,6 +14,9 @@ import os
 import time
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html   pip install pigpio
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 import log

@@ -19,6 +19,9 @@ import time
 import csv
 import datetime
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 import log

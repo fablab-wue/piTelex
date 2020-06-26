@@ -14,6 +14,9 @@ import pyaudio
 import math
 import struct
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 
