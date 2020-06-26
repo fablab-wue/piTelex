@@ -105,3 +105,8 @@ venv.bak/
 cdr/Sicherungskopie*.cdr
 cdr/Handlocher Lorenz HL38.cdr
 .vscode/*
+
+# Logfiles
+test.log
+recv_debug.log
+error_log/
