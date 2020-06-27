@@ -133,6 +133,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         number, _, ddext = number.partition("-")
 
         if len(number) < 1:
+            l.warning("Number too short {!r}".format(number))
             return None
 
         # Query locally
@@ -147,13 +148,15 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 user = cls.query_TNS_bin(number[1:])
 
         # Direct dial override continued
-        if user:
-            if ddext and ddext.isnumeric() and 1 <= len(ddext) <= 2:
+        if user and ddext:
+            if ddext.isnumeric() and 1 <= len(ddext) <= 2:
                 l.info("Direct dial override: {!r}".format(ddext))
                 user['ENum'] = ddext
             else:
                 l.warning("Invalid direct dial override, ignored: {!r}".format(ddext))
 
+        if not user:
+            l.info("No user found for number {!r}".format(number))
         return user
 
     @classmethod
@@ -237,7 +240,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                     'Host': host,
                     'Port': port
                 }
-                l.info('Found user in TNS '+str(user))
+                l.info('Found user in TNS: '+str(user))
                 return user
 
         except Exception:
@@ -272,7 +275,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                     'Host': items[4],
                     'Port': int(items[5]),
                 }
-                l.info('Found user in TNS '+str(user))
+                l.info('Found user in TNS: '+str(user))
                 return user
 
         except:
@@ -297,7 +300,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
             for user in TelexITelexClient.USERLIST:
                 if number == user['Nick'] or number == user['TNum']:
-                    l.info('Found user '+repr(user))
+                    l.info('Found user in local userlist: '+repr(user))
                     return user
 
         except:
