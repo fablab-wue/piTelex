@@ -50,10 +50,12 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
     def read(self) -> str:
         if self._rx_buffer:
+            l.debug("read: {!r}".format(self._rx_buffer[0]))
             return self._rx_buffer.pop(0)
 
 
     def write(self, a:str, source:str):
+        l.debug("write from {!r}: {!r}".format(source, a))
         if len(a) != 1:
             if a == '\x1bZ':   # end session
                 self.disconnect_client()
@@ -95,11 +97,11 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             is_ascii = user['Type'] in 'Aa'
 
             # connect to destination Telex
+            l.info('connecting to {Name} ({Host}:{Port})'.format(**user))
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 address = (user['Host'], int(user['Port']))
                 s.connect(address)
-                l.info('connected to '+user['Name'])
 
                 self._rx_buffer.append('\x1bA')
 
@@ -124,6 +126,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         number = number.replace('[', '')
         number = number.replace(']', '')
         number = number.replace(' ', '')
+        l.info("Get User: {!r}".format(number))
 
         if len(number) < 1:
             return None

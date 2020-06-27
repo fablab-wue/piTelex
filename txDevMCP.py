@@ -67,6 +67,7 @@ class watchdog():
                 if  time_act > (wd['time_reset'] + wd['time_offset']):
                     wd['time_reset'] = None
                     wd['action_list'].append(wd['action_char'])
+                    l.debug("Watchdog {!r}: {!s}.append({!r})".format(name, wd["action_list"], wd["action_char"]))
 
 #######
 
@@ -318,7 +319,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
     
     def thread_memory(self):
         while self._run:
-            l.debug('.')
+            #l.debug('.')
             if self._mx_buffer:
                 a = self._mx_buffer.pop(0)
                 self._rx_buffer.append(a)

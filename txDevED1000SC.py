@@ -80,11 +80,13 @@ class TelexED1000SC(txBase.TelexBase):
     def read(self) -> str:
         if self._rx_buffer:
             a = self._rx_buffer.pop(0)
+            l.debug("read: {!r}".format(a))
             return a
 
     # -----
 
     def write(self, a:str, source:str):
+        l.debug("write from {!r}: {!r}".format(source, a))
         if len(a) != 1:
             self._check_commands(a)
             return
