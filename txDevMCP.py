@@ -301,9 +301,9 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
             #if a == '0':   # hack!!!! to test the pulse dial
             #    self._rx_buffer.append('\x1bA')   # send text
 
-            # A digit or + is being dialled; record digit and trigger dial
+            # A digit or +/- is being dialled; record digit and trigger dial
             # thread to check
-            if a.isdigit() or (self._dial_timeout is None and a == '+'):
+            if a.isdigit() or a == '-' or (self._dial_timeout is None and a == '+'):
                 self._dial_number += a
                 self._dial_change.set()
             else:

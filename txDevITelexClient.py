@@ -128,6 +128,10 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         number = number.replace(' ', '')
         l.info("Get User: {!r}".format(number))
 
+        # Direct Dial override: Dial <number>-<ddext> to have the direct dial
+        # extension from TNS replaced by the dialled extension.
+        number, _, ddext = number.partition("-")
+
         if len(number) < 1:
             return None
 
@@ -141,6 +145,14 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             # Also accept leading zero for compatibility reasons
             if not user and number[0] == '0':
                 user = cls.query_TNS_bin(number[1:])
+
+        # Direct dial override continued
+        if user:
+            if ddext and ddext.isnumeric() and 1 <= len(ddext) <= 2:
+                l.info("Direct dial override: {!r}".format(ddext))
+                user['ENum'] = ddext
+            else:
+                l.warning("Invalid direct dial override, ignored: {!r}".format(ddext))
 
         return user
 
