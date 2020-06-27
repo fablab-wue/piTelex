@@ -158,7 +158,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         else:
                             # TODO: Start up printer properly and fail if it
                             # doesn't work.
-                            if self._connected < 2:
+                            if 0 < self._connected < 2:
                                 # Start printer and send welcome banner
                                 self._rx_buffer.append('\x1bA')
                                 self._connected = 2
@@ -173,7 +173,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         aa = bmc.decodeBM2A(data[2:])
                         # TODO: Start up printer properly and fail if it
                         # doesn't work.
-                        if self._connected < 2:
+                        if 0 < self._connected < 2:
                             # Start printer and send welcome banner
                             self._rx_buffer.append('\x1bA')
                             self._connected = 2
@@ -244,7 +244,7 @@ class TelexITelexCommon(txBase.TelexBase):
                     is_ascii = True
                     # TODO: Start up printer properly and fail if it
                     # doesn't work.
-                    if self._connected < 2:
+                    if 0 < self._connected < 2:
                         # Start printer and send welcome banner
                         self._rx_buffer.append('\x1bA')
                         self._connected = 2

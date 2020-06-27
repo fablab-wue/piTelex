@@ -48,6 +48,7 @@ class TelexED1000SC(txBase.TelexBase):
         self._tx_buffer = []
         self._rx_buffer = []
         self._is_online = Event()
+        self._ST_pressed = False
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
@@ -107,6 +108,11 @@ class TelexED1000SC(txBase.TelexBase):
             # can write out the rest. Critical for ASCII services that send
             # faster than 50 Bd.
             self._set_online(False)
+            # ...except if we ourselves initiated going offline (by pressing
+            # ST).
+            if self._ST_pressed:
+                self._ST_pressed = False
+                self._tx_buffer = []
 
         if a == '\x1bWB':
             self._tx_buffer = []
@@ -272,6 +278,7 @@ class TelexED1000SC(txBase.TelexBase):
                 _bit_counter_1 = 0
                 if _bit_counter_0 == 100:   # 0.5sec
                     self._rx_buffer.append('\x1bST')
+                    self._ST_pressed = True
 
             # Suppress symbol recognition until we're "properly online", i.e.
             # piTelex is in online state and at least one Z has been received
