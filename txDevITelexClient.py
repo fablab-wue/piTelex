@@ -107,8 +107,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
                 if not is_ascii:
                     self.send_version(s)
-                    self.send_direct_dial(s, user['ENum'], 0)
-
+                    self.send_direct_dial(s, user['ENum'])
+                l.info("connected")
                 self.process_connection(s, False, is_ascii)
 
         except Exception:
@@ -193,12 +193,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 # TCP port
                 port = int.from_bytes(data[93:95], byteorder="little", signed=False)
                 # local dialling extension
-                extension = data[95]
-                # No real requirement, just to get equal results compared with
-                # text protocol. As per the specs, the text protocol should
-                # send "0" on no extension, but it sends a dash instead.
-                if extension == 0:
-                    extension = '-'
+                extension = txDevITelexCommon.decode_ext_from_direct_dial(data[95])
                 # PIN: ignored as per spec
                 pin = data[96:98]
                 # last changed date: caution, UTC! ignored as of now.

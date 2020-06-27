@@ -29,11 +29,27 @@ allowed_types = lambda: chain(range(0x00, 0x09+1), range(0x10, 0x1f+1))
 
 #######
 
+# Decoding and encoding of extension numbers (see i-Telex specification, r874)
+#
+#            encoded         decoded
+# (raw network data)    (as dialled)
+#
+#                  0            none
+#                  1              01
+#                  2              02
+#                ...             ...
+#                 99              99
+#                100              00
+#                101               1
+#                102               2
+#                ...
+#                109               9
+#                110               0
+#               >110         invalid
+
 def decode_ext_from_direct_dial(ext:int) -> str:
     """
     Decode integer extension from direct dial packet and return as str.
-
-    See i-Telex specification, r874.
     """
     ext = int(ext)
     if ext == 0:
@@ -46,7 +62,30 @@ def decode_ext_from_direct_dial(ext:int) -> str:
         return str(ext%10)
     else:
         # invalid!
-        return "invalid"
+        l.warning("Invalid direct dial extension: {} (falling back to 0)".format(ext))
+        return None
+
+def encode_ext_for_direct_dial(ext:str) -> int:
+    """
+    Encode str extension to integer extension for direct dial packet and return
+    it.
+    """
+    if not ext:
+        # no extension
+        return 0
+    try:
+        ext_int = int(ext)
+    except (ValueError, TypeError):
+        l.warning("Invalid direct dial extension: {!r} (falling back to none)".format(ext))
+        return 0
+    if len(ext) == 1:
+        return 110 if not ext_int else ext_int + 100
+    elif len(ext) == 2:
+        return 100 if not ext_int else ext_int
+    else:
+        l.warning("Invalid direct dial extension: {!r} (falling back to none)".format(ext))
+        return 0
+
 
 class TelexITelexCommon(txBase.TelexBase):
     def __init__(self):
@@ -319,26 +358,12 @@ class TelexITelexCommon(txBase.TelexBase):
         s.sendall(send)
 
 
-    def send_direct_dial(self, s, dial:str, id):
+    def send_direct_dial(self, s, dial:str):
         '''Send direct dial packet (1)'''
-        data = bytearray([1, 5])   # Direct Dial
-        if not dial.isnumeric():
-            number = 0
-        elif len(dial) == 2:
-            number = int(dial)
-            if number == 0:
-                number = 100
-        elif len(dial) == 1:
-            number = int(dial) + 100
-            if number == 100:
-                number = 110
-        else:
-            number = 0
-        data.append(number)   # direct dial number
-        data.append(1)    # id, 32 bit
-        data.append(2)
-        data.append(3)
-        data.append(4)
+        l.info("Sending direct dial: {!r}".format(dial))
+        data = bytearray([1, 1])   # Direct Dial
+        ext = encode_ext_for_direct_dial(dial)
+        data.append(ext)
         s.sendall(data)
 
 
