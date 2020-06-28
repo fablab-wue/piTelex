@@ -38,12 +38,12 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         self.SERVER.listen(2)
         #print("Waiting for connection...")
-        Thread(target=self.thread_srv_accept_incoming_connections, name='iTelexSaic').start()
+        Thread(target=self.thread_srv_accept_incoming_connections, name='iTelexSrvAC').start()
 
 
     def exit(self):
-        self.disconnect_client()
         self._run = False
+        self.disconnect_client()
         self.SERVER.close()
 
     # =====
@@ -70,16 +70,18 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     def thread_srv_accept_incoming_connections(self):
         """Sets up handling for incoming clients."""
         while self.run:
-            client, client_address = self.SERVER.accept()
-            LOG("%s:%s has connected" % client_address, 3)
-            if self.clients:   # one client is active!
-                self.send_reject(client)
-                client.close()
-                continue
-            self.clients[client] = client_address
-            self._tx_buffer = []
-            Thread(target=self.thread_srv_handle_client, name='iTelexShc', args=(client,)).start()
-
+            try:
+                client, client_address = self.SERVER.accept()
+                LOG("%s:%s has connected" % client_address, 3)
+                if self.clients:   # one client is active!
+                    self.send_reject(client)
+                    client.close()
+                    continue
+                self.clients[client] = client_address
+                self._tx_buffer = []
+                Thread(target=self.thread_srv_handle_client, name='iTelexSrvHC', args=(client,)).start()
+            except:
+                return
 
     def thread_srv_handle_client(self, s):  # Takes client socket as argument.
         """Handles a single client connection."""

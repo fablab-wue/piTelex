@@ -247,14 +247,14 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def _check_special_sequences(self, a:str):
         if not self._use_cts:
-            if a == '[':
+            if a == '<':
                 self._counter_LTRS += 1
                 if self._counter_LTRS == 5:
                     self._rx_buffer.append('\x1bST')
             else:
                 self._counter_LTRS = 0
 
-            if a == ']':
+            if a == '>':
                 self._counter_FIGS += 1
                 if self._counter_FIGS == 5:
                     self._rx_buffer.append('\x1bAT')

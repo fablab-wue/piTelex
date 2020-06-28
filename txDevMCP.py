@@ -46,7 +46,7 @@ class watchdog():
 #######
 
 class TelexMCP(txBase.TelexBase):
-    _fontstr = {'A': 'VSSV', 'B': '[YYR', 'C': 'CZZZ', 'D': '[ZZC', 'E': '[YYZ', 'F': '[SSE', 'G': 'CZYX', 'H': '[  [', 'I': 'Z[Z', 'J': '<TZK', 'K': '[ RZ', 'L': '[TTT', 'M': '[|M|[', 'N': '[| [', 'O': 'CZZZC', 'P': '[SS|', 'Q': 'CZBV', 'R': '[SFL', 'S': 'LYYD', 'T': 'EE[EE', 'U': 'KTTK', 'V': 'U<T<U', 'W': '[<I<[', 'X': 'ZR RZ', 'Y': 'E|M|E', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L[T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  [  ', '-': '    ', '*': 'YC CY', '/': 'T< |E', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY|', "'": 'AA', ' ': '~~', '': '~', '\r': ' RZZ', '<': ' RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
+    _fontstr = {'A': 'VSSV', 'B': '<YYR', 'C': 'CZZZ', 'D': '<ZZC', 'E': '<YYZ', 'F': '<SSE', 'G': 'CZYX', 'H': '<  <', 'I': 'Z<Z', 'J': '<TZK', 'K': '< RZ', 'L': '<TTT', 'M': '<|M|<', 'N': '<| <', 'O': 'CZZZC', 'P': '<SS|', 'Q': 'CZBV', 'R': '<SFL', 'S': 'LYYD', 'T': 'EE<EE', 'U': 'KTTK', 'V': 'U<T<U', 'W': '<<I<<', 'X': 'ZR RZ', 'Y': 'E|M|E', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L<T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  <  ', '-': '    ', '*': 'YC CY', '/': 'T< |E', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY|', "'": 'AA', ' ': '~~', '': '~', '\r': ' RZZ', '<': ' RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
     _fontsep = '~'
 
 
@@ -67,7 +67,7 @@ class TelexMCP(txBase.TelexBase):
         self._dial_number = ''
 
         self._wd = watchdog()
-        self._wd.init('ONLINE', 180, self._rx_buffer, '\x1bZ')
+        self._wd.init('ONLINE', 10, self._rx_buffer, '\x1bZ')
 
         self._run = True
         self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
@@ -120,20 +120,6 @@ class TelexMCP(txBase.TelexBase):
             if a == '\x1bA':   # start motor
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
-
-
-            if a == '\x1bTAB':   # next mode
-                if self._mode == 'Z':
-                    self._rx_buffer.append('\x1bWB')   # send text
-                    self._mode = 'WB'
-                elif self._mode == 'WB':
-                    self._rx_buffer.append('\x1bA')   # send text
-                    self._mode = 'A'
-                elif self._mode == 'A':
-                    self._rx_buffer.append('\x1bZ')   # send text
-                    self._mode = 'Z'
-                self._wd.reset('ONLINE')
-                return True
 
 
             if a == '\x1bFONT':   # set to font mode
@@ -190,13 +176,13 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 return True
 
 
-            if a == '\x1bT':   # actual time
+            if a == '\x1bDATE':   # actual date and time
                 text = time.strftime("%Y-%m-%d  %H:%M", time.localtime()) + '\r\n'
                 self._rx_buffer.extend(list(text))   # send text
                 return True
 
             if a == '\x1bI':   # welcome as server
-                text = '[[[\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
+                text = '<<<\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
                 #if self.device_id:
                 #    text += self.device_id   # send back device id
                 #else:
@@ -223,7 +209,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
 
 
         if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
-            self._rx_buffer.extend(list('[\r\n' + self.device_id))   # send back device id
+            self._rx_buffer.extend(list('<\r\n' + self.device_id))   # send back device id
             return True
 
 
@@ -237,6 +223,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
             elif self._mode == 'A':
                 self._rx_buffer.append('\x1bZ')   # send text
                 self._mode = 'Z'
+                self._wd.disable('ONLINE')
             return True
 
 

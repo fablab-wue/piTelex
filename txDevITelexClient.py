@@ -130,8 +130,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
     @classmethod
     def get_user(cls, number:str):
 
-            number = number.replace('[', '')
-            number = number.replace(']', '')
+            number = number.replace('<', '')
+            number = number.replace('>', '')
             number = number.replace(' ', '')
 
             if len(number) < 2:

@@ -14,6 +14,10 @@ import txDevMCP
 import time
 import threading
 from argparse import ArgumentParser
+import log
+ 
+def LOG(text:str, level:int=3):
+    log.LOG('\033[0;30;47m '+text+' \033[0m', level)
 
 #######
 # definitions and configuration
@@ -53,6 +57,11 @@ def init():
             screen = txDevScreen.TelexScreen(**dev_param)
             DEVICES.append(screen)
 
+        if dev_param['type'] == 'ED1000':
+            import txDevED1000SC
+            serial = txDevED1000SC.TelexED1000SC(**dev_param)
+            DEVICES.append(serial)
+
         if dev_param['type'] == 'CH340TTY':
             import txDevCH340TTY
             serial = txDevCH340TTY.TelexCH340TTY(**dev_param)
@@ -63,10 +72,10 @@ def init():
             serial = txDevRPiTTY.TelexRPiTTY(**dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'ED1000':
-            import txDevED1000SC
-            serial = txDevED1000SC.TelexED1000SC(**dev_param)
-            DEVICES.append(serial)
+        if dev_param['type'] == 'RPiCtrl':
+            import txDevRPiCtrl
+            ctrl = txDevRPiCtrl.TelexRPiCtrl(**dev_param)
+            DEVICES.append(ctrl)
 
         #if dev_param['type'] == 'telnet':
         #    import txDevTelnetSrv
@@ -114,8 +123,11 @@ def exit():
     global DEVICES
     
     for device in DEVICES:
-        device.exit()
-        del device
+        try:
+            device.exit()
+            del device
+        except Exception as e:
+            pass
     DEVICES = []
 
 # =====
@@ -158,7 +170,10 @@ def main():
     #test()
     init()
 
-    print('\033[2J-=TELEX=-')
+    #print('\033[2J-=TELEX=-')
+    print()
+    LOG(' -=TELEX=- ', 1)
+    print()
 
     try:
         while True:
@@ -166,7 +181,7 @@ def main():
             time.sleep(0.001)   # update with max ??? Hz
 
     except (KeyboardInterrupt, SystemExit):
-        pass
+        LOG('Exit by Keyboard', 2)
 
     except:
         raise
