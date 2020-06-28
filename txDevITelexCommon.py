@@ -87,6 +87,13 @@ def encode_ext_for_direct_dial(ext:str) -> int:
         return 0
 
 
+def display_hex(data:bytes) -> str:
+    """
+    Convert a byte string into a string of hex values for diplay.
+    """
+    return " ".join(hex(i) for i in data)
+
+
 class TelexITelexCommon(txBase.TelexBase):
     def __init__(self):
         super().__init__()
@@ -176,12 +183,11 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Heartbeat
                     if data[0] == 0 and packet_len == 0:
-                        l.debug('Heartbeat '+repr(data))
-                        pass
+                        l.debug('Received i-Telex packet: Heartbeat ({})'.format(display_hex(data)))
 
                     # Direct Dial
                     elif data[0] == 1 and packet_len == 1:
-                        l.info('Direct Dial '+repr(data))
+                        l.debug('Received i-Telex packet: Direct dial ({})'.format(display_hex(data)))
 
                         # Disable emitting "direct dial" command, since it's
                         # currently not acted upon anywhere.
@@ -190,6 +196,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         # Instead, only accept extension 0 (i-Telex default)
                         # and None, and reject all others.
                         ext = decode_ext_from_direct_dial(data[2])
+                        l.info('Direct Dial, extension {}'.format(ext))
                         if not ext in ('0', None):
                             self.send_reject(s, 'na')
                             error = True
@@ -208,7 +215,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Baudot Data
                     elif data[0] == 2 and packet_len >= 1 and packet_len <= 50:
-                        l.debug('Baudot data '+repr(data))
+                        l.debug('Received i-Telex packet: Baudot data ({})'.format(display_hex(data)))
                         aa = bmc.decodeBM2A(data[2:])
                         # TODO: Start up printer properly and fail if it
                         # doesn't work.
@@ -228,24 +235,25 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # End
                     elif data[0] == 3 and packet_len == 0:
-                        l.info('End '+repr(data))
+                        l.info('Received i-Telex packet: End ({})'.format(display_hex(data)))
                         break
 
                     # Reject
                     elif data[0] == 4 and packet_len <= 20:
-                        l.info('Reject '+repr(data))
+                        l.debug('Received i-Telex packet: Reject ({})'.format(display_hex(data)))
                         aa = bmc.translate(data[2:])
+                        l.info('i-Telex connection rejected, reason {!r}'.format(aa))
                         for a in aa:
                             self._rx_buffer.append(a)
                         break
 
                     # Acknowledge
                     elif data[0] == 6 and packet_len == 1:
-                        l.debug('Acknowledge '+repr(data))
+                        l.debug('Received i-Telex packet: Acknowledge ({})'.format(display_hex(data)))
                         unprinted = (sent_counter - int(data[2])) & 0xFF
                         #if unprinted < 0:
                         #    unprinted += 256
-                        l.debug(str(data[2])+'/'+str(sent_counter)+'='+str(unprinted))
+                        l.debug(str(data[2])+'/'+str(sent_counter)+'='+str(unprinted) + " (printed/sent=unprinted)")
                         if unprinted < 7:   # about 1 sec
                             time_next_send = None
                         else:
@@ -254,23 +262,21 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
-                        l.debug('Version '+repr(data))
+                        l.debug('Received i-Telex packet: Version ({})'.format(display_hex(data)))
                         if not is_server or data[2] != 1:
                             self.send_version(s)
 
                     # Self test
                     elif data[0] == 8 and packet_len >= 2:
-                        l.debug('Self test '+repr(data))
-                        pass
+                        l.debug('Received i-Telex packet: Self test ({})'.format(display_hex(data)))
 
                     # Remote config
                     elif data[0] == 9 and packet_len >= 3:
-                        l.info('Remote config '+repr(data))
-                        pass
+                        l.info('Received i-Telex packet: Remote config ({})'.format(display_hex(data)))
 
                     # Wrong packet - will resync at next socket.timeout
                     else:
-                        l.warning('ERROR Packet '+repr(data))
+                        l.warning('Received invalid i-Telex Packet: {}'.format(display_hex(data)))
                         packet_error = True
 
                     if not packet_error:
@@ -279,7 +285,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                 # ASCII character(s)
                 else:
-                    l.debug('Other', repr(data))
+                    l.debug('Received non-i-Telex data: {} ({})'.format(repr(data), display_hex(data)))
                     is_ascii = True
                     # TODO: Start up printer properly and fail if it
                     # doesn't work.
@@ -299,7 +305,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         received_counter += 1
 
             except socket.timeout:
-                l.debug('.')
+                #l.debug('.')
                 if is_ascii is not None:   # either ASCII or baudot connection detected
                     timeout_counter += 1
                     
@@ -314,7 +320,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                         if self._tx_buffer:
                             if time_next_send and time.time() < time_next_send:
-                                l.debug('Wait'+str(int(time_next_send-time.time())))
+                                l.debug('Sending paused for {:.3f} s'.format(time_next_send-time.time()))
                                 pass
                             else:
                                 sent = self.send_data_baudot(s, bmc)
@@ -343,18 +349,21 @@ class TelexITelexCommon(txBase.TelexBase):
     def send_heartbeat(self, s):
         '''Send heartbeat packet (0)'''
         data = bytearray([0, 0])
+        l.debug('Sending i-Telex packet: Heartbeat ({})'.format(display_hex(data)))
         s.sendall(data)
 
 
     def send_ack(self, s, received:int):
-        '''Send acknowlage packet (6)'''
+        '''Send acknowledge packet (6)'''
         data = bytearray([6, 1, received & 0xff])
+        l.debug('Sending i-Telex packet: Acknowledge ({})'.format(display_hex(data)))
         s.sendall(data)
 
 
     def send_version(self, s):
         '''Send version packet (7)'''
         send = bytearray([7, 1, 1])
+        l.debug('Sending i-Telex packet: Version ({})'.format(display_hex(send)))
         s.sendall(send)
 
 
@@ -364,6 +373,7 @@ class TelexITelexCommon(txBase.TelexBase):
         data = bytearray([1, 1])   # Direct Dial
         ext = encode_ext_for_direct_dial(dial)
         data.append(ext)
+        l.debug('Sending i-Telex packet: Direct dial ({})'.format(display_hex(data)))
         s.sendall(data)
 
 
@@ -375,6 +385,7 @@ class TelexITelexCommon(txBase.TelexBase):
             if b not in '[]~%':
                 a += b
         data = a.encode('ASCII')
+        l.debug('Sending non-i-Telex data: {} ({})'.format(repr(data), display_hex(data)))
         s.sendall(data)
         return len(data)
 
@@ -390,6 +401,7 @@ class TelexITelexCommon(txBase.TelexBase):
                     data.append(b)
         length = len(data) - 2
         data[1] = length
+        l.debug('Sending i-Telex packet: Baudot data ({})'.format(display_hex(data)))
         s.sendall(data)
         return length
 
@@ -397,6 +409,7 @@ class TelexITelexCommon(txBase.TelexBase):
     def send_end(self, s):
         '''Send end packet (3)'''
         send = bytearray([3, 0])   # End
+        l.debug('Sending i-Telex packet: End ({})'.format(display_hex(send)))
         s.sendall(send)
 
 
@@ -411,6 +424,7 @@ class TelexITelexCommon(txBase.TelexBase):
         '''Send reject packet (4)'''
         send = bytearray([4, len(msg)])   # Reject
         send.extend([ord(i) for i in msg])
+        l.debug('Sending i-Telex packet: Reject ({})'.format(display_hex(send)))
         s.sendall(send)
 
 
@@ -453,7 +467,6 @@ class TelexITelexCommon(txBase.TelexBase):
         distribution.
         """
         return random.choice(cls._tns_addresses)
-
 
 
 #######
