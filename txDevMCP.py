@@ -29,7 +29,7 @@ WB_TIMEOUT = 45.0
 # - B: sent as reject packet payload by called party
 #
 # Error Type Handled in  Description
-# bk    A                dial failure (called party not found in TNS)
+# bk    A    iTxClient   dial failure (called party not found in TNS)
 # nc    A    iTxClient   cannot establish TCP connection to called party
 # abs   A                line disabled
 # abs   B                line disabled

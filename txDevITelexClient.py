@@ -64,6 +64,10 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 user = self.get_user(a[2:])
                 if user:
                     self.connect_client(user)
+                else:
+                    self._rx_buffer.extend('bk')
+                    self._rx_buffer.append('\x1bZ')
+
 
             if a[:2] == '\x1b?':   # ask TNS
                 user = self.get_user(a[2:], tns_force = True)
