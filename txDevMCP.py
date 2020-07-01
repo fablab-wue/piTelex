@@ -307,7 +307,14 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 self._dial_number += a
                 self._dial_change.set()
             else:
-                return True
+                # Invalid data for dial mode, except it's an error printed by
+                # txDevITelexClient
+                if source == '>':
+                    # Error message, print
+                    return None
+                else:
+                    # Invalid data, discard
+                    return True
 
 
     # -----

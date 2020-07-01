@@ -49,6 +49,9 @@ class TelexED1000SC(txBase.TelexBase):
         self._rx_buffer = []
         self._is_online = Event()
         self._ST_pressed = False
+        # Delay going offline by a certain time (see thread_tx) so that operator
+        # can read the latest text -- crucial in case of dial errors.
+        self.delay_offline = False
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
@@ -113,9 +116,10 @@ class TelexED1000SC(txBase.TelexBase):
             # faster than 50 Bd.
             self._set_online(False)
             # ...except if we ourselves initiated going offline (by pressing
-            # ST).
+            # ST). In this case, also cancel offline delay in thread_tx.
             if self._ST_pressed:
                 self._ST_pressed = False
+                self.delay_offline = False
                 self._tx_buffer = []
 
         if a == '\x1bWB':
@@ -130,6 +134,8 @@ class TelexED1000SC(txBase.TelexBase):
         if online:
             l.debug("set online")
             self._is_online.set()
+            # Enable offline delay in case of errors (see thread_tx)
+            self.delay_offline = True
         else:
             l.debug("set offline")
             self._is_online.clear()
@@ -213,6 +219,12 @@ class TelexED1000SC(txBase.TelexBase):
                         stream.write(waves[1], Fpb)   # blocking
 
                 else:   # offline
+                    if self.delay_offline:
+                        # delay going offline by 3 s
+                        self.delay_offline = False
+                        for i in range(150):
+                            stream.write(waves[1], Fpb)   # blocking
+
                     if zcarrier:
                         stream.write(waves[0], Fpb)   # blocking
                     else:
