@@ -28,17 +28,17 @@ WB_TIMEOUT = 45.0
 # - A: printed at the calling party during keyboard dial
 # - B: sent as reject packet payload by called party
 #
-# Error Type    Description
-# bk    A       dial failure (called party not found in TNS)
-# nc    A       cannot establish TCP connection to called party
-# abs   A/B     line disabled
-# occ   B       line occupied
-# der   B       derailed: line connected, but called teletypewriter not
-#               starting up
-# na    B       called extension not allowed
+# Error Type Handled in  Description
+# bk    A                dial failure (called party not found in TNS)
+# nc    A    iTxClient   cannot establish TCP connection to called party
+# abs   A                line disabled
+# abs   B                line disabled
+# occ   B    iTxSrv      line occupied
+# der   B                derailed: line connected, but called teletypewriter
+#                        not starting up
+# na    B    iTxCommon   called extension not allowed
 #
-# A type errors are handled here, B type errors in txDevITelexCommon (see
-# send_reject).
+# B type errors are handled in txDevITelexCommon.send_reject.
 
 class watchdog():
     def __init__(self):

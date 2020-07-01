@@ -101,15 +101,26 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 address = (user['Host'], int(user['Port']))
-                s.connect(address)
+                s.settimeout(5.0) # Wait at most 5 s during connect
+                try:
+                    # Catch all errors during connect here to print proper
+                    # error message
+                    s.connect(address)
+                except OSError as e:
+                    # Error during connect: print error and switch off printer
+                    self._rx_buffer.extend('nc')
+                    l.warning("Could not connect: {!s}".format(e))
+                    self.disconnect_client()
+                else:
+                    s.settimeout(None) # Re-enable blocking mode
 
-                self._rx_buffer.append('\x1bA')
+                    self._rx_buffer.append('\x1bA')
 
-                if not is_ascii:
-                    self.send_version(s)
-                    self.send_direct_dial(s, user['ENum'])
-                l.info("connected")
-                self.process_connection(s, False, is_ascii)
+                    if not is_ascii:
+                        self.send_version(s)
+                        self.send_direct_dial(s, user['ENum'])
+                    l.info("connected")
+                    self.process_connection(s, False, is_ascii)
 
         except Exception:
             l.error("Exception caught:", exc_info = sys.exc_info())
