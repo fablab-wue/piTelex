@@ -101,11 +101,13 @@ class TelexED1000SC(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         if a == '\x1bA':
+            l.debug("going online")
             self._tx_buffer = []
             self._tx_buffer.append('§A')   # signaling type A - connection
             self._set_online(True)
 
         if a == '\x1bZ':
+            l.debug("going offline (ST pressed: {})".format(self._ST_pressed))
             # When going offline, *don't* empty the tx buffer so the tx thread
             # can write out the rest. Critical for ASCII services that send
             # faster than 50 Bd.
@@ -117,6 +119,7 @@ class TelexED1000SC(txBase.TelexBase):
                 self._tx_buffer = []
 
         if a == '\x1bWB':
+            l.debug("ready to dial")
             self._tx_buffer = []
             self._tx_buffer.append('§W')   # signaling type W - ready for dial
             self._set_online(True)
@@ -125,8 +128,10 @@ class TelexED1000SC(txBase.TelexBase):
 
     def _set_online(self, online:bool):
         if online:
+            l.debug("set online")
             self._is_online.set()
         else:
+            l.debug("set offline")
             self._is_online.clear()
 
     # =====

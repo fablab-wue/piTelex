@@ -32,6 +32,7 @@ TIME_20HZ = time.time()
 TIME_DELAY = None
 ERRLOG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "error_log")
 ERRLOG_LEVEL = logging.INFO
+#ERRLOG_LEVEL = logging.DEBUG
 
 #######
 # -----
@@ -226,13 +227,20 @@ def loop():
         for in_device in DEVICES:
             c = in_device.read()
             if c:
+                l.debug("read {!r} from {!r}".format(c, in_device))
                 for out_device in DEVICES:
                     if out_device != in_device:
+                        l.debug("writing {!r} to {!r}".format(c, out_device))
                         ret = out_device.write(c, in_device.id)
+                        l.debug("writing returned {!r}".format(ret))
+                        # Evaluate write return value:
                         if ret is not None:
                             if isinstance(ret, float):
+                                # if it's a float, wait for this time in s
                                 TIME_DELAY = time.time() + ret
                             else:
+                                # else, stop writing to other devices (discard
+                                # data)
                                 break
     
     for device in DEVICES:
