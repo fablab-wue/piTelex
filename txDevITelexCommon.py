@@ -334,12 +334,15 @@ class TelexITelexCommon(txBase.TelexBase):
 
             except socket.error:
                 l.error("Exception caught:", exc_info = sys.exc_info())
+                error = True
                 break
 
 
         if not is_ascii:
-            # In an error condition, a specific reject package has already been
-            # sent. Don't send an end package additionally.
+            # Don't send end packet in case of error. There may be two error
+            # cases:
+            # - Protocol error: We've already sent a reject package.
+            # - Network error: There's no connection to send over anymore.
             if not error:
                 self.send_end(s)
         l.info('end connection')
