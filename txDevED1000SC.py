@@ -107,6 +107,7 @@ class TelexED1000SC(txBase.TelexBase):
             l.debug("going online")
             self._tx_buffer = []
             self._tx_buffer.append('§A')   # signaling type A - connection
+            self._rx_buffer.append('\x1bAC') # Start timer in MCP
             self._set_online(True)
 
         if a == '\x1bZ':
@@ -342,6 +343,7 @@ class TelexED1000SC(txBase.TelexBase):
                 # to start reading characters
                 if (not properly_online) and bit:
                     properly_online = True
+                    self._rx_buffer.append('\x1bACK')
                     slice_counter = 0
             else:
                 properly_online = False
