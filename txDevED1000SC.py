@@ -246,7 +246,14 @@ class TelexED1000SC(txBase.TelexBase):
     def thread_rx(self):
         """Handler for receiving tones."""
 
-        _bit_counter_0 = 0
+        # If the "0" bit counter was initialised to 0, after startup, we'd
+        # receive a rogue ST press after 100 scans, ending any connection that
+        # may be active. So initialise to 100.
+        #
+        # (If we wanted to press ST to achieve anything, our teleprinter would
+        # have to be sending 1s before, which would reset the "0" counter. So,
+        # no danger of interfering.)
+        _bit_counter_0 = 100
         _bit_counter_1 = 0
         slice_counter = 0
         properly_online = False
@@ -298,6 +305,7 @@ class TelexED1000SC(txBase.TelexBase):
                 if _bit_counter_0 == 100:   # 0.5sec
                     self._rx_buffer.append('\x1bST')
                     self._ST_pressed = True
+            #l.debug("bit counters: 0:{} 1:{}".format(_bit_counter_0, _bit_counter_1))
 
             # Suppress symbol recognition until we're "properly online", i.e.
             # piTelex is in online state and at least one Z has been received
