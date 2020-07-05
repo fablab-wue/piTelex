@@ -110,6 +110,7 @@ class TelexMCP(txBase.TelexBase):
         self._wd = watchdog()
         self._wd.init('ONLINE', 180, self._rx_buffer, '\x1bZ')
         self._wd.init('WB', WB_TIMEOUT, self._rx_buffer, '\x1bZ')
+        self._wd.init('PRINTER', 5, self._rx_buffer, '\x1bACT')
 
         self._run = True
         self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
@@ -165,11 +166,44 @@ class TelexMCP(txBase.TelexBase):
                 self._mode = 'Z'
                 self._wd.disable('ONLINE')
                 self._wd.disable('WB')
+                self._wd.disable('PRINTER')
             if a == '\x1bA':   # start motor
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
                 self._wd.disable('WB')
 
+            # Printer start feedback code follows, which enables us to check if
+            # the printer hardware has in fact been started.
+            #
+            # To keep this backwards compatible with other interface modules
+            # not supporting this, a three-step protocol is established:
+            #
+            # 1. Any interface module that wishes to take part shall, upon
+            #    receipt of ESC-A, send ESC-AC (check).
+            #
+            # 2. ESC-AC activates our printer start timer.
+            #
+            # 3. The interface module shall, on successful printer start, send
+            #    ESC-ACK (check okay), which disables our timer. The same
+            #    happens on ESC-Z.
+            #
+            #    On timeout, we send ESC-ACT (check timeout). Any module may
+            #    evaluate this information though at present, only
+            #    txDevITelexSrv does: An active incoming connection is
+            #    terminated with an i-Telex "der" end packet.
+            #
+            #    In the future, this may be used by, e.g., a recording module
+            #    which hooks a timeout to step in for an unresponsive printer
+            #    and record an incoming message. For this, sequence of devices
+            #    in telex.py's DEVICES list and the write method's return value
+            #    are critical.
+
+            if a == '\x1bAC':
+                self._wd.reset('PRINTER')
+                l.debug("Printer start timer enabled")
+            elif a == '\x1bACK':
+                self._wd.disable('PRINTER')
+                l.debug("Printer has been started successfully, cancelling start timer")
 
             if a == '\x1bTAB':   # next mode
                 if self._mode == 'Z':
