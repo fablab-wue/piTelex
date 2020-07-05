@@ -306,6 +306,15 @@ class TelexITelexCommon(txBase.TelexBase):
 
             except socket.timeout:
                 #l.debug('.')
+                if is_server and self.printer_start_timed_out:
+                    self.printer_start_timed_out = False
+                    if is_ascii:
+                        s.sendall(b"der")
+                    else:
+                        self.send_reject(s, "der")
+                    l.error("Disconnecting client because printer didn't start up")
+                    error = True
+                    break
                 if is_ascii is not None:   # either ASCII or baudot connection detected
                     timeout_counter += 1
                     

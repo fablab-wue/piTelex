@@ -74,6 +74,9 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         # Threading event for self-test coordination
         self.selftest_event = Event()
 
+        # Flag for printer start timeout; terminate connection if it did
+        self.printer_start_timed_out = False
+
         if self._number:
             # Own number given: update own information in TNS (telex number
             # server) if needed
@@ -103,7 +106,10 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         if len(a) != 1:
             if a == '\x1bZ':   # end session
                 self.disconnect_client()
-            if self._connected == 2 and a == '\x1bWELCOME' and source == '^':
+            elif a == '\x1bACT':
+                # Printer start attempt timed out; initiate disconnect
+                self.printer_start_timed_out = True
+            elif self._connected == 2 and a == '\x1bWELCOME' and source == '^':
                 # MCP says: Welcome banner has been received completely. Enable
                 # non-command reads in read method so that normal communication
                 # can begin.
@@ -147,7 +153,9 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 continue
             l.info("%s:%s has connected" % client_address)
             if self.clients:
-                # our line is occupied (occ)
+                # Our line is occupied (occ), reject client. Little issue here:
+                # ASCII clients get an i-Telex package. But the content should
+                # be readable enough to infer our message.
                 self.send_reject(client, "occ")
                 client.close()
                 continue
