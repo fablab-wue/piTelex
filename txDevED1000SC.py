@@ -271,7 +271,7 @@ class TelexED1000SC(txBase.TelexBase):
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
 
         while self.run:
-            # Don't waste processor cycles while offline; wait up to 5 s before
+            # Don't waste processor cycles while offline; wait up to 1 s before
             # next tone decode. If we come online during the wait, we
             # immediately scan for the next bit.
             #
@@ -280,7 +280,7 @@ class TelexED1000SC(txBase.TelexBase):
             # filter also seems to introduce a delay.  In trials under optimal
             # circumstances, after pressing AT on the teletypewriter, it took
             # the filter two cycles to recognise the change.
-            self._is_online.wait(2)
+            self._is_online.wait(1)
 
             bdata = stream.read(FpS, exception_on_overflow=False)   # blocking
             data = np.frombuffer(bdata, dtype=np.int16)
