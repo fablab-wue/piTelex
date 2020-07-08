@@ -34,11 +34,12 @@ WB_TIMEOUT = 45.0
 # abs   A                line disabled
 # abs   B                line disabled
 # occ   B    iTxSrv      line occupied
-# der   B                derailed: line connected, but called teletypewriter
+# der   B    iTxCommon   derailed: line connected, but called teleprinter
 #                        not starting up
 # na    B    iTxCommon   called extension not allowed
 #
-# B type errors are handled in txDevITelexCommon.send_reject.
+# B type errors are handled in txDevITelexCommon.send_reject. It defaults to
+# "abs", but this error isn't used yet.
 
 class watchdog():
     def __init__(self):

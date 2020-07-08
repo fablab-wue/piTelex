@@ -429,7 +429,7 @@ class TelexITelexCommon(txBase.TelexBase):
     #
     # - abs   line disabled
     # - occ   line occupied
-    # - der   derailed: line connected, but called teletypewriter not starting
+    # - der   derailed: line connected, but called teleprinter not starting
     #         up
     # - na    called extension not allowed
     def send_reject(self, s, msg = "abs"):

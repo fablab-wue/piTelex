@@ -157,6 +157,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # ASCII clients get an i-Telex package. But the content should
                 # be readable enough to infer our message.
                 self.send_reject(client, "occ")
+                l.warning("Rejecting client (occupied)")
                 client.close()
                 continue
             self.clients[client] = client_address
