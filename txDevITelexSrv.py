@@ -226,7 +226,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                     l.info("self-test: TNS update successful, resuming self-test")
                     self.test_connection_fail = 0
                 else:
-                    l.info("self-test: TNS update successful")
+                    l.debug("self-test: TNS update successful")
             else:
                 self.update_tns_fail += 1
                 l.warning("self-test: TNS update failed {}x".format(self.update_tns_fail))
