@@ -17,6 +17,10 @@
       "port": 2342,
       "number": 0,
       "tns-pin": 12345
+    },
+    "archive": {
+      "type": "archive",
+      "enable": true
     }
   },
   "verbose": true,

@@ -110,3 +110,6 @@ cdr/Handlocher Lorenz HL38.cdr
 test.log
 recv_debug.log
 error_log/
+
+# Archive
+archive/

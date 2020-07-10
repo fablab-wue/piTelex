@@ -199,7 +199,12 @@ def init():
             eliza = txDevEliza.TelexEliza(**dev_param)
             DEVICES.append(eliza)
 
-        if dev_param['type'] == 'log':
+        elif dev_param['type'] == 'archive':
+            import txDevArchive
+            archive = txDevArchive.TelexArchive(**dev_param)
+            DEVICES.append(archive)
+
+        elif dev_param['type'] == 'log':
             import txDevLog
             log = txDevLog.TelexLog(**dev_param)
             DEVICES.insert(0,log)

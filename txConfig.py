@@ -99,6 +99,10 @@ def load():
         dest="eliza", default=False, action="store_true",
         help="Eliza chat bot")
 
+    gg.add_argument("-A", "--archive",
+        dest="archive", default=False, action="store_true",
+        help="Archive module")
+
 
     gd = parser.add_argument_group("Debug")
 
@@ -214,6 +218,9 @@ def load():
 
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}
+
+    if ARGS.archive:
+        devices['archive'] = {'type': 'archive', 'enable': True}
 
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
