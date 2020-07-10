@@ -149,27 +149,27 @@ def init():
             screen = txDevScreen.TelexScreen(**dev_param)
             DEVICES.append(screen)
 
-        if dev_param['type'] == 'CH340TTY':
+        elif dev_param['type'] == 'CH340TTY':
             import txDevCH340TTY
             serial = txDevCH340TTY.TelexCH340TTY(**dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'RPiTTY':
+        elif dev_param['type'] == 'RPiTTY':
             import txDevRPiTTY
             serial = txDevRPiTTY.TelexRPiTTY(**dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'ED1000':
+        elif dev_param['type'] == 'ED1000':
             import txDevED1000SC
             serial = txDevED1000SC.TelexED1000SC(**dev_param)
             DEVICES.append(serial)
 
-        #if dev_param['type'] == 'telnet':
+        #elif dev_param['type'] == 'telnet':
         #    import txDevTelnetSrv
         #    srv = txDevTelnetSrv.TelexTelnetSrv(**dev_param)
         #    DEVICES.append(srv)
 
-        if dev_param['type'] == 'i-Telex':
+        elif dev_param['type'] == 'i-Telex':
             import txDevITelexClient
             srv = txDevITelexClient.TelexITelexClient(**dev_param)
             DEVICES.append(srv)
@@ -179,22 +179,22 @@ def init():
                 srv = txDevITelexSrv.TelexITelexSrv(**dev_param)
                 DEVICES.append(srv)
 
-        if dev_param['type'] == 'news':
+        elif dev_param['type'] == 'news':
             import txDevNews
             news = txDevNews.TelexNews(**dev_param)
             DEVICES.insert(0,news)
 
-        if dev_param['type'] == 'IRC':
+        elif dev_param['type'] == 'IRC':
             import txDevIRC
             news = txDevIRC.TelexIRC(**dev_param)
             DEVICES.insert(0,news)
 
-        if dev_param['type'] == 'REST':
+        elif dev_param['type'] == 'REST':
             import txDevREST
             news = txDevREST.TelexREST(**dev_param)
             DEVICES.insert(0,news)
 
-        if dev_param['type'] == 'eliza':
+        elif dev_param['type'] == 'eliza':
             import txDevEliza
             eliza = txDevEliza.TelexEliza(**dev_param)
             DEVICES.append(eliza)
@@ -203,6 +203,9 @@ def init():
             import txDevLog
             log = txDevLog.TelexLog(**dev_param)
             DEVICES.insert(0,log)
+
+        else:
+            l.warning("Unknown module type in configuration, section {!r}: {!r}".format(dev_name, dev_param['type']))
 
 # =====
 
