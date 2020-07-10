@@ -124,7 +124,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._cb = None
         self._is_pulse_dial = False
         self._pulse_dial_count = 0
-        self._rxd_stable = False   # rxd=Low 
+        self._rxd_stable = False   # rxd=Low
         self._rxd_counter = 0
         self._time_squelch = 0
         self._is_online = False
@@ -142,7 +142,7 @@ class TelexRPiTTY(txBase.TelexBase):
         # init codec
         character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate
         self._mc = txCode.BaudotMurrayCode(self._loopback, coding=self._coding, character_duration=character_duration)
-        
+
         # init GPIOs
         pi.set_pad_strength(0, 8)
 
@@ -153,7 +153,7 @@ class TelexRPiTTY(txBase.TelexBase):
             pi.set_mode(self._pin_fsg_ns, pigpio.INPUT)
             pi.set_pull_up_down(self._pin_fsg_ns, pigpio.PUD_UP)
             pi.set_glitch_filter(self._pin_fsg_ns, 1000)   # 1ms
-        
+
         pi.set_mode(self._pin_txd, pigpio.OUTPUT)
         #pi.write(self._pin_txd, not self._inv_txd)
         pi.write(self._pin_txd, 1)
@@ -201,7 +201,7 @@ class TelexRPiTTY(txBase.TelexBase):
         status = pi.bb_serial_read_close(self._pin_rxd)
         pi.wave_clear()
         super().__del__()
-    
+
     # =====
 
     def read(self) -> str:
@@ -232,7 +232,7 @@ class TelexRPiTTY(txBase.TelexBase):
             rxd = pi.read(self._pin_rxd)
             rxd = (not pi.read(self._pin_rxd)) == self._inv_rxd   # int->bool, logical xor
             if rxd != self._rxd_stable:
-                
+
                 self._rxd_counter += 1
                 if self._rxd_counter == 10:   # 0.5sec
                     self._rxd_stable = rxd
@@ -254,12 +254,12 @@ class TelexRPiTTY(txBase.TelexBase):
             and not self._is_pulse_dial:
 
             aa = self._mc.decodeBM2A(bb)
-    
+
             if aa:
                 for a in aa:
                     #self._check_special_sequences(a)
                     self._rx_buffer.append(a)
-            
+
             self._rxd_counter = 0
 
         if self._status_LED_r:
@@ -387,7 +387,7 @@ class TelexRPiTTY(txBase.TelexBase):
     def _callback_pulse_dial(self, gpio, level, tick):
         if self._use_squelch and (time.time() <= self._time_squelch):
             return
-            
+
         if level == pigpio.TIMEOUT:   # watchdog timeout
             LOG(str(gpio)+str(level)+str(tick), 5)   # debug
             if self._pulse_dial_count:

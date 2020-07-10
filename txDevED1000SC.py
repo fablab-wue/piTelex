@@ -93,7 +93,7 @@ class TelexED1000SC(txBase.TelexBase):
         if len(a) != 1:
             self._check_commands(a)
             return
-            
+
         if a == '#':
             a = '@'   # ask teletype for hardware ID
 
@@ -193,7 +193,7 @@ class TelexED1000SC(txBase.TelexBase):
                             if not bb:
                                 continue
                             nbit = 5
-                        
+
                         for b in bb:
                             bits = [0]*nbit
                             mask = 1
@@ -204,7 +204,7 @@ class TelexED1000SC(txBase.TelexBase):
                             wavecomp = bytearray()
                             for bit in bits:
                                 wavecomp.extend(waves[bit])
- 
+
                             if nbit == 5:
                                 # Single Baudot character: add start and stop bits
                                 wavecomp[0:0] = waves[0]
@@ -239,7 +239,7 @@ class TelexED1000SC(txBase.TelexBase):
             print(e)
 
         finally:
-            stream.stop_stream()  
+            stream.stop_stream()
             stream.close()
 
     # =====
@@ -258,7 +258,7 @@ class TelexED1000SC(txBase.TelexBase):
         _bit_counter_1 = 0
         slice_counter = 0
         properly_online = False
-        
+
         devindex = self.params.get('devindex', None)
         baudrate = self.params.get('baudrate', 50)
 
@@ -391,11 +391,11 @@ class TelexED1000SC(txBase.TelexBase):
                     continue
 
                 slice_counter += 1
-        
+
             #time.sleep(0.001)
 
 
-        stream.stop_stream()  
+        stream.stop_stream()
         stream.close()
 
     # =====

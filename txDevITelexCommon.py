@@ -106,7 +106,7 @@ class TelexITelexCommon(txBase.TelexBase):
     def __del__(self):
         self.exit()
         super().__del__()
-    
+
 
     def exit(self):
         self._connected = 0
@@ -162,7 +162,7 @@ class TelexITelexCommon(txBase.TelexBase):
         while self._connected > 0:
             try:
                 data = s.recv(1)
-                
+
                 # lost connection
                 if not data:
                     break
@@ -317,7 +317,7 @@ class TelexITelexCommon(txBase.TelexBase):
                     break
                 if is_ascii is not None:   # either ASCII or baudot connection detected
                     timeout_counter += 1
-                    
+
                     if is_ascii:
                         if self._tx_buffer:
                             sent = self.send_data_ascii(s)
@@ -336,10 +336,10 @@ class TelexITelexCommon(txBase.TelexBase):
                                 sent_counter += sent
                                 if sent > 7:
                                     time_next_send = time.time() + (sent-6)*0.15
-                        
+
                         elif (timeout_counter % 15) == 0:   # every 3 sec
                             self.send_heartbeat(s)
-                    
+
 
             except socket.error:
                 l.error("Exception caught:", exc_info = sys.exc_info())

@@ -42,7 +42,7 @@ class TelexED1000TxOnly(txBase.TelexBase):
         self.run = False
 
         super().__del__()
-    
+
     # =====
 
     def read(self) -> str:
@@ -52,7 +52,7 @@ class TelexED1000TxOnly(txBase.TelexBase):
     def write(self, a:str, source:str):
         if len(a) != 1:
             return
-            
+
         bb = self._mc.encodeA2BM(a)
         if bb:
             for b in bb:
@@ -113,11 +113,11 @@ class TelexED1000TxOnly(txBase.TelexBase):
 
             else:   # nothing to send
                 stream.write(waves[1], Fpb)   # blocking
-        
+
             time.sleep(0.001)
 
 
-        stream.stop_stream()  
+        stream.stop_stream()
         stream.close()
 
 

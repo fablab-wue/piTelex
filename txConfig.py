@@ -36,99 +36,99 @@ def load():
     global ARGS, CFG
 
     parser = ArgumentParser(
-        prog='telex', 
-        conflict_handler='resolve', 
-        description='Handle historic teletypes.', 
+        prog='telex',
+        conflict_handler='resolve',
+        description='Handle historic teletypes.',
         epilog='More infos at https://github.com/fablab-wue/piTelex.git',
         allow_abbrev=True)
 
     gi = parser.add_argument_group("Interfaces")
 
     gi.add_argument("-G", "--RPiTW39",
-        dest="RPiTTY", default=False, action="store_true", 
+        dest="RPiTTY", default=False, action="store_true",
         help="GPIO (pigpio) on RPi with TW39 teletype")
 
-    gi.add_argument("-Y", "--tty", 
+    gi.add_argument("-Y", "--tty",
         dest="CH340", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with teletype (without dialing)")
 
-    gi.add_argument("-W", "--ttyTW39", 
+    gi.add_argument("-W", "--ttyTW39",
         dest="CH340_TW39", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with TW39 teletype (pulse dial)")
 
-    gi.add_argument("-M", "--ttyTWM", 
+    gi.add_argument("-M", "--ttyTWM",
         dest="CH340_TWM", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with TWM teletype (keypad dial)")
 
-    gi.add_argument("-V", "--ttyV10", 
+    gi.add_argument("-V", "--ttyV10",
         dest="CH340_V10", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-Serial-Adapter (CH340-chip) with V.10 teletype (FS200, FS220)")
 
     gi.add_argument("-E", "--audioED1000",
-        dest="ED1000", default=False, action="store_true", 
+        dest="ED1000", default=False, action="store_true",
         help="USB-Sound-Card with ED1000 teletype")
 
     gi.add_argument("--noscreen",
-        dest="screen", default=True, action="store_false", 
+        dest="screen", default=True, action="store_false",
         help="No Screen in/out")
 
 
     gg = parser.add_argument_group("Gateways")
 
-    gg.add_argument("-I", "--iTelex", 
+    gg.add_argument("-I", "--iTelex",
         dest="itelex", default=-1, const=0, nargs='?', metavar='PORT', type=int,
         help="i-Telex Client and Server (if PORT>0)")
 
-    #gg.add_argument("-T", "--telnet", 
+    #gg.add_argument("-T", "--telnet",
     #    dest="telnet", default=0, metavar='PORT', type=int,
     #    help="Terminal Socket Server at Port Number")
 
-    gg.add_argument("-N", "--news", 
+    gg.add_argument("-N", "--news",
         dest="news", default='', metavar="PATH",
         help="News from File")
 
-    gg.add_argument("-C", "--IRC", 
+    gg.add_argument("-C", "--IRC",
         dest="irc", default='', metavar="CHANNEL",
         help="IRC Client")
 
-    gg.add_argument("-R", "--REST", 
+    gg.add_argument("-R", "--REST",
         dest="rest", default='', metavar="TEMPLATE",
         help="REST Client")
 
     gg.add_argument("-Z", "--eliza",
-        dest="eliza", default=False, action="store_true", 
+        dest="eliza", default=False, action="store_true",
         help="Eliza chat bot")
 
 
     gd = parser.add_argument_group("Debug")
 
-    gd.add_argument("-L", "--log", 
+    gd.add_argument("-L", "--log",
         dest="log", default='', metavar="FILE",
         help="Log to File")
 
-    gd.add_argument("-d", "--debug", 
+    gd.add_argument("-d", "--debug",
         dest="debug", default=0, metavar='LEVEL', type=int,
         help="Debug level")
 
 
-    parser.add_argument("-c", "--config", 
+    parser.add_argument("-c", "--config",
         dest="cnf", default='txConfig.json', metavar="FILE",
         help="Load Config File (JSON)")
 
-    parser.add_argument("-k", "--id", "--KG", 
+    parser.add_argument("-k", "--id", "--KG",
         dest="wru_id", default='', metavar="ID",
         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
-    #parser.add_argument("-m", "--mode", 
+    #parser.add_argument("-m", "--mode",
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
 
     parser.add_argument("-q", "--quiet",
-        dest="verbose", default=True, action="store_false", 
+        dest="verbose", default=True, action="store_false",
         help="don't print status messages to stdout")
 
     parser.add_argument("-s", "--save",
-        dest="save", default=False, action="store_true", 
+        dest="save", default=False, action="store_true",
         help="Save command line args to config file (txConfig.json)")
 
 
@@ -144,7 +144,7 @@ def load():
         CFG['devices'] = {}
 
     devices = CFG['devices']
-    
+
     if ARGS.screen:
         screen_args = {'type': 'screen', 'enable': True, 'lowercase': False, 'suppress_shifts': False}
         try:
@@ -167,17 +167,17 @@ def load():
     if ARGS.RPiTTY:
         devices['RPiTTY'] = {
             'type': 'RPiTTY',
-            'enable': True, 
-            'pin_txd': 17, 
-            'pin_rxd': 27, 
+            'enable': True,
+            'pin_txd': 17,
+            'pin_rxd': 27,
             'pin_fsg_ns': 6,
-            'pin_rel': 22, 
-            'pin_oin': 10, 
-            'pin_opt': 9, 
-            'pin_dir': 11, 
+            'pin_rel': 22,
+            'pin_oin': 10,
+            'pin_opt': 9,
+            'pin_dir': 11,
             'pin_sta': 23,
-            'baudrate': 50, 
-            'inv_rxd': False, 
+            'baudrate': 50,
+            'inv_rxd': False,
             'coding': 0,
             'loopback': True,
             }
@@ -185,15 +185,15 @@ def load():
     if ARGS.ED1000:
         devices['ED1000'] = {
             'type': 'ED1000',
-            'enable': True, 
-            'send_f0': 500, 
-            'send_f1': 700, 
-            'recv_f0': 2250, 
+            'enable': True,
+            'send_f0': 500,
+            'send_f1': 700,
+            'recv_f0': 2250,
             'recv_f1': 3150,
             'recv_squelch': 100,
             'recv_debug': False,
-            'baudrate': 50, 
-            'devindex': None, 
+            'baudrate': 50,
+            'devindex': None,
             'zcarrier': False,
             }
 
@@ -220,11 +220,11 @@ def load():
 
 
     CFG['verbose'] = ARGS.verbose
-    
+
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
         CFG['wru_id'] = wru_id
-    
+
     #mode = ARGS.mode.strip()
     #if mode:
     #    CFG['mode'] = mode

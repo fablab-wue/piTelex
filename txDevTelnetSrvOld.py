@@ -50,7 +50,7 @@ class TelexTelnetSrv(txBase.TelexBase):
         #print('__del__ in TelexWebSrv')
         self.SERVER.close()
         super().__del__()
-    
+
     # =====
 
     def read(self) -> str:
@@ -65,7 +65,7 @@ class TelexTelnetSrv(txBase.TelexBase):
     def write(self, a:str, source:str):
         if len(a) != 1:
             return
-            
+
         self.broadcast(a)
 
     # =====

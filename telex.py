@@ -139,7 +139,7 @@ def init():
     for dev_name, dev_param in txConfig.CFG['devices'].items():
         if not dev_param.get('enable', False):
             continue
-        
+
         dev_param['name'] = dev_name
         #if 'mode' not in dev_param:
         #    dev_param['mode'] = mode
@@ -208,7 +208,7 @@ def init():
 
 def exit():
     global DEVICES
-    
+
     for device in DEVICES:
         device.exit()
         del device
@@ -242,7 +242,7 @@ def loop():
                                 # else, stop writing to other devices (discard
                                 # data)
                                 break
-    
+
     for device in DEVICES:
         device.idle()
 
@@ -258,7 +258,7 @@ def loop():
 
 def main():
     txConfig.load()
-    
+
     #test()
     init_error_log()
     init()

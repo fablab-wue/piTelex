@@ -49,7 +49,7 @@ class watchdog():
     def init(self, name:str, timer:int, action_list, action_char:str):
         wd = {}
         wd['time_reset'] = None
-        wd['time_offset'] = timer 
+        wd['time_offset'] = timer
         wd['action_list'] = action_list
         wd['action_char'] = action_char
         self._wds[name] = wd
@@ -124,7 +124,7 @@ class TelexMCP(txBase.TelexBase):
     def __del__(self):
         self._run = False
         super().__del__()
-    
+
 
     def exit(self):
         self._run = False
@@ -306,7 +306,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
             self._wd.reset('ONLINE')
 
 
-        if self._font_mode:   # 
+        if self._font_mode:   #
             f = self._fontstr.get(a, None)
             if f:
                 f += self._fontsep
@@ -358,7 +358,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
         self._wd.process()
 
     # =====
-    
+
     def thread_memory(self):
         while self._run:
             #l.debug('.')
@@ -366,7 +366,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 a = self._mx_buffer.pop(0)
                 self._rx_buffer.append(a)
             time.sleep(0.15)
-        
+
     def thread_dial(self):
         # This thread monitors the number-to-dial and initiates the dial
         # command depending on the set mode (timeout dialling or plus dialling)
@@ -411,7 +411,7 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                 # txDevMCP.get_user.
 
                 if change:
-                    # A change in self._dial_number has occurred 
+                    # A change in self._dial_number has occurred
                     if self._dial_timeout is None:
                         # We are in + dial mode: Check if the last change was a
                         # plus, otherwise ignore
