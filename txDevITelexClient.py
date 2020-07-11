@@ -118,8 +118,6 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 else:
                     s.settimeout(None) # Re-enable blocking mode
 
-                    self._rx_buffer.append('\x1bA')
-
                     if not is_ascii:
                         self.send_version(s)
                         self.send_direct_dial(s, user['ENum'])
