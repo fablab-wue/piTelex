@@ -106,7 +106,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         if len(a) != 1:
             if a == '\x1bZ':   # end session
                 self.disconnect_client()
-            elif a == '\x1bACT':
+            elif self._connected > 0 and a == '\x1bACT':
                 # Printer start attempt timed out; initiate disconnect
                 self.printer_start_timed_out = True
             elif self._connected == 2 and a == '\x1bWELCOME' and source == '^':
