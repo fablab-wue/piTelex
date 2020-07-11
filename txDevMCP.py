@@ -306,50 +306,50 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
             self._wd.reset('ONLINE')
 
 
-        if self._font_mode:   #
-            f = self._fontstr.get(a, None)
-            if f:
-                f += self._fontsep
-                self._rx_buffer.extend(list(f))   # send back font pattern
-            return True
+            if self._font_mode:   #
+                f = self._fontstr.get(a, None)
+                if f:
+                    f += self._fontsep
+                    self._rx_buffer.extend(list(f))   # send back font pattern
+                return True
 
 
-        if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
-            self._rx_buffer.extend(list('[\r\n' + self.device_id))   # send back device id
-            return True
+            if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
+                self._rx_buffer.extend(list('[\r\n' + self.device_id))   # send back device id
+                return True
 
 
-        if a == '\t':   # next mode
-            if self._mode == 'Z':
-                self._rx_buffer.append('\x1bWB')   # send text
-                self._mode = 'WB'
-            elif self._mode == 'WB':
-                self._rx_buffer.append('\x1bA')   # send text
-                self._mode = 'A'
-            elif self._mode == 'A':
-                self._rx_buffer.append('\x1bZ')   # send text
-                self._mode = 'Z'
-            return True
+            if a == '\t':   # next mode
+                if self._mode == 'Z':
+                    self._rx_buffer.append('\x1bWB')   # send text
+                    self._mode = 'WB'
+                elif self._mode == 'WB':
+                    self._rx_buffer.append('\x1bA')   # send text
+                    self._mode = 'A'
+                elif self._mode == 'A':
+                    self._rx_buffer.append('\x1bZ')   # send text
+                    self._mode = 'Z'
+                return True
 
 
-        if self._mode == 'WB':
-            #if a == '0':   # hack!!!! to test the pulse dial
-            #    self._rx_buffer.append('\x1bA')   # send text
+            if self._mode == 'WB':
+                #if a == '0':   # hack!!!! to test the pulse dial
+                #    self._rx_buffer.append('\x1bA')   # send text
 
-            # A digit or +/- is being dialled; record digit and trigger dial
-            # thread to check
-            if a.isdigit() or a == '-' or (self._dial_timeout is None and a == '+'):
-                self._dial_number += a
-                self._dial_change.set()
-            else:
-                # Invalid data for dial mode, except it's an error printed by
-                # txDevITelexClient
-                if source == '>':
-                    # Error message, print
-                    return None
+                # A digit or +/- is being dialled; record digit and trigger dial
+                # thread to check
+                if a.isdigit() or a == '-' or (self._dial_timeout is None and a == '+'):
+                    self._dial_number += a
+                    self._dial_change.set()
                 else:
-                    # Invalid data, discard
-                    return True
+                    # Invalid data for dial mode, except it's an error printed by
+                    # txDevITelexClient
+                    if source == '>':
+                        # Error message, print
+                        return None
+                    else:
+                        # Invalid data, discard
+                        return True
 
 
     # -----
