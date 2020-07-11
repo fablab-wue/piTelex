@@ -107,7 +107,6 @@ class TelexED1000SC(txBase.TelexBase):
             l.debug("going online")
             self._tx_buffer = []
             self._tx_buffer.append('§A')   # signaling type A - connection
-            self._rx_buffer.append('\x1bAC') # Start timer in MCP
             self._set_online(True)
 
         if a == '\x1bZ':
@@ -133,6 +132,9 @@ class TelexED1000SC(txBase.TelexBase):
 
     def _set_online(self, online:bool):
         if online:
+            # Start timer in MCP if we're going from offline to online
+            if not self._is_online.is_set():
+                self._rx_buffer.append('\x1bAC')
             l.debug("set online")
             self._is_online.set()
             # Enable offline delay in case of errors (see thread_tx)
@@ -278,8 +280,8 @@ class TelexED1000SC(txBase.TelexBase):
             # This delay probably shouldn't be raised much. On one hand, the
             # worst-case reaction time will grow.  Moreover, the receive IIR
             # filter also seems to introduce a delay.  In trials under optimal
-            # circumstances, after pressing AT on the teletypewriter, it took
-            # the filter two cycles to recognise the change.
+            # circumstances, after pressing AT on the teleprinter, it took the
+            # filter two cycles to recognise the change.
             self._is_online.wait(1)
 
             bdata = stream.read(FpS, exception_on_overflow=False)   # blocking
@@ -310,7 +312,7 @@ class TelexED1000SC(txBase.TelexBase):
 
             # Suppress symbol recognition until we're "properly online", i.e.
             # piTelex is in online state and at least one Z has been received
-            # from the teletypewriter.
+            # from the teleprinter.
             #
             # If we don't wait for a stable Z, we might spuriously decode one
             # of these symbols (start bit, 5x character bit, stop bits):
@@ -332,17 +334,18 @@ class TelexED1000SC(txBase.TelexBase):
             # - AT is pressed: All ok, we've got a stable Z level already,
             #   that's why we went online in the first place.
             #
-            # - Incoming connection: We send Z first, the teletypewriter
+            # - Incoming connection: We send Z first, the teleprinter
             #   acknowledges this by switching from A to Z after some time.
             #
             # The second case is critical: We have to wait for the
-            # teletypewriter to send a Z; only after this we are "properly
+            # teleprinter to send a Z; only after this we are "properly
             # online".
             if self._is_online.is_set():
                 # If we're online and receive Z, set "properly online" status
                 # to start reading characters
                 if (not properly_online) and bit:
                     properly_online = True
+                    l.info("Teleprinter online")
                     self._rx_buffer.append('\x1bACK')
                     slice_counter = 0
             else:
