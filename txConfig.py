@@ -123,6 +123,10 @@ def load():
         dest="wru_id", default='', metavar="ID",
         help="Set the ID of the Telex Device. Leave empty to use the Hardware ID")
 
+    parser.add_argument("--id-fallback",
+        dest="wru_fallback", default=False, action="store_true",
+        help="Enable software ID fallback mode: If printer isn't starting up on command, enable software ID")
+
     #parser.add_argument("-m", "--mode",
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
@@ -231,6 +235,10 @@ def load():
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
         CFG['wru_id'] = wru_id
+
+    wru_fallback = ARGS.wru_fallback
+    if wru_fallback:
+        CFG['wru_fallback'] = ARGS.wru_fallback
 
     #mode = ARGS.mode.strip()
     #if mode:

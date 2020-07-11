@@ -25,6 +25,7 @@
   },
   "verbose": true,
   "wru_id": "",
+  "wru_fallback": false,
   "dial_timeout": 2.0,
   "debug": 8
 }

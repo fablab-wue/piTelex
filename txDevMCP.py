@@ -85,6 +85,7 @@ class TelexMCP(txBase.TelexBase):
         self.params = params
 
         self.device_id = params.get('wru_id', '')
+        self.wru_fallback = params.get('wru_fallback', False)
 
         self._rx_buffer = []
         self._mx_buffer = []
@@ -107,6 +108,9 @@ class TelexMCP(txBase.TelexBase):
                 dial_timeout = 2.0
         self._dial_timeout = dial_timeout
         self._dial_change = Event()
+
+        # Fallback WRU state
+        self._fallback_wru_triggered = False
 
         self._wd = watchdog()
         self._wd.init('ONLINE', 180, self._rx_buffer, '\x1bZ')
@@ -136,6 +140,12 @@ class TelexMCP(txBase.TelexBase):
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
+
+        if ret == '\x1bACT' and self.wru_fallback:
+            # Intercept printer timeout signal and replace by a fake ESC-ACK
+            self._fallback_wru_triggered = True
+            l.warning("Printer start attempt timed out, fallback WRU responder enabled")
+            ret = '\x1bACK'
 
         return ret
 
@@ -168,6 +178,7 @@ class TelexMCP(txBase.TelexBase):
                 self._wd.disable('ONLINE')
                 self._wd.disable('WB')
                 self._wd.disable('PRINTER')
+                self._fallback_wru_triggered = False
             if a == '\x1bA':   # start motor
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
@@ -315,8 +326,10 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
 
 
             if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
-                self._rx_buffer.extend(list('[\r\n' + self.device_id))   # send back device id
-                return True
+                if not self.wru_fallback or self._fallback_wru_triggered:
+                    self._rx_buffer.extend(list('[\r\n' + self.device_id))   # send back device id
+                    l.info("Sending software WRU response: {!r}".format(self.device_id))
+                    return True
 
 
             if a == '\t':   # next mode
