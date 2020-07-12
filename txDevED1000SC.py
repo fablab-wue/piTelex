@@ -260,6 +260,7 @@ class TelexED1000SC(txBase.TelexBase):
         _bit_counter_1 = 0
         slice_counter = 0
         properly_online = False
+        quick_scanning = False
 
         devindex = self.params.get('devindex', None)
         baudrate = self.params.get('baudrate', 50)
@@ -279,10 +280,15 @@ class TelexED1000SC(txBase.TelexBase):
             #
             # This delay probably shouldn't be raised much. On one hand, the
             # worst-case reaction time will grow.  Moreover, the receive IIR
-            # filter also seems to introduce a delay.  In trials under optimal
+            # filter also seems to introduce a delay. In trials under optimal
             # circumstances, after pressing AT on the teleprinter, it took the
             # filter two cycles to recognise the change.
-            self._is_online.wait(1)
+            #
+            # So, to enhance the responsiveness, raise scan frequency at the
+            # first Z level, and lower again at A. As we wait on the _is_online
+            # event, this only takes effect when offline.
+            if not quick_scanning:
+                self._is_online.wait(1)
 
             bdata = stream.read(FpS, exception_on_overflow=False)   # blocking
             data = np.frombuffer(bdata, dtype=np.int16)
@@ -295,17 +301,25 @@ class TelexED1000SC(txBase.TelexBase):
             if bit:
                 _bit_counter_0 = 0
                 _bit_counter_1 += 1
-                # In offline state, we wait quite a bit to save CPU cycles.
-                # Before, we waited until the counter had increased to 20,
-                # which means 100 ms.
-                #
-                # So react to the first "high" and go online.
-                if _bit_counter_1 == 1 and not self._is_online.is_set():
+                if _bit_counter_1 == 1:
+                    # First Z level detected; raise scanning rate to timely
+                    # react to AT press
+                    quick_scanning = True
+                    l.debug("Enabling quick scanning")
+                # Go online after 20 consecutive Zs (100 ms + rest of
+                # _is_online.wait delay, see above)
+                if _bit_counter_1 == 20 and not self._is_online.is_set():
                     self._rx_buffer.append('\x1bAT')
             else:
                 _bit_counter_0 += 1
                 _bit_counter_1 = 0
-                if _bit_counter_0 == 100:   # 0.5sec
+                if quick_scanning:
+                    # "A" level detected; disable quick scanning so that we scan
+                    # the input signal less often (see above)
+                    quick_scanning = False
+                    l.debug("Disabling quick scanning")
+                # Go offline after 100 consecutive As (500 ms)
+                if _bit_counter_0 == 100:
                     self._rx_buffer.append('\x1bST')
                     self._ST_pressed = True
             #l.debug("bit counters: 0:{} 1:{}".format(_bit_counter_0, _bit_counter_1))
