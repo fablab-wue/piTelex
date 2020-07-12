@@ -77,6 +77,9 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         # Flag for printer start timeout; terminate connection if it did
         self.printer_start_timed_out = False
 
+        # Flag for blocking inbound connections when an outbound one is active
+        self.block_inbound = False
+
         if self._number:
             # Own number given: update own information in TNS (telex number
             # server) if needed
@@ -104,16 +107,27 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
-            if a == '\x1bZ':   # end session
-                self.disconnect_client()
-            elif self._connected > 0 and a == '\x1bACT':
-                # Printer start attempt timed out; initiate disconnect
-                self.printer_start_timed_out = True
-            elif self._connected == 2 and a == '\x1bWELCOME' and source == '^':
-                # MCP says: Welcome banner has been received completely. Enable
-                # non-command reads in read method so that normal communication
-                # can begin.
-                self._connected = 3
+            if self._connected <= 0:
+                if a == '\x1bWB':
+                    # Ready-to-dial state triggered: There is an outgoing
+                    # connection. Block inbound ones.
+                    self.block_inbound = True
+                    l.info("Blocking inbound connections") # TODO debug
+                elif a == '\x1bZ':
+                    # Connection ended, unblock
+                    self.block_inbound = False
+                    l.info("Unblocking inbound connections") # TODO debug
+            elif self._connected > 0:
+                if a == '\x1bZ':   # end session
+                    self.disconnect_client()
+                elif a == '\x1bACT':
+                    # Printer start attempt timed out; initiate disconnect
+                    self.printer_start_timed_out = True
+                elif self._connected == 2 and a == '\x1bWELCOME' and source == '^':
+                    # MCP says: Welcome banner has been received completely. Enable
+                    # non-command reads in read method so that normal communication
+                    # can begin.
+                    self._connected = 3
             return
 
         if source in '<>':
@@ -152,7 +166,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 client.close()
                 continue
             l.info("%s:%s has connected" % client_address)
-            if self.clients:
+            if self.clients or self.block_inbound:
                 # Our line is occupied (occ), reject client. Little issue here:
                 # ASCII clients get an i-Telex package. But the content should
                 # be readable enough to infer our message.
