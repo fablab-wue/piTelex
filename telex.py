@@ -265,10 +265,10 @@ def loop():
 # =====
 
 def main():
+    init_error_log()
     txConfig.load()
 
     #test()
-    init_error_log()
     init()
 
     print('\033[2J-=TELEX=-')

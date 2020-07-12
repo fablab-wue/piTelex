@@ -80,7 +80,7 @@ class TelexArchive(txBase.TelexBase):
                 self._dial_number = data[2:]
             elif data == "\x1bA":
                 if self._state >= 2:
-                    l.info("Redundant printer start command detected (ignored)")
+                    l.warning("Redundant printer start command detected (ignored)")
                     return
                 self._state = 2
                 l.info("recording new message") # TODO debug
@@ -88,7 +88,7 @@ class TelexArchive(txBase.TelexBase):
                 self._timestamp = time.localtime()
             elif data == "\x1bZ":
                 if self._state <= 0:
-                    l.warning("Double printer stop command detected (ignored)")
+                    l.warning("Redundant printer stop command detected (ignored)")
                     return
                 elif self._state >= 2:
                     self.save_msg()
