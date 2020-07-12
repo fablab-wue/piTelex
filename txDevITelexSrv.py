@@ -108,15 +108,15 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     def write(self, a:str, source:str):
         if len(a) != 1:
             if self._connected <= 0:
-                if a == '\x1bWB':
-                    # Ready-to-dial state triggered: There is an outgoing
-                    # connection. Block inbound ones.
+                if a in ('\x1bWB', '\x1bA'):
+                    # Ready-to-dial or printer start states triggered: There is
+                    # an outgoing connection. Block inbound ones.
                     self.block_inbound = True
-                    l.info("Blocking inbound connections") # TODO debug
+                    l.debug("Blocking inbound connections")
                 elif a == '\x1bZ':
                     # Connection ended, unblock
                     self.block_inbound = False
-                    l.info("Unblocking inbound connections") # TODO debug
+                    l.debug("Unblocking inbound connections")
             elif self._connected > 0:
                 if a == '\x1bZ':   # end session
                     self.disconnect_client()
