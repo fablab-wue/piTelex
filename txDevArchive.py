@@ -84,7 +84,6 @@ class TelexArchive(txBase.TelexBase):
                     return
                 self._state = 2
                 l.info("recording new message") # TODO debug
-                self._direction_out = None
                 self._timestamp = time.localtime()
             elif data == "\x1bZ":
                 if self._state <= 0:
@@ -92,6 +91,7 @@ class TelexArchive(txBase.TelexBase):
                     return
                 elif self._state >= 2:
                     self.save_msg()
+                self._direction_out = None
                 self._state = 0
         else:
             # this is data
