@@ -87,7 +87,7 @@ class BaudotMurrayCode:
         'ß': 'SS',
         '\a': '%',   # Bell
         '\f': '(FF)',   # Form Feed
-        '\d': '(DEL)',   # Delete
+        '\x7f': '(DEL)',   # Delete
         '\t': '(TAB)',   # Tab
         '\v': '(VT)',   # Vertical Tab
         '\x1B': '(ESC)',   # Escape
