@@ -243,10 +243,11 @@ class TelexArchive(txBase.TelexBase):
             wru = self.find_WRU_answer(msg, inbound=True)
 
         # Fallback if no WRU answer found
-        if (not wru) and self._dial_number:
-            wru = self._dial_number
-        else:
-            wru = "<unknown>"
+        if not wru:
+            if self._dial_number:
+                wru = self._dial_number
+            else:
+                wru = "<unknown>"
         self._dial_number = None
 
         filename = self.filename(wru=wru, direction=direction, timestamp=self._timestamp)
