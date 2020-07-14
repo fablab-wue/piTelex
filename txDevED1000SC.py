@@ -25,6 +25,7 @@ import numpy as np
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
+#l.setLevel(logging.DEBUG)
 
 import txCode
 import txBase
@@ -49,9 +50,13 @@ class TelexED1000SC(txBase.TelexBase):
         self._rx_buffer = []
         self._is_online = Event()
         self._ST_pressed = False
-        # Delay going offline by a certain time (see thread_tx) so that operator
-        # can read the latest text -- crucial in case of dial errors.
-        self.delay_offline = False
+        # State of rx thread, governs most of the module operation. States:
+        # -  0 offline / startup
+        # - 10 going online by ESC-WB/-A
+        # - 20 online
+        # - 30 going offline by ESC-Z
+        # - 40 offline delay
+        self._rx_state = 0
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
@@ -66,7 +71,6 @@ class TelexED1000SC(txBase.TelexBase):
         self._tx_thread.start()
         self._rx_thread = Thread(target=self.thread_rx, name='ED1000rx')
         self._rx_thread.start()
-
 
 
     def __del__(self):
@@ -104,27 +108,16 @@ class TelexED1000SC(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         if a == '\x1bA':
-            l.debug("going online")
-            self._tx_buffer = []
+            l.debug("received online command")
             self._tx_buffer.append('§A')   # signaling type A - connection
             self._set_online(True)
 
         if a == '\x1bZ':
-            l.debug("going offline (ST pressed: {})".format(self._ST_pressed))
-            # When going offline, *don't* empty the tx buffer so the tx thread
-            # can write out the rest. Critical for ASCII services that send
-            # faster than 50 Bd.
+            l.debug("received offline command (ST pressed: {})".format(self._ST_pressed))
             self._set_online(False)
-            # ...except if we ourselves initiated going offline (by pressing
-            # ST). In this case, also cancel offline delay in thread_tx.
-            if self._ST_pressed:
-                self._ST_pressed = False
-                self.delay_offline = False
-                self._tx_buffer = []
 
         if a == '\x1bWB':
             l.debug("ready to dial")
-            self._tx_buffer = []
             self._tx_buffer.append('§W')   # signaling type W - ready for dial
             self._set_online(True)
 
@@ -137,8 +130,6 @@ class TelexED1000SC(txBase.TelexBase):
                 self._rx_buffer.append('\x1bAC')
             l.debug("set online")
             self._is_online.set()
-            # Enable offline delay in case of errors (see thread_tx)
-            self.delay_offline = True
         else:
             l.debug("set offline")
             self._is_online.clear()
@@ -176,14 +167,18 @@ class TelexED1000SC(txBase.TelexBase):
 
         #a = stream.get_write_available()
         try:
-
             while self.run:
-                # Process buffer if we're online or if something's left in it
-                # after going offline. Critical for ASCII services that send
-                # faster than 50 Bd.
-                if self._is_online.is_set() or self._tx_buffer:
+                # Going online: send Z
+                if self._rx_state == 10:
+                    l.debug("[tx] Sending Z level")
+                    stream.write(waves[1], Fpb)   # blocking
+                # Process buffer if we're online or going offline with nonempty
+                # buffer. Critical for ASCII services that send faster than 50
+                # Bd.
+                elif 20 <= self._rx_state <= 30:
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
+                        l.debug("[tx] Sending {!r} (buffer length {})".format(a, len(self._tx_buffer)))
                         if a == '§W':
                             bb = (0xFFC0,)
                             nbit = 16
@@ -219,18 +214,21 @@ class TelexED1000SC(txBase.TelexBase):
                             stream.write(bytes(wavecomp), frames)   # blocking
 
                     else:   # nothing to send
+                        l.debug("[tx] Online with empty tx buffer")
                         stream.write(waves[1], Fpb)   # blocking
 
                 else:   # offline
-                    if self.delay_offline:
-                        # delay going offline by 3 s
-                        self.delay_offline = False
-                        for i in range(150):
+                    if self._rx_state == 40:
+                        l.debug("[tx] Going offline shortly")
+                        # Wait out offline delay; write Z until then
+                        while self._rx_state == 40:
                             stream.write(waves[1], Fpb)   # blocking
 
                     if zcarrier:
+                        l.debug("[tx] Offline, sending A level")
                         stream.write(waves[0], Fpb)   # blocking
                     else:
+                        l.debug("[tx] Offline, waiting")
                         # If there's absolutely nothing to do, block until
                         # we're going online again
                         self._is_online.wait()
@@ -249,17 +247,10 @@ class TelexED1000SC(txBase.TelexBase):
     def thread_rx(self):
         """Handler for receiving tones."""
 
-        # If the "0" bit counter was initialised to 0, after startup, we'd
-        # receive a rogue ST press after 100 scans, ending any connection that
-        # may be active. So initialise to 100.
-        #
-        # (If we wanted to press ST to achieve anything, our teleprinter would
-        # have to be sending 1s before, which would reset the "0" counter. So,
-        # no danger of interfering.)
-        _bit_counter_0 = 100
+        _bit_counter_0 = 0
         _bit_counter_1 = 0
         slice_counter = 0
-        properly_online = False
+        offline_delay_counter = 0
         quick_scanning = False
 
         devindex = self.params.get('devindex', None)
@@ -274,42 +265,52 @@ class TelexED1000SC(txBase.TelexBase):
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
 
         while self.run:
-            # Don't waste processor cycles while offline; wait up to 1 s before
-            # next tone decode. If we come online during the wait, we
-            # immediately scan for the next bit.
+            # Executing the IIR filter for bit recognition takes a lot of CPU
+            # power. Normally, we do it four times per bit or every 5 ms (once
+            # per "slice", "quick scan").
             #
-            # This delay probably shouldn't be raised much. On one hand, the
-            # worst-case reaction time will grow.  Moreover, the receive IIR
-            # filter also seems to introduce a delay. In trials under optimal
-            # circumstances, after pressing AT on the teleprinter, it took the
-            # filter two cycles to recognise the change.
+            # When offline, this is quite a waste. We'll read A level for a
+            # long time without any benefit. So we lower scan interval to 1000
+            # ms ("slow scan").
             #
-            # So, to enhance the responsiveness, raise scan frequency at the
-            # first Z level, and lower again at A. As we wait on the _is_online
-            # event, this only takes effect when offline.
-            if not quick_scanning:
+            # When the operator presses AT, the teleprinter sends Z level.
+            # We need to recognise this ASAP to maximise responsiveness. But we
+            # also need to avoid recognising freak AT presses (e.g. when
+            # plugging or unplugging the data line). To this end, we need to
+            # establish a train of stable Z readings. To obtain this quickly,
+            # after detecting the first Z, we switch to quick scan. From here
+            # on, there are two possibilities:
+            # - We read 20x Z: go online
+            # - We read an A: go back to slow scan
+            #
+            # The responsiveness delay is about 2x scan interval. (The receive
+            # IIR filter also seems to introduce a delay. In trials under
+            # optimal circumstances, after pressing AT on the teleprinter,
+            # it took the filter two cycles to recognise the change.)
+
+            if quick_scanning or self._rx_state > 0:
+                pass
+            else:
                 self._is_online.wait(1)
 
+            # Read audio input
             bdata = stream.read(FpS, exception_on_overflow=False)   # blocking
             data = np.frombuffer(bdata, dtype=np.int16)
 
+            # Run FSK demodulation (bit detection)
             bit = self._recv_decode(data)
 
-            #if bit is None and self._is_online.is_set():
-            #print(bit, val)
-
+            # The purpose of these bit counters is to detect a stable level of
+            # A or Z, which triggers state changes.
             if bit:
                 _bit_counter_0 = 0
                 _bit_counter_1 += 1
-                if _bit_counter_1 == 1:
-                    # First Z level detected; raise scanning rate to timely
-                    # react to AT press
-                    quick_scanning = True
-                    l.debug("Enabling quick scanning")
-                # Go online after 20 consecutive Zs (100 ms + rest of
-                # _is_online.wait delay, see above)
-                if _bit_counter_1 == 20 and not self._is_online.is_set():
-                    self._rx_buffer.append('\x1bAT')
+                if self._rx_state <= 0: # offline / startup
+                    if _bit_counter_1 == 1:
+                        # First Z level detected; raise scanning rate to timely
+                        # react to AT press
+                        quick_scanning = True
+                        l.debug("[rx] Enabling quick scanning")
             else:
                 _bit_counter_0 += 1
                 _bit_counter_1 = 0
@@ -317,16 +318,116 @@ class TelexED1000SC(txBase.TelexBase):
                     # "A" level detected; disable quick scanning so that we scan
                     # the input signal less often (see above)
                     quick_scanning = False
-                    l.debug("Disabling quick scanning")
-                # Go offline after 100 consecutive As (500 ms)
+                    l.debug("[rx] Disabling quick scanning")
+
+            #l.debug("[rx] Bit counters: A:{}/Z:{}".format(_bit_counter_0, _bit_counter_1))
+
+            # Main state machine tracking what the teleprinter hardware does.
+            # Tx thread is slaved to this state.
+            state_before = self._rx_state # Only for logging
+            if self._rx_state <= 0:   # offline / startup ======================
+                if self._is_online.is_set():
+                    self._rx_state = 10
+                    # Online by external command: reset bit counters because we
+                    # need a defined starting point for Z level recognition
+                    _bit_counter_0 = 0
+                    _bit_counter_1 = 0
+                # Send ESC-AT after 20 consecutive Zs (100 ms + rest of
+                # _is_online.wait delay, see above). Don't advance state;
+                # ESC-AT will cause us to receive ESC-WB/ESC-A by txDevMCP and
+                # this will toggle is_online.
+                if _bit_counter_1 >= 20:
+                    l.info("[rx] Detected AT press")
+                    self._rx_buffer.append('\x1bAT')
+                    # Don't send printer start confirmation since AT was
+                    # pressed.
+            elif self._rx_state == 10: # going online by ESC-WB/-A =============
+                # Go online after 20 consecutive Zs.
+                # - If we come here after ESC-AT, we fall through since
+                #   _bit_counter_1 is already >= 20.
+                # - If we come here by ESC-A from incoming connection, we
+                #   properly wait for a stable Z reading.
+                if _bit_counter_1 >= 20:
+                    self._rx_state = 20
+                    # Send printer start confirmation
+                    self._rx_buffer.append('\x1bACK')
+                    # Reset character recognition
+                    slice_counter = 0
+                # Send ESC-ST after 100 consecutive As (500 ms). Don't advance
+                # state; ESC-ST will cause us to receive ESC-Z by txDevMCP and
+                # this will toggle is_online. Use == 100 to ensure sending
+                # ESC-ST only once.
                 if _bit_counter_0 == 100:
+                    l.info("[rx] Detected ST press or unresponsive teleprinter")
                     self._rx_buffer.append('\x1bST')
                     self._ST_pressed = True
-            #l.debug("bit counters: 0:{} 1:{}".format(_bit_counter_0, _bit_counter_1))
+                    if self._tx_buffer:
+                        l.warning("[rx] Discarding tx buffer due to ST press ({} characters)".format(len(self._tx_buffer)))
+                        l.debug("[rx] tx buffer contents: {!r}".format(self._tx_buffer))
+                        self._tx_buffer = []
+            elif self._rx_state == 20: # online ================================
+                # Go offline on ESC-Z
+                if not self._is_online.is_set():
+                    self._rx_state = 30
+                # Send ESC-ST after 100 consecutive As (500 ms). Don't advance
+                # state; ESC-ST will cause us to receive ESC-Z by txDevMCP and
+                # this will toggle is_online. Use == 100 to ensure sending
+                # ESC-ST only once.
+                if _bit_counter_0 == 100:
+                    l.info("[rx] Detected ST press")
+                    self._rx_buffer.append('\x1bST')
+                    self._ST_pressed = True
+                    if self._tx_buffer:
+                        l.warning("[rx] Discarding tx buffer due to ST press ({} characters)".format(len(self._tx_buffer)))
+                        l.debug("[rx] tx buffer contents: {!r}".format(self._tx_buffer))
+                        self._tx_buffer = []
+            elif self._rx_state == 30: # going offline by ESC-Z ================
+                # Write out tx buffer
+                if not self._tx_buffer:
+                    l.info("[rx] tx buffer empty")
+                    self._rx_state = 40
+                # ... but break on ST (if the operator wishes to go offline
+                # immediately).
+                # (If we reached this state by pressing ST, the buffer will be
+                # empty and this point in code is not reached.  It wouldn't
+                # matter though.)
+                if _bit_counter_0 >= 100:
+                    l.info("[rx] Detected ST press")
+                    # Sending ST now probably won't be needed since _is_online
+                    # has already been cleared.
+                    self._rx_buffer.append('\x1bST')
+                    self._ST_pressed = True
+                    # Don't advance state since emptying the buffer now will
+                    # trigger state 40 on next loop (see above).
+                    if self._tx_buffer:
+                        l.warning("[rx] Discarding tx buffer due to ST press ({} characters)".format(len(self._tx_buffer)))
+                        l.debug("[rx] tx buffer contents: {!r}".format(self._tx_buffer))
+                        self._tx_buffer = []
+            elif self._rx_state == 40: # offline delay =========================
+                if self._ST_pressed:
+                    # Skip delay if ST was pressed to improve responsiveness
+                    self._ST_pressed = False
+                    self._rx_state = 50
+                offline_delay_counter += 1
+                # Wait 3000 ms until switching to A level.
+                if offline_delay_counter > 600:
+                    self._rx_state = 50
+                    offline_delay_counter = 0
+                else:
+                    if offline_delay_counter % 100 == 0:
+                        l.debug("[rx] Offline delay running: {!r}/600".format(offline_delay_counter))
+            elif self._rx_state >= 50: # offline, wait for Z level =============
+                if _bit_counter_0 > 100:
+                    self._rx_state = 0
+                    _bit_counter_0 = 0
+                    _bit_counter_1 = 0
+                    l.debug("[rx] Received A level, offline confirmed")
 
-            # Suppress symbol recognition until we're "properly online", i.e.
-            # piTelex is in online state and at least one Z has been received
-            # from the teleprinter.
+            #l.debug("[rx] _is_online: {} bit: {}".format(self._is_online.is_set(), bit))
+            if state_before != self._rx_state:
+                l.info("[rx] State transition: {}=>{}".format(state_before, self._rx_state))
+
+            # Suppress symbol recognition until we're in full online state.
             #
             # If we don't wait for a stable Z, we might spuriously decode one
             # of these symbols (start bit, 5x character bit, stop bits):
@@ -341,9 +442,9 @@ class TelexED1000SC(txBase.TelexBase):
             # AZZZZZZZ: letter shift ([ in piTelex)
             #
             # We must not detect any A level that only results from the earlier
-            # offline state -- this would be the start bit triggering one of
-            # the above characters. For the two possible ways of going online
-            # this means:
+            # not-quite-online-yet state -- this would be the start bit
+            # triggering one of the above characters. For the two possible ways
+            # of going online this means:
             #
             # - AT is pressed: All ok, we've got a stable Z level already,
             #   that's why we went online in the first place.
@@ -352,25 +453,14 @@ class TelexED1000SC(txBase.TelexBase):
             #   acknowledges this by switching from A to Z after some time.
             #
             # The second case is critical: We have to wait for the
-            # teleprinter to send a Z; only after this we are "properly
-            # online".
-            if self._is_online.is_set():
-                # If we're online and receive Z, set "properly online" status
-                # to start reading characters
-                if (not properly_online) and bit:
-                    properly_online = True
-                    l.info("Teleprinter online")
-                    self._rx_buffer.append('\x1bACK')
-                    slice_counter = 0
-            else:
-                properly_online = False
+            # teleprinter to send a Z; only after this we are online
+            # (_rx_state == 20). Turn off character recognition in later states
+            # because the other endpoint is already disconnected; received data
+            # would be useless. But ST operation always works independently.
+            if not self._rx_state == 20: # online
                 continue
 
-            # If we haven't received a Z yet, skip character recognition until
-            # we do
-            if not properly_online:
-                continue
-
+            # Character recognition
             if slice_counter == 0:
                 if not bit:   # found start step
                     symbol = 0
