@@ -5,7 +5,7 @@ Telex Device - Archive all printed messages
 __author__      = "Björn Schließmann"
 __license__     = "GPL3"
 
-import time
+import datetime
 import os
 import re
 
@@ -84,7 +84,7 @@ class TelexArchive(txBase.TelexBase):
                     return
                 self._state = 2
                 l.info("recording new message") # TODO debug
-                self._timestamp = time.localtime()
+                self._timestamp = datetime.datetime.now()
             elif data == "\x1bZ":
                 if self._state <= 0:
                     l.warning("Redundant printer stop command detected (ignored)")
@@ -124,8 +124,8 @@ class TelexArchive(txBase.TelexBase):
         fn = {}
 
         if not timestamp:
-            timestamp = time.localtime()
-        fn["timestamp"] = time.strftime("%Y-%m-%d %H.%M.%S %Z", time.localtime())
+            timestamp = datetime.datetime.now()
+        fn["timestamp"] = timestamp.strftime("%Y-%m-%d %H.%M.%S.%f")[:-3]
 
         fn["title"] = "msg {} {}".format(direction, wru)
 
