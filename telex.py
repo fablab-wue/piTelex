@@ -30,7 +30,9 @@ import traceback
 DEVICES = []
 TIME_20HZ = time.time()
 TIME_DELAY = None
+# Path of error log files
 ERRLOG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "error_log")
+# Default log level for all modules
 ERRLOG_LEVEL = logging.INFO
 #ERRLOG_LEVEL = logging.DEBUG
 
@@ -94,14 +96,14 @@ def init_error_log():
     root logger ("piTelex").
     """
     logger = logging.getLogger("piTelex")
-    logger.setLevel(ERRLOG_LEVEL)
+    logger.setLevel(ERRLOG_LEVEL) # Log level of this root logger
     try:
         os.mkdir(ERRLOG_PATH)
     except FileExistsError:
         pass
     handler = MonthlyRotatingFileHandler(filename = os.path.join(ERRLOG_PATH, "piTelex-errors.log"))
 
-    handler.setLevel(ERRLOG_LEVEL)
+    handler.setLevel(logging.DEBUG) # Upper bounds for log level of all loggers
     formatter = logging.Formatter('%(asctime)s %(name)s [%(levelname)s]: %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
