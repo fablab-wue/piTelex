@@ -159,7 +159,12 @@ class TelexITelexCommon(txBase.TelexBase):
         #   completely. On this command, our read method is unlocked and
         #   previously received data is available for main loop. (state 3)
 
+        # Start with 0 to trigger log message
+        _connected_before = 0
         while self._connected > 0:
+            if _connected_before != self._connected:
+                l.info("State transition: {}=>{}".format(_connected_before, self._connected))
+                _connected_before = self._connected
             try:
                 data = s.recv(1)
 
@@ -356,6 +361,8 @@ class TelexITelexCommon(txBase.TelexBase):
                 self.send_end(s)
         l.info('end connection')
         self._connected = 0
+        if _connected_before != self._connected:
+            l.info("State transition: {}=>{}".format(_connected_before, self._connected))
 
 
     def send_heartbeat(self, s):
