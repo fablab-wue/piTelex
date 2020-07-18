@@ -42,3 +42,10 @@ sudo systemctl <cmd> pitelex.service
 
 Inside byobu, piTelex can also be terminated using CTRL-C, CTRL-C. The byobu
 session will also quit. systemd will restart everything after 10 s.
+
+NB: Depending on the modules/options you use, the service may need internet
+access on start. On Raspberry Pi with Raspbian 10 (buster), this requires
+enabling the following option in raspi-config additionally:
+
+- 3 Boot Options
+- B2 Wait for Network at Boot
