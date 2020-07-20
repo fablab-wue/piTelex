@@ -53,7 +53,8 @@ class LED_PWM():
         pi.set_PWM_dutycycle(pin, 0)   # off
 
     def __del__(self):
-        pi.set_PWM_dutycycle(self._pin, 0)   # off
+        #pi.set_PWM_dutycycle(self._pin, 0)   # off
+        pass
 
     def process_fade(self):
         if self._val > self._dst:
@@ -115,7 +116,7 @@ class LED():
 #######
 
 class Button():
-    ''' Handle a button connected to GPIO. Buttons connected to GND and NO-mode 
+    ''' Handle a button connected to GPIO. Buttons connected to GND and NO-mode
     callback:
         def _callback_button([self,] gpio, level, tick):
     '''
@@ -178,7 +179,7 @@ class NumberSwitch():
     def _callback_pulse_dial(self, gpio, level, tick):
         #if self._use_squelch and (time.time() <= self._time_squelch):
         #    return
-            
+
         if level == pigpio.TIMEOUT:   # watchdog timeout
             #LOG(str(gpio)+str(level)+str(tick), 5)   # debug
             if self._pulse_dial_count:

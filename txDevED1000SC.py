@@ -7,6 +7,9 @@ https://www.allaboutcircuits.com/technical-articles/fsk-explained-with-python/
 https://dsp.stackexchange.com/questions/29946/demodulating-fsk-audio-in-python
 https://stackoverflow.com/questions/35759353/demodulating-an-fsk-signal-in-python#
 
+Protocol:
+https://wiki.telexforum.de/index.php?title=ED1000_Verfahren_(Teil_2)
+
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -46,6 +49,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', True)
+        self.send_WB_pulse = self.params.get('send_WB_pulse', False)
 
         recv_f0 = self.params.get('recv_f0', 2250)
         recv_f1 = self.params.get('recv_f1', 3150)
@@ -82,7 +86,7 @@ class TelexED1000SC(txBase.TelexBase):
         if len(a) != 1:
             self._check_commands(a)
             return
-            
+
         if a == '#':
             a = '@'   # ask teletype for hardware ID
 
@@ -103,7 +107,8 @@ class TelexED1000SC(txBase.TelexBase):
 
         if a == '\x1bWB':
             self._tx_buffer = []
-            self._tx_buffer.append('§W')   # signaling type W - ready for dial
+            if self.send_WB_pulse:
+                self._tx_buffer.append('§W')   # signaling type W - ready for dial
             self._set_online(True)
 
     # -----
@@ -149,32 +154,29 @@ class TelexED1000SC(txBase.TelexBase):
                 if self._is_online:
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
-                        if a == '§W':
-                            bb = (0xF9FFFFFF,)
+                        if a == '§W':   # signal WB (ready for dial)
+                            bb = (0xF9FFFFFF,)   # 40ms pulse after 500ms pause, may be interpreted as 'V'
                             nbit = 32
-                        elif a == '§A':
-                            bb = (0xFFC0,)
+                        elif a == '§A':   # signal A (online)
+                            bb = (0xFFC0,)   # 140ms pulse
                             nbit = 16
-                        else:
+                        else:   # normal ANSI character
                             bb = self._mc.encodeA2BM(a)
                             if not bb:
                                 continue
                             nbit = 5
-                        
+
                         for b in bb:
-                            bits = [0]*nbit
                             mask = 1
-                            for i in range(nbit):
-                                if b & mask:
-                                    bits[i] = 1
-                                mask <<= 1
                             wavecomp = bytearray()
-                            wavecomp.extend(waves[0])
-                            for bit in bits:
-                                wavecomp.extend(waves[bit])
+                            wavecomp.extend(waves[0])   # start bit
+                            for i in range(nbit):
+                                bit = 1 if (b & mask) else 0
+                                mask <<= 1
+                                wavecomp.extend(waves[bit])   # data bit
+                            wavecomp.extend(waves[1])   # 2x stop bit
                             wavecomp.extend(waves[1])
-                            wavecomp.extend(waves[1])
- 
+
                             if nbit == 5:
                                 frames = Fpw   # 7.5 bits
                             else:
@@ -196,7 +198,7 @@ class TelexED1000SC(txBase.TelexBase):
             print(e)
 
         finally:
-            stream.stop_stream()  
+            stream.stop_stream()
             stream.close()
 
     # =====
@@ -207,7 +209,7 @@ class TelexED1000SC(txBase.TelexBase):
         _bit_counter_0 = 0
         _bit_counter_1 = 0
         slice_counter = 0
-        
+
         devindex = self.params.get('devindex', None)
         baudrate = self.params.get('baudrate', 50)
 
@@ -265,8 +267,7 @@ class TelexED1000SC(txBase.TelexBase):
                         symbol |= 16
                 if slice_counter == 26:   # middle of stop step
                     if not bit:
-                        slice_counter = -5
-                        pass
+                        slice_counter = -5   # wrong stop bit!
                 if slice_counter >= 28:   # end of stop step
                     slice_counter = 0
                     #print(symbol, val)   #debug
@@ -276,11 +277,11 @@ class TelexED1000SC(txBase.TelexBase):
                     continue
 
                 slice_counter += 1
-        
+
             #time.sleep(0.001)
 
 
-        stream.stop_stream()  
+        stream.stop_stream()
         stream.close()
 
     # =====

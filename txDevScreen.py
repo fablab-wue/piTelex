@@ -74,15 +74,27 @@ class TelexScreen(txBase.TelexBase):
         '\x1b[5~': '\x1bA',    # Page up
         '\x1b[6~': '\x1bZ',    # Page down
         }
-    _LUT_show_special_chars = {
-        '<': 'ᴬ', # Bu LTRS   ª
-        '>': '¹', # Zi FIGS   º
-        '%': '⍾', # Kl Bell
-        '~': '⊝', # Null
-        '@': '✠', # WerDa? WRU
-        ' ': '⎵', # Space
-        '\t': '→', # TAB
-        }
+    if os.name == 'nt':
+        _LUT_show_special_chars = {
+            '<': 'ᴬ', # Bu LTRS   ª
+            '>': '¹', # Zi FIGS   º
+            '%': '⍾', # Kl Bell
+            '~': '⊝', # Null
+            '@': '✠', # WerDa? WRU
+            ' ': '⎵', # Space
+            '\t': '→', # TAB
+            }
+    else:
+        # Usable: ƒ•¡¤¦§¨ª«¬°±²´µ¶·¸º»¼½¿×Ø÷ø
+        _LUT_show_special_chars = {
+            '<': 'ª', # Bu LTRS   ª
+            '>': 'º', # Zi FIGS   º
+            '%': '%', # Kl Bell
+            '~': 'ø', # Null
+            '@': '@', # WerDa? WRU
+            ' ': '·', # Space
+            '\t': '→', # TAB
+            }
 
     def __init__(self, **params):
         '''Creates a Screen object that you can call to do various keyboard things. '''
@@ -194,6 +206,8 @@ class TelexScreen(txBase.TelexBase):
                             self._rx_buffer.append(a)
 
                             # local echo
+                            if a == '\t':   # tab -> 1T
+                                self._rx_buffer.append('\x1b1T')
                             if a == '\r' or a == '\n':   # bug in print()
                                 print(a, end='')
                             else:

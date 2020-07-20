@@ -4,18 +4,17 @@ testTelex for RPi Zero W or PC
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
-__copyright__   = "Copyright 2018, JK"
+__copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "0.0.2"
 
 import txConfig
 import txDevMCP
 
 import time
 import threading
-from argparse import ArgumentParser
 import log
- 
+
 def LOG(text:str, level:int=3):
     log.LOG('\033[0;30;47m '+text+' \033[0m', level)
 
@@ -47,7 +46,7 @@ def init():
     for dev_name, dev_param in txConfig.CFG['devices'].items():
         if not dev_param.get('enable', False):
             continue
-        
+
         dev_param['name'] = dev_name
         #if 'mode' not in dev_param:
         #    dev_param['mode'] = mode
@@ -57,32 +56,32 @@ def init():
             screen = txDevScreen.TelexScreen(**dev_param)
             DEVICES.append(screen)
 
-        if dev_param['type'] == 'ED1000':
+        elif dev_param['type'] == 'ED1000':
             import txDevED1000SC
             serial = txDevED1000SC.TelexED1000SC(**dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'CH340TTY':
+        elif dev_param['type'] == 'CH340TTY':
             import txDevCH340TTY
             serial = txDevCH340TTY.TelexCH340TTY(**dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'RPiTTY':
+        elif dev_param['type'] == 'RPiTTY':
             import txDevRPiTTY
             serial = txDevRPiTTY.TelexRPiTTY(**dev_param)
             DEVICES.append(serial)
 
-        if dev_param['type'] == 'RPiCtrl':
+        elif dev_param['type'] == 'RPiCtrl':
             import txDevRPiCtrl
             ctrl = txDevRPiCtrl.TelexRPiCtrl(**dev_param)
             DEVICES.append(ctrl)
 
-        #if dev_param['type'] == 'telnet':
+        #elif dev_param['type'] == 'telnet':
         #    import txDevTelnetSrv
         #    srv = txDevTelnetSrv.TelexTelnetSrv(**dev_param)
         #    DEVICES.append(srv)
 
-        if dev_param['type'] == 'i-Telex':
+        elif dev_param['type'] == 'i-Telex':
             import txDevITelexClient
             srv = txDevITelexClient.TelexITelexClient(**dev_param)
             DEVICES.append(srv)
@@ -92,27 +91,32 @@ def init():
                 srv = txDevITelexSrv.TelexITelexSrv(**dev_param)
                 DEVICES.append(srv)
 
-        if dev_param['type'] == 'news':
+        elif dev_param['type'] == 'news':
             import txDevNews
             news = txDevNews.TelexNews(**dev_param)
             DEVICES.insert(0,news)
 
-        if dev_param['type'] == 'IRC':
+        elif dev_param['type'] == 'twitter':
+            import txDevTwitter
+            twitter = txDevTwitter.TelexTwitter(**dev_param)
+            DEVICES.append(twitter)
+
+        elif dev_param['type'] == 'IRC':
             import txDevIRC
             news = txDevIRC.TelexIRC(**dev_param)
             DEVICES.insert(0,news)
 
-        if dev_param['type'] == 'REST':
+        elif dev_param['type'] == 'REST':
             import txDevREST
             news = txDevREST.TelexREST(**dev_param)
             DEVICES.insert(0,news)
 
-        if dev_param['type'] == 'eliza':
+        elif dev_param['type'] == 'eliza':
             import txDevEliza
             eliza = txDevEliza.TelexEliza(**dev_param)
             DEVICES.append(eliza)
 
-        if dev_param['type'] == 'log':
+        elif dev_param['type'] == 'log':
             import txDevLog
             log = txDevLog.TelexLog(**dev_param)
             DEVICES.insert(0,log)
@@ -121,7 +125,7 @@ def init():
 
 def exit():
     global DEVICES
-    
+
     for device in DEVICES:
         try:
             device.exit()
@@ -150,7 +154,7 @@ def loop():
                                 TIME_DELAY = time.time() + ret
                             else:
                                 break
-    
+
     for device in DEVICES:
         device.idle()
 
@@ -166,7 +170,7 @@ def loop():
 
 def main():
     txConfig.load()
-    
+
     #test()
     init()
 

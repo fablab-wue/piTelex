@@ -10,8 +10,8 @@ __version__     = "0.0.1"
 
 import time
 # pip install watchdog
-from watchdog.observers import Observer  
-from watchdog.events import PatternMatchingEventHandler  
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
 
 import txCode
 import txBase
@@ -31,7 +31,7 @@ class TelexNews(txBase.TelexBase):
 
         def on_modified(self, event):
             """
-            event.event_type 
+            event.event_type
                 'modified' | 'created' | 'moved' | 'deleted'
             event.is_directory
                 True | False
@@ -80,11 +80,11 @@ class TelexNews(txBase.TelexBase):
     def __del__(self):
         self.exit()
         super().__del__()
-    
+
 
     def exit(self):
         self._observer.stop()
-    
+
     # =====
 
     def read(self) -> str:
@@ -106,7 +106,7 @@ class TelexNews(txBase.TelexBase):
     def idle20Hz(self):
         if self._news_buffer and self._state_counter:
             self._state_counter += 1
-            
+
             if self._state_counter == 2:
                 self._rx_buffer.append('\x1bA')
 

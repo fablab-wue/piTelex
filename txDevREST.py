@@ -92,7 +92,7 @@ class TelexREST(txBase.TelexBase):
 
         except Exception as e:
             LOG(str(e))
-        
+
         #s.close()
 
     # =====

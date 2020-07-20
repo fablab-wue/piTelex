@@ -21,7 +21,7 @@ class TelexBase:
     def __del__(self):
         #print('__del__ in TelexSerial')
         pass
-    
+
 
     def read(self) -> str:
         return ''

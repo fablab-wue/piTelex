@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 """
 Telex Device - Serial Communication over CH340-Chip (not FTDI, not Prolific, not CP213x)
+
+Protocol:
+https://wiki.telexforum.de/index.php?title=TW39_Verfahren_(Teil_2)
+
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -58,6 +62,7 @@ class TelexCH340TTY(txBase.TelexBase):
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
 
+        #if baudrate not in self._tty.BAUDRATES:
         if baudrate not in self._tty.BAUDRATES:
             raise Exception('Baudrate not supported')
         if bytesize not in self._tty.BYTESIZES:
@@ -103,7 +108,6 @@ class TelexCH340TTY(txBase.TelexBase):
         if mode.find('TWM') >= 0:
             self._loopback = True
             self._use_cts = True
-            self._use_pulse_dial = False
             self._use_squelch = True
             self._use_dedicated_line = False
 

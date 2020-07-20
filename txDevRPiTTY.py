@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 """
 Telex Device - Serial Communication over Rasperry Pi (Zero W) to TW39 teletype
+
+Protocol:
+https://wiki.telexforum.de/index.php?title=TW39_Verfahren_(Teil_2)
+
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -53,7 +57,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         self._tx_buffer = []
         self._rx_buffer = []
-        self._rxd_stable = False   # rxd=Low 
+        self._rxd_stable = False   # rxd=Low
         self._rxd_counter = 0
         self._time_squelch = 0
         self._is_online = False
@@ -65,10 +69,10 @@ class TelexRPiTTY(txBase.TelexBase):
         # init codec
         character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate
         self._mc = txCode.BaudotMurrayCode(self._loopback, coding=self._coding, character_duration=character_duration)
-        
+
         pi.set_mode(self._pin_rxd, pigpio.INPUT)
         pi.set_pull_up_down(self._pin_rxd, pigpio.PUD_UP)
-        pi.set_glitch_filter(self._pin_rxd, 1000)   # 1ms
+        pi.set_glitch_filter(self._pin_rxd, 50000 // self._baudrate)   # 1ms @ 50Bd
 
         self._number_switch = None
         if self._pin_number_switch > 0:   # 0:keyboard pos:TW39 neg:TW39@RPiCtrl
@@ -155,7 +159,7 @@ class TelexRPiTTY(txBase.TelexBase):
             #rxd = pi.read(self._pin_rxd)
             rxd = (not pi.read(self._pin_rxd)) == self._inv_rxd   # int->bool, logical xor
             if rxd != self._rxd_stable:
-                
+
                 self._rxd_counter += 1
                 if self._rxd_counter == 40:   # 2sec
                     self._rxd_stable = rxd
@@ -177,12 +181,12 @@ class TelexRPiTTY(txBase.TelexBase):
             and not self._is_pulse_dial:
 
             aa = self._mc.decodeBM2A(bb)
-    
+
             if aa:
                 for a in aa:
                     #self._check_special_sequences(a)
                     self._rx_buffer.append(a)
-            
+
             self._rxd_counter = 0
 
     # -----
@@ -224,7 +228,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 if self._number_switch:
                     self._number_switch.enable(True)
                 self._is_pulse_dial = True
-                self._tx_buffer = ['<']   # send 20ms pulse
+                self._tx_buffer = ['<']   # send "Bu" for 20ms pulse
                 self._write_wave()
                 enable = False
             else:   # dedicated line, TWM, V.10

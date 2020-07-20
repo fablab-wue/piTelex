@@ -18,7 +18,7 @@ import txCode
 import txBase
 import log
 from RPiIO import Button, LED, LED_PWM, NumberSwitch, pi, pi_exit
- 
+
 def LOG(text:str, level:int=3):
     log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
 
@@ -201,12 +201,7 @@ class TelexRPiCtrl(txBase.TelexBase):
     def _callback_button_1T(self, gpio, level, tick):
         if level == 1:
             return
-        if self._mode == 'Z':
-            self._rx_buffer.append('\x1bWB')
-        elif self._mode == 'WB':
-            self._rx_buffer.append('\x1bA')
-        else:
-            self._rx_buffer.append('\x1bZ')
+        self._rx_buffer.append('\x1b1T')
 
     def _callback_button_AT(self, gpio, level, tick):
         if level == 1:
@@ -227,29 +222,25 @@ class TelexRPiCtrl(txBase.TelexBase):
         if level == 1:
             return
         text = self.params.get('text_button_U1', 'RY')
-        for c in text:
-            self._rx_buffer.append(c)
+        self._rx_buffer.extend(list(text))
 
     def _callback_button_U2(self, gpio, level, tick):
         if level == 1:
             return
         text = self.params.get('text_button_U2', 'RY'*30)
-        for c in text:
-            self._rx_buffer.append(c)
+        self._rx_buffer.extend(list(text))
 
     def _callback_button_U3(self, gpio, level, tick):
         if level == 1:
             return
         text = self.params.get('text_button_U3', '#')
-        for c in text:
-            self._rx_buffer.append(c)
+        self._rx_buffer.extend(list(text))
 
     def _callback_button_U4(self, gpio, level, tick):
         if level == 1:
             return
         text = self.params.get('text_button_U4', '@')
-        for c in text:
-            self._rx_buffer.append(c)
+        self._rx_buffer.extend(list(text))
 
     def _callback_number_switch(self, text:str):
         if text.isnumeric():

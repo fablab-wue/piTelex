@@ -31,11 +31,11 @@ class TelexLog(txBase.TelexBase):
     def __del__(self):
         self.exit()
         super().__del__()
-    
+
 
     def exit(self):
         pass
-    
+
     # =====
 
     def read(self) -> str:
@@ -66,7 +66,7 @@ class TelexLog(txBase.TelexBase):
 
         if source != self._last_source:
             out = True
-        
+
         if out:
             line = self._last_time
             line += ' ,'

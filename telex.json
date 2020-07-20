@@ -6,6 +6,15 @@
       "show_BuZi": true,
       "show_capital": false
     },
+    "CH340TTY": {
+      "type": "CH340TTY",
+      "enable": true,
+      "portname": "COM3",
+      "baudrate": 75,
+      "mode": "TW39",
+      "coding": 0,
+      "loopback": false
+    },
     "ED1000": {
       "type": "ED1000",
       "enable": false,
@@ -21,7 +30,7 @@
     },
     "RPiTTY": {
       "type": "RPiTTY",
-      "enable": true,
+      "enable": false,
       "pin_txd": 17,
       "pin_rxd": 27,
       "inv_rxd": false,
@@ -37,7 +46,7 @@
     },
     "RPiCtrl": {
       "type": "RPiCtrl",
-      "enable": true,
+      "enable": false,
       "pin_number_switch": 6,
       "pin_button_1T": 8,
       "pin_button_AT": 0,
@@ -70,6 +79,6 @@
     }
   },
   "verbose": true,
-  "wru_id": "",
+  "wru_id": "234200 FABLAB D",
   "debug": 3
 }

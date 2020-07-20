@@ -4,9 +4,9 @@ Load COnfiguration
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
-__copyright__   = "Copyright 2018, JK"
+__copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "0.0.2"
 
 import time
 from argparse import ArgumentParser
@@ -34,99 +34,103 @@ def load():
     global ARGS, CFG
 
     parser = ArgumentParser(
-        prog='telex', 
-        conflict_handler='resolve', 
-        description='Handle historic teletypes.', 
+        prog='telex',
+        conflict_handler='resolve',
+        description='Handle historic teletypes.',
         epilog='More infos at https://github.com/fablab-wue/piTelex.git',
         allow_abbrev=True)
 
     gi = parser.add_argument_group("Interfaces")
 
     gi.add_argument("-G", "--RPiTW39",
-        dest="RPiTTY", default=False, action="store_true", 
+        dest="RPiTTY", default=False, action="store_true",
         help="GPIO (pigpio) on RPi with TW39 teletype")
 
     gi.add_argument("-C", "--RPiCtrl",
-        dest="RPiCtrl", default=False, action="store_true", 
+        dest="RPiCtrl", default=False, action="store_true",
         help="GPIO (pigpio) on RPi with button controls and LEDs")
 
-    gi.add_argument("-Y", "--tty", 
+    gi.add_argument("-Y", "--tty",
         dest="CH340", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-serial-adapter (CH340-chip) with teletype (without dialing)")
 
-    gi.add_argument("-W", "--ttyTW39", 
+    gi.add_argument("-W", "--ttyTW39",
         dest="CH340_TW39", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-serial-adapter (CH340-chip) with TW39 teletype (pulse dial)")
 
-    gi.add_argument("-M", "--ttyTWM", 
+    gi.add_argument("-M", "--ttyTWM",
         dest="CH340_TWM", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-serial-adapter (CH340-chip) with TWM teletype (keypad dial)")
 
-    gi.add_argument("-V", "--ttyV10", 
+    gi.add_argument("-V", "--ttyV10",
         dest="CH340_V10", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-serial-adapter (CH340-chip) with V.10 teletype (FS200, FS220)")
 
     gi.add_argument("-E", "--audioED1000",
-        dest="ED1000", default=False, action="store_true", 
+        dest="ED1000", default=False, action="store_true",
         help="USB-sound-card with ED1000 teletype")
 
     gi.add_argument("--noscreen",
-        dest="screen", default=True, action="store_false", 
+        dest="screen", default=True, action="store_false",
         help="No screen in/out")
 
 
     gg = parser.add_argument_group("Gateways")
 
-    gg.add_argument("-I", "--iTelex", 
+    gg.add_argument("-I", "--iTelex",
         dest="itelex", default=-1, const=0, nargs='?', metavar='PORT', type=int,
         help="i-Telex client and server (if PORT>0)")
 
-    gg.add_argument("-N", "--news", 
+    gg.add_argument("-N", "--news",
         dest="news", default='', metavar="PATH",
         help="News from file")
 
-    gg.add_argument("-C", "--IRC", 
+    gg.add_argument("-T", "--twitter",
+        dest="twitter", default='', nargs='?', metavar='CONSUMER_KEY:CONSUMER_SECRET:API_KEY:API_SECRET',
+        help="Twitter client")
+
+    gg.add_argument("-C", "--IRC",
         dest="irc", default='', metavar="CHANNEL",
         help="IRC client")
 
-    gg.add_argument("-R", "--REST", 
+    gg.add_argument("-R", "--REST",
         dest="rest", default='', metavar="TEMPLATE",
         help="REST client")
 
     gg.add_argument("-Z", "--eliza",
-        dest="eliza", default=False, action="store_true", 
+        dest="eliza", default=False, action="store_true",
         help="Eliza chat bot")
 
 
     gd = parser.add_argument_group("Debug")
 
-    gd.add_argument("-L", "--log", 
+    gd.add_argument("-L", "--log",
         dest="log", default='', metavar="FILE",
         help="Log to file")
 
-    gd.add_argument("-d", "--debug", 
+    gd.add_argument("-d", "--debug",
         dest="debug", default=0, metavar='LEVEL', type=int,
         help="Debug level")
 
 
-    parser.add_argument("-c", "--config", 
+    parser.add_argument("-c", "--config",
         dest="cnf_file", default='telex.json', metavar="FILE",
         help="Load config file (telex.json)")
 
-    parser.add_argument("-k", "--id", "--KG", 
+    parser.add_argument("-k", "--id", "--KG",
         dest="wru_id", default='', metavar="ID",
         help="Set the ID of the telex device. Leave empty to use the hardware ID")
 
-    #parser.add_argument("-m", "--mode", 
+    #parser.add_argument("-m", "--mode",
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
 
     parser.add_argument("-q", "--quiet",
-        dest="verbose", default=True, action="store_false", 
+        dest="verbose", default=True, action="store_false",
         help="don't print status messages to stdout")
 
     parser.add_argument("-s", "--save",
-        dest="save", default=False, action="store_true", 
+        dest="save", default=False, action="store_true",
         help="Save command line args to config file (telex.json)")
 
 
@@ -142,7 +146,7 @@ def load():
         CFG['devices'] = {}
 
     devices = CFG['devices']
-    
+
     if ARGS.screen and 'screen' not in devices:
         devices['screen'] = {'type': 'screen', 'enable': True, 'show_BuZi': True, 'show_capital': False}
 
@@ -161,16 +165,16 @@ def load():
     if ARGS.RPiTTY:
         devices['RPiTTY'] = {
             'type': 'RPiTTY',
-            'enable': True, 
-            'pin_txd': 17, 
-            'pin_rxd': 27, 
-            'inv_rxd': False, 
-            'pin_relay': 22, 
-            'inv_relay': False, 
-            'pin_online': 0, 
-            'pin_dir': 0, 
+            'enable': True,
+            'pin_txd': 17,
+            'pin_rxd': 27,
+            'inv_rxd': False,
+            'pin_relay': 22,
+            'inv_relay': False,
+            'pin_online': 0,
+            'pin_dir': 0,
             'pin_number_switch': 6,
-            'baudrate': 50, 
+            'baudrate': 50,
             'coding': 0,
             'loopback': True,
             'observe_rxd': True,
@@ -179,7 +183,7 @@ def load():
     if ARGS.RPiCtrl:
         devices['RPiCtrl'] = {
             'type': 'RPiCtrl',
-            'enable': True, 
+            'enable': True,
             'pin_switch_num': 0,
             'pin_button_1T': 0,
             'pin_button_AT': 0,
@@ -199,14 +203,14 @@ def load():
     if ARGS.ED1000:
         devices['ED1000'] = {
             'type': 'ED1000',
-            'enable': True, 
-            'send_f0': 500, 
-            'send_f1': 700, 
-            'recv_f0': 2250, 
+            'enable': True,
+            'send_f0': 500,
+            'send_f1': 700,
+            'recv_f0': 2250,
             'recv_f1': 3150,
             'recv_squelch': 100,
-            'baudrate': 50, 
-            'devindex': None, 
+            'baudrate': 50,
+            'devindex': None,
             'zcarrier': False,
             }
 
@@ -215,6 +219,12 @@ def load():
 
     if ARGS.news:
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
+
+    if ARGS.twitter:
+        twit_creds = ARGS.twitter.split(":")
+        os.environ['consumer_key'] = ARGS.consumer_key
+        os.environ['consumer_secret'] = ARGS.consumer_secret
+        devices['twitter'] = { 'type': 'twitter', 'enable'  : True, 'consumer_key' : twit_creds [0], 'consumer_secret' : twit_creds [1], 'access_token_key' : twit_creds [2], 'access_token_secret' : twit_creds [3] , 'track' : ARGS.track, 'follow': ARGS.follow, 'languages' : ARGS.languages, 'url' : ARGS.url, 'host' : ARGS.host, 'port' : ARGS.port }
 
     if ARGS.irc:
         devices['IRC'] = {'type': 'IRC', 'enable': True, 'channel': ARGS.irc.strip()}
@@ -230,11 +240,11 @@ def load():
 
 
     CFG['verbose'] = ARGS.verbose
-    
+
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
         CFG['wru_id'] = wru_id
-    
+
     #mode = ARGS.mode.strip()
     #if mode:
     #    CFG['mode'] = mode

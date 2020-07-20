@@ -8,13 +8,13 @@ CCITT-2:
 ===========================================
 | 000.00 | 00.000 | ▨ | ▨ | ⊝ | ⊝ | ▨ | #* |
 | 000.01 | 10.000 | E | 3 | Е | 3 | 3 | 3 |
-| 000.10 | 01.000 |           ≡           | 
+| 000.10 | 01.000 |           ≡           |
 | 000.11 | 11.000 | A | - | А | - | - | - |
-| 001.00 | 00.100 |           ⎵           | 
+| 001.00 | 00.100 |           ⎵           |
 | 001.01 | 10.100 | S | ' | С | ' | ⍾ | ' |
 | 001.10 | 01.100 | I | 8 | И | 8 | 8 | 8 |
 | 001.11 | 11.100 | U | 7 | У | 7 | 7 | 7 |
-| 010.00 | 00.010 |           ❮            | 
+| 010.00 | 00.010 |           ❮            |
 | 010.01 | 10.010 | D | ✠ | Д | ✠ | $ | ✠ |
 | 010.10 | 01.010 | R | 4 | Р | 4 | 4 | 4 |
 | 010.11 | 11.010 | J | ⍾ | Й | Ю | ' | ; |
@@ -33,13 +33,13 @@ CCITT-2:
 | 110.00 | 00.011 | O | 9 | О | 9 | 9 | 9 |
 | 110.01 | 10.011 | B | ? | Б | ? | ? | ╳ |
 | 110.10 | 01.011 | G | ▨ | Г | Ш | & | ] |
-| 110.11 | 11.011 |          1...         | 
+| 110.11 | 11.011 |          1...         |
 | 111.00 | 00.111 | M | . | М | . | . | . |
 | 111.01 | 10.111 | X | / | Ь | / | / | / |
 | 111.10 | 01.111 | V | = | Ж | = | ; | = |
-| 111.11 | 11.111 |          A...         | 
+| 111.11 | 11.111 |          A...         |
 
-Note for Zuse: #*   '#' in A...   '*' in 1... 
+Note for Zuse: #*   '#' in A...   '*' in 1...
 
 
 ▨    not defined
@@ -78,20 +78,20 @@ import unicodedata
 class BaudotMurrayCode:
     # Baudot-Murray-Code to ASCII table
     _LUT_BM2A_ITA2 = (
-        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<", 
+        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
         "~3\n- '87\r@4%,~:(5+)2~6019?~>./=<"
     )
     _LUT_BM2A_US = (
-        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<", 
+        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
         "~3\n- %87\r$4',!:(5\")2@6019?&>./;<"
     )
     _LUT_BM2A_MKT2 = (
-        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<", 
+        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
         "~3\n- '87\r@4Ю,Э:(5+)2Щ6019?Ш>./=<",
         "~Е\nА СИУ\rДРЙНФЦКТЗЛВХЫПЯОБГ>МЬЖ<"
     )
     _LUT_BM2A_ZUSE = (
-        "#E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<", 
+        "#E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
         "*3\n- '87\r@4;,[:(5+)2^6019µ]>./=<"
     )
     # Baudot-Murray-Code mode switch codes
@@ -110,7 +110,7 @@ class BaudotMurrayCode:
         'ß': 'SS',
         '\a': '%',   # Bell
         '\f': '(FF)',   # Form Feed
-        '\d': '(DEL)',   # Delete
+        '\x7f': '(DEL)',   # Delete
         '\t': '(TAB)',   # Tab
         '\v': '(VT)',   # Vertical Tab
         '\x1B': '(ESC)',   # Escape
@@ -171,7 +171,7 @@ class BaudotMurrayCode:
                 ret += a
             except:
                 pass
-                        
+
         return ret
 
     # -----
@@ -273,12 +273,12 @@ class BaudotMurrayCode:
             ret = self.do_flip_bits(ret)
 
         if self._loop_back:
-            l = len(ret)
-            self._loop_back_eat_bytes += l
+            length  = len(ret)
+            self._loop_back_eat_bytes += length 
             time_act = time.time()
             if self._loop_back_expire_time < time_act:
                 self._loop_back_expire_time = time_act
-            self._loop_back_expire_time += l * self._character_duration
+            self._loop_back_expire_time += length  * self._character_duration
 
         return ret
 
