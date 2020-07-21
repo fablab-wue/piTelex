@@ -215,7 +215,7 @@ class TelexITelexCommon(txBase.TelexBase):
                                 self._connected = 2
                                 if is_server:
                                     self._tx_buffer = []
-                                    received_counter += self.send_welcome(s)
+                                    self.send_welcome(s)
                             self.send_ack(s, received_counter)
 
                     # Baudot Data
@@ -230,7 +230,7 @@ class TelexITelexCommon(txBase.TelexBase):
                             self._connected = 2
                             if is_server:
                                 self._tx_buffer = []
-                                received_counter += self.send_welcome(s)
+                                self.send_welcome(s)
                         for a in aa:
                             if a == '@':
                                 a = '#'
@@ -255,6 +255,11 @@ class TelexITelexCommon(txBase.TelexBase):
                     # Acknowledge
                     elif data[0] == 6 and packet_len == 1:
                         l.debug('Received i-Telex packet: Acknowledge ({})'.format(display_hex(data)))
+                        # TODO: Fix calculation and prevent overflows, e.g. if
+                        # the first ACK is sent with a low positive value. This
+                        # might be done by saving the first ACK's absolute
+                        # counter value and only doing difference calculations
+                        # afterwards.
                         unprinted = (sent_counter - int(data[2])) & 0xFF
                         #if unprinted < 0:
                         #    unprinted += 256
@@ -300,7 +305,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         self._connected = 2
                         if is_server:
                             self._tx_buffer = []
-                            received_counter += self.send_welcome(s)
+                            self.send_welcome(s)
                     data = data.decode('ASCII', errors='ignore').upper()
                     data = txCode.BaudotMurrayCode.translate(data)
                     for a in data:
