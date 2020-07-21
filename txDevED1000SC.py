@@ -355,16 +355,24 @@ class TelexED1000SC(txBase.TelexBase):
                     self._rx_buffer.append('\x1bACK')
                     # Reset character recognition
                     slice_counter = 0
-                # Send ESC-ST after 100 consecutive As (500 ms). Don't advance
-                # state; ESC-ST will cause us to receive ESC-Z by txDevMCP and
-                # this will toggle is_online. Use == 100 to ensure sending
-                # ESC-ST only once.
+                # If the teleprinter doesn't switch to Z, but stays in A for at
+                # least 100 scans (500 ms), detect it as unresponsive. This can
+                # theoretically also happen if ST is pressed just at the right
+                # moment, but this is very unlikely.
+                #
+                # This typically happens on an incoming connection, so don't
+                # send ESC-ST because this would terminate it immediately. To
+                # keep this transparent and allow fallback mechanisms like the
+                # archive module to continue receiving, just set offline and
+                # reset our internal state to 0.
                 if _bit_counter_0 == 100:
-                    l.info("[rx] Detected ST press or unresponsive teleprinter")
-                    self._rx_buffer.append('\x1bST')
-                    self._ST_pressed = True
+                    l.info("[rx] Detected unresponsive teleprinter")
+                    self._set_online(False)
+                    self._rx_state = 0
+                    _bit_counter_0 = 0
+                    _bit_counter_1 = 0
                     if self._tx_buffer:
-                        l.warning("[rx] Discarding tx buffer due to ST press ({} characters)".format(len(self._tx_buffer)))
+                        l.warning("[rx] Discarding tx buffer due to unresponsive teleprinter ({} characters)".format(len(self._tx_buffer)))
                         l.debug("[rx] tx buffer contents: {!r}".format(self._tx_buffer))
                         self._tx_buffer = []
             elif self._rx_state == 20: # online ================================
