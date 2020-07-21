@@ -136,8 +136,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
     @classmethod
     def get_user(cls, number:str, tns_force:bool = False):
         # For details about dialling logic, see txDevMCP in thread_dial.
-        number = number.replace('[', '')
-        number = number.replace(']', '')
+        number = number.replace('<', '')
+        number = number.replace('>', '')
         number = number.replace(' ', '')
         l.info("Get User: {!r}".format(number))
 

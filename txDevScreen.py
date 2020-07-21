@@ -37,19 +37,19 @@ else:
 
 class TelexScreen(txBase.TelexBase):
     _LUT_typed_special_chars = {
-        '*': 'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
+        '$': 'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
         '\r': '\r\n', # windows
         '\n': '\r\n', # non-windows
-        '<': '\r',
-        '|': '\n',
+        '\\': '\r',
+        '_': '\n',
         '\x08': 'e e e ',
         # pass through chars:
         '#': '#',
         '@': '@',
         '~': '~',
         '%': '%',
-        '[': '[',
-        ']': ']',
+        '<': '<',
+        '>': '>',
         '\t': '\t',
         #'\t': '\x1bTAB',
         }
@@ -77,6 +77,27 @@ class TelexScreen(txBase.TelexBase):
         '\x1b[5~': '\x1bA',    # Page up
         '\x1b[6~': '\x1bZ',    # Page down
         }
+    if os.name == 'nt':
+        _LUT_show_special_chars = {
+            '<': 'ᴬ', # Bu LTRS   ª
+            '>': '¹', # Zi FIGS   º
+            '%': '⍾', # Kl Bell
+            '~': '⊝', # Null
+            '@': '✠', # WerDa? WRU
+            ' ': '⎵', # Space
+            '\t': '→', # TAB
+            }
+    else:
+        # Usable: ƒ•¡¤¦§¨ª«¬°±²´µ¶·¸º»¼½¿×Ø÷ø
+        _LUT_show_special_chars = {
+            '<': 'ª', # Bu LTRS   ª
+            '>': 'º', # Zi FIGS   º
+            '%': '%', # Kl Bell
+            '~': 'ø', # Null
+            '@': '@', # WerDa? WRU
+            ' ': '·', # Space
+            '\t': '→', # TAB
+            }
 
     def __init__(self, **params):
         '''Creates a Screen object that you can call to do various keyboard things. '''
@@ -88,16 +109,14 @@ class TelexScreen(txBase.TelexBase):
         self._rx_buffer = []
         self._escape = ''
 
-        self.lowercase = self.params.get('lowercase', False)
-
-        self.suppress_shifts = self.params.get('suppress_shifts', False)
+        self._show_BuZi = self.params.get('show_BuZi', False)
+        self._show_capital = self.params.get('show_capital', False)
 
         if os.name == 'nt':
             pass
 
         else:   # Linux and RPi
             # Save the terminal settings
-            #self.fd = os.fdopen(sys.stdin.detach().fileno(), 'rb', buffering=0)   # experimental
             self.fd = sys.stdin.fileno()
             self.new_term = termios.tcgetattr(self.fd)
             self.old_term = termios.tcgetattr(self.fd)
@@ -149,13 +168,12 @@ class TelexScreen(txBase.TelexBase):
                     k = self.getch()
                     c = self._LUT_replace_windows_ctrl_chars.get(k, '')
                     if c:
-                        print('\033[1;33;41m<'+c[1:]+'>\033[0m', end='', flush=True)
+                        print('\033[1;33;41m{'+c[1:]+'}\033[0m', end='', flush=True)
                         self._rx_buffer.append(c)
                     return '' # eat cursor and control keys
                 if k == b'\x1b' or k == '\x1b':
                     self._escape = '\x1b'
-                    print('\033[0;30;41m§\033[0m', end='', flush=True)
-                    #print('§', end='', flush=True)
+                    print('\033[0;37;41m{\033[0m', end='', flush=True)
                     return ''
 
                 if os.name == 'nt':
@@ -167,15 +185,16 @@ class TelexScreen(txBase.TelexBase):
                     if c == '\r' or c == '\n':
                         self._escape = self._escape.upper()
                         self._rx_buffer.append(self._escape)
-                        print('\033[0;37;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
+                        print('\033[0;37;41m}\033[0m', end='', flush=True)
                         self._escape = ''
                     else:
+                        print('\033[0;37;41m'+c+'\033[0m', end='', flush=True)
                         self._escape += c
                         c = self._LUT_replace_linux_escape_seqs.get(self._escape, '')
                         if c:
                             self._escape = c
                             self._rx_buffer.append(self._escape)
-                            print('\033[0;92;41m<'+self._escape[1:]+'>\033[0m', end='', flush=True)
+                            print('\033[0;92;41m'+self._escape[1:]+'\033[0m', end='', flush=True)
                             self._escape = ''
                 else:
                     if c in self._LUT_typed_special_chars:
@@ -190,14 +209,20 @@ class TelexScreen(txBase.TelexBase):
                             self._rx_buffer.append(a)
 
                             # local echo
-                            if a == '\r' or a == '\n':
+                            if a == '\t':   # tab -> 1T
+                                self._rx_buffer.append('\x1b1T')
+                            if a == '\r' or a == '\n':   # bug in print()
                                 print(a, end='')
 
                                 # Print line ending cue for new lines
                                 if a == '\n':
                                     print('\033[70G'+'|'+'\033[0G'+'\033[0m', end='', flush=True)
                             else:
-                                print('\033[1;31m'+(a.lower() if self.lowercase else a)+'\033[0m', end='', flush=True)
+                                if a in self._LUT_show_special_chars:
+                                    a = self._LUT_show_special_chars[a]
+                                if not self._show_capital:
+                                    a = a.lower()
+                                print('\033[1;31m'+a+'\033[0m', end='', flush=True)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
@@ -206,14 +231,11 @@ class TelexScreen(txBase.TelexBase):
 
 
     def write(self, a:str, source:str):
-        if len(a) != 1:
+        if len(a) != 1:   # escape sequ.
             if a[0] == '\x1b' and not a[1:] == "WELCOME":
                 # Print all commands, except WELCOME (internal use)
                 print('\033[0;30;47m<'+a[1:]+'>\033[0m', end='', flush=True)
             return
-
-        if self.lowercase:
-            a = a.lower()
 
         if a == '\r' or a == '\n':
             print(a, end='')
@@ -221,14 +243,16 @@ class TelexScreen(txBase.TelexBase):
             # Print line ending cue for new lines
             if a == '\n':
                 print('\033[70G'+'|'+'\033[0G'+'\033[0m', end='', flush=True)
-        elif a in '[]' and self.suppress_shifts:
-            # Don't print letter/figure shift
-            pass
         else:
-            if source == '^':
-                print('\033[0;33m'+a+'\033[0m', end='', flush=True)
-            else:
-                print(a, end='', flush=True)
+            if not self._show_BuZi and a in '<>':   # Bi Zi
+                return
+            if a in self._LUT_show_special_chars:
+                a = self._LUT_show_special_chars[a]
+            if not self._show_capital:
+                a = a.lower()
+            if source == '^':   # DevMCP
+                a = '\033[0;33m'+a+'\033[0m'
+            print(a, end='', flush=True)
 
     # =====
 

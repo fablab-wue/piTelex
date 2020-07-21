@@ -7,6 +7,9 @@ https://www.allaboutcircuits.com/technical-articles/fsk-explained-with-python/
 https://dsp.stackexchange.com/questions/29946/demodulating-fsk-audio-in-python
 https://stackoverflow.com/questions/35759353/demodulating-an-fsk-signal-in-python#
 
+Protocol:
+https://wiki.telexforum.de/index.php?title=ED1000_Verfahren_(Teil_2)
+
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -60,6 +63,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
+        self.send_WB_pulse = self.params.get('send_WB_pulse', False)
 
         recv_f0 = self.params.get('recv_f0', 2250)
         recv_f1 = self.params.get('recv_f1', 3150)
@@ -118,7 +122,8 @@ class TelexED1000SC(txBase.TelexBase):
 
         if a == '\x1bWB':
             l.debug("ready to dial")
-            self._tx_buffer.append('§W')   # signaling type W - ready for dial
+            if self.send_WB_pulse:
+                self._tx_buffer.append('§W')   # signaling type W - ready for dial
             self._set_online(True)
 
     # -----
@@ -179,32 +184,29 @@ class TelexED1000SC(txBase.TelexBase):
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
                         l.debug("[tx] Sending {!r} (buffer length {})".format(a, len(self._tx_buffer)))
-                        if a == '§W':
-                            bb = (0xFFC0,)
+                        if a == '§W':   # signal WB (ready for dial)
+                            bb = (0xF9FFFFFF,)   # 40ms pulse after 500ms pause, may be interpreted as 'V'
+                            nbit = 32
+                        elif a == '§A':   # signal A (online)
+                            bb = (0xFFC0,)   # 140ms pulse
                             nbit = 16
-                        elif a == '§A':
-                            bb = (0xFFC0,)
-                            nbit = 16
-                        else:
+                        else:   # normal ANSI character
                             bb = self._mc.encodeA2BM(a)
                             if not bb:
                                 continue
                             nbit = 5
 
                         for b in bb:
-                            bits = [0]*nbit
                             mask = 1
-                            for i in range(nbit):
-                                if b & mask:
-                                    bits[i] = 1
-                                mask <<= 1
                             wavecomp = bytearray()
-                            for bit in bits:
-                                wavecomp.extend(waves[bit])
+                            for i in range(nbit):
+                                bit = 1 if (b & mask) else 0
+                                mask <<= 1
+                                wavecomp.extend(waves[bit])   # data bit
 
                             if nbit == 5:
                                 # Single Baudot character: add start and stop bits
-                                wavecomp[0:0] = waves[0]
+                                wavecomp[0:0] = waves[0]   # start bit
                                 wavecomp.extend(waves[1])
                                 wavecomp.extend(waves[1])
                                 # Limit send length (only 1.5 stop bits)
@@ -487,8 +489,7 @@ class TelexED1000SC(txBase.TelexBase):
                         symbol |= 16
                 if slice_counter == 26:   # middle of stop step
                     if not bit:
-                        slice_counter = -5
-                        pass
+                        slice_counter = -5   # wrong stop bit!
                 if slice_counter >= 28:   # end of stop step
                     slice_counter = 0
                     #print(symbol, val)   #debug

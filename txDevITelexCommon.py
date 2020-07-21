@@ -401,7 +401,7 @@ class TelexITelexCommon(txBase.TelexBase):
         a = ''
         while self._tx_buffer and len(a) < 250:
             b = self._tx_buffer.pop(0)
-            if b not in '[]~%':
+            if b not in '<>~%':
                 a += b
         data = a.encode('ASCII')
         l.debug('Sending non-i-Telex data: {} ({})'.format(repr(data), display_hex(data)))
@@ -449,7 +449,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def send_welcome(self, s):
         '''Send welcome message indirect as a server'''
-        #self._tx_buffer.extend(list('[[[\r\n'))   # send text
+        #self._tx_buffer.extend(list('<<<\r\n'))   # send text
         #self._rx_buffer.append('\x1bT')
         #self._rx_buffer.append('#')
         #self._rx_buffer.append('@')

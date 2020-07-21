@@ -4,9 +4,9 @@ Telex Device - Master-Control-Module (MCP)
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
-__copyright__   = "Copyright 2018, JK"
+__copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "0.1.0"
 
 from threading import Thread, Event
 import time
@@ -41,17 +41,59 @@ WB_TIMEOUT = 45.0
 # B type errors are handled in txDevITelexCommon.send_reject. It defaults to
 # "abs", but this error isn't used yet.
 
+escape_texts = {
+    '\x1bRY':   # print RY pattern (64 characters = 10sec@50baud)
+        'RY'*32,
+    '\x1bFOX':   # print RY pattern (? characters = 10sec@50baud)
+        'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
+    '\x1bPELZE':   # print RY pattern (? characters = 10sec@50baud)
+        'KAUFEN SIE JEDE WOCHE VIER GUTE BEQUEME PELZE XY 1234567890',
+    '\x1bABC':   # print ABC pattern (51 characters = 7.6sec@50baud)
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 .,-+=/()?\'%',
+    '\x1bA1':   # print Bi-Zi-change pattern (? characters = 7.6sec@50baud)
+        'A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z%',
+    '\x1bLOREM':   # print LOREM IPSUM (460 characters = 69sec@50baud)
+        '''
+LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISICI ELIT,
+SED EIUSMOD TEMPOR INCIDUNT UT LABORE ET DOLORE MAGNA ALIQUA.
+UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO
+LABORIS NISI UT ALIQUID EX EA COMMODI CONSEQUAT. QUIS AUTE IURE
+REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT
+NULLA PARIATUR. EXCEPTEUR SINT OBCAECAT CUPIDITAT NON PROIDENT,
+SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.
+''',
+    '\x1bLOGO':   # print piTelex logo (380 characters = 57sec@50baud)
+        '''
+-----------------------------------------------------
+      OOO   OOO  OOOOO  OOOO  O     OOOO  O   O
+      O  O   O     O    O     O     O      O O
+      OOO    O     O    OOO   O     OOO     O
+.....................................................
+      O      O     O    O     O     O      O O
+      O     OOO    O    OOOO  OOOO  OOOO  O   O
+-----------------------------------------------------
+''',
+    '\x1bTEST':   # print test pattern (546 characters = 82sec@50baud)
+        '''
+.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.
+-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-
+=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=
+X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
+=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=
+-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-''',
+}
+
+#######
+
 class watchdog():
     def __init__(self):
         self._wds = {}
-        pass
 
-    def init(self, name:str, timer:int, action_list, action_char:str):
+    def init(self, name:str, timer:int, callback):
         wd = {}
         wd['time_reset'] = None
         wd['time_offset'] = timer
-        wd['action_list'] = action_list
-        wd['action_char'] = action_char
+        wd['callback'] = callback
         self._wds[name] = wd
 
     def reset(self, name:str):
@@ -67,13 +109,13 @@ class watchdog():
             if wd['time_reset']:
                 if  time_act > (wd['time_reset'] + wd['time_offset']):
                     wd['time_reset'] = None
-                    wd['action_list'].append(wd['action_char'])
-                    l.debug("Watchdog {!r}: {!s}.append({!r})".format(name, wd["action_list"], wd["action_char"]))
+                    wd['callback'](name)
+                    l.debug("Watchdog {!r}: {!r}".format(name, wd["callback"]))
 
 #######
 
 class TelexMCP(txBase.TelexBase):
-    _fontstr = {'A': 'VSSV', 'B': '[YYR', 'C': 'CZZZ', 'D': '[ZZC', 'E': '[YYZ', 'F': '[SSE', 'G': 'CZYX', 'H': '[  [', 'I': 'Z[Z', 'J': '\rTZK', 'K': '[ RZ', 'L': '[TTT', 'M': '[\n \n[', 'N': '[\n [', 'O': 'CZZZC', 'P': '[SS\n', 'Q': 'CZBV', 'R': '[SFL', 'S': 'LYYD', 'T': 'EE[EE', 'U': 'KTTK', 'V': 'U\rT\rU', 'W': '[\rI\r[', 'X': 'ZR RZ', 'Y': 'E\nM\nE', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L[T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  [  ', '-': '    ', '*': 'YC CY', '/': 'T\r \nE', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY\n', "'": 'AA', ' ': '~~', '': '~', '\r': ' RZZ', '<': ' RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
+    _fontstr = {'A': 'VSSV', 'B': '<YYR', 'C': 'CZZZ', 'D': '<ZZC', 'E': '<YYZ', 'F': '<SSE', 'G': 'CZYX', 'H': '<  <', 'I': 'Z<Z', 'J': '\rTZK', 'K': '< RZ', 'L': '<TTT', 'M': '<\n \n<', 'N': '<\n <', 'O': 'CZZZC', 'P': '<SS\n', 'Q': 'CZBV', 'R': '<SFL', 'S': 'LYYD', 'T': 'EE<EE', 'U': 'KTTK', 'V': 'U\rT\rU', 'W': '<\rI\r<', 'X': 'ZR RZ', 'Y': 'E\nM\nE', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L<T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  <  ', '-': '    ', '*': 'YC CY', '/': 'T\r \nE', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY\n', "'": 'AA', ' ': '~~', '': '~', '\r': ' RZZ', '<': ' RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
     _fontsep = '~'
 
 
@@ -113,13 +155,13 @@ class TelexMCP(txBase.TelexBase):
         self._fallback_wru_triggered = False
 
         self._wd = watchdog()
-        self._wd.init('ONLINE', 180, self._rx_buffer, '\x1bZ')
-        self._wd.init('WB', WB_TIMEOUT, self._rx_buffer, '\x1bZ')
-        self._wd.init('PRINTER', 5, self._rx_buffer, '\x1bACT')
+        self._wd.init('ONLINE', 180, self._watchdog_callback)
+        self._wd.init('WB', WB_TIMEOUT, self._watchdog_callback)
+        self._wd.init('PRINTER', 5, lambda name: self._rx_buffer.append('\x1bACT'))
 
         self._run = True
-        self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
-        self._tx_thread.start()
+        #self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
+        #self._tx_thread.start()
 
         self._dial_thread = Thread(target=self.thread_dial, name='Dialler')
         self._dial_thread.start()
@@ -137,7 +179,6 @@ class TelexMCP(txBase.TelexBase):
     def read(self) -> str:
         ret = ''
 
-
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
 
@@ -152,6 +193,14 @@ class TelexMCP(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
+            if a == '\x1b1T':   # 1T
+                if self._mode == 'Z':
+                    a = '\x1bAT'
+                elif self._mode == 'WB':
+                    a = '\x1bLT'
+                else:
+                    a = '\x1bST'
+
             if a == '\x1bAT':   # AT
                 self._rx_buffer.append('\x1bWB')   # send text
                 self._mode = 'WB'
@@ -179,6 +228,7 @@ class TelexMCP(txBase.TelexBase):
                 self._wd.disable('WB')
                 self._wd.disable('PRINTER')
                 self._fallback_wru_triggered = False
+
             if a == '\x1bA':   # start motor
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
@@ -217,84 +267,33 @@ class TelexMCP(txBase.TelexBase):
                 self._wd.disable('PRINTER')
                 l.debug("Printer has been started successfully, cancelling start timer")
 
-            if a == '\x1bTAB':   # next mode
-                if self._mode == 'Z':
-                    self._rx_buffer.append('\x1bWB')   # send text
-                    self._mode = 'WB'
-                    self._wd.reset('WB')
-                elif self._mode == 'WB':
-                    self._rx_buffer.append('\x1bA')   # send text
-                    self._mode = 'A'
-                    self._wd.disable('WB')
-                elif self._mode == 'A':
-                    self._rx_buffer.append('\x1bZ')   # send text
-                    self._mode = 'Z'
-                self._wd.reset('ONLINE')
-                return True
-
-
             if a == '\x1bFONT':   # set to font mode
                 self._font_mode = not self._font_mode
                 return True
 
 
-            if a == '\x1bLOREM':   # print LOREM IPSUM (460 characters = 69sec@50baud)
-                self._rx_buffer.extend(list('\r\nLOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISICI ELIT,\r\nSED EIUSMOD TEMPOR INCIDUNT UT LABORE ET DOLORE MAGNA ALIQUA.\r\nUT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO\r\nLABORIS NISI UT ALIQUID EX EA COMMODI CONSEQUAT. QUIS AUTE IURE\r\nREPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT\r\nNULLA PARIATUR. EXCEPTEUR SINT OBCAECAT CUPIDITAT NON PROIDENT,\r\nSUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.\r\n'))   # send text
-                return True
-
-            if a == '\x1bRY':   # print RY pattern (64 characters = 10sec@50baud)
-                self._rx_buffer.extend(list('RYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRY'))   # send text
-                return True
-
-            if a == '\x1bFOX':   # print RY pattern (64 characters = 10sec@50baud)
-                self._rx_buffer.extend(list('THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG'))   # send text
-                return True
-
-            if a == '\x1bABC':   # print ABC pattern (51 characters = 7.6sec@50baud)
-                self._rx_buffer.extend(list('ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 .,-+=/()?\'%'))   # send text
-                return True
-
-            if a == '\x1bLOGO':   # print piTelex logo (380 characters = 57sec@50baud)
-                self._rx_buffer.extend(list('''
------------------------------------------------------
-      OOO   OOO  OOOOO  OOOO  O     OOOO  O   O
-      O  O   O     O    O     O     O      O O
-      OOO    O     O    OOO   O     OOO     O
-.....................................................
-      O      O     O    O     O     O      O O
-      O     OOO    O    OOOO  OOOO  OOOO  O   O
------------------------------------------------------
-'''))   # send text
-                return True
-
-            if a == '\x1bTEST':   # print test pattern (546 characters = 82sec@50baud)
-                self._rx_buffer.extend(list('''
-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.
--=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-
-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=
-X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
-=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=
--.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-'''))   # send text
+            if a in escape_texts:
+                self._rx_buffer.extend(list(escape_texts[a]))   # send text
                 return True
 
 
-            if a[:3] == '\x1bM=':   # set memory text
-                self._mx_buffer.extend(list(a[3:]))   # send text
-                return True
+            #if a[:3] == '\x1bM=':   # set memory text
+            #    self._mx_buffer.extend(list(a[3:]))   # send text
+            #    return True
 
-            if a == '\x1bMC':   # clear memory text
-                self._mx_buffer = []
-                return True
+            #if a == '\x1bMC':   # clear memory text
+            #    self._mx_buffer = []
+            #    return True
 
 
-            if a == '\x1bT':   # actual time
+            if a == '\x1bDATE':   # current date and time
                 text = time.strftime("%Y-%m-%d  %H:%M", time.localtime()) + '\r\n'
                 self._rx_buffer.extend(list(text))   # send text
                 return True
 
             if a == '\x1bI':   # welcome as server
                 # The welcome banner itself has a fixed total length of 24 characters:
-                text = '[[[\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
+                text = '<<<\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
                 #if self.device_id:
                 #    text += self.device_id   # send back device id
                 #else:
@@ -327,22 +326,9 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
 
             if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
                 if not self.wru_fallback or self._fallback_wru_triggered:
-                    self._rx_buffer.extend(list('[\r\n' + self.device_id))   # send back device id
+                    self._rx_buffer.extend(list('<\r\n' + self.device_id))   # send back device id
                     l.info("Sending software WRU response: {!r}".format(self.device_id))
                     return True
-
-
-            if a == '\t':   # next mode
-                if self._mode == 'Z':
-                    self._rx_buffer.append('\x1bWB')   # send text
-                    self._mode = 'WB'
-                elif self._mode == 'WB':
-                    self._rx_buffer.append('\x1bA')   # send text
-                    self._mode = 'A'
-                elif self._mode == 'A':
-                    self._rx_buffer.append('\x1bZ')   # send text
-                    self._mode = 'Z'
-                return True
 
 
             if self._mode == 'WB':
@@ -364,21 +350,12 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
                         # Invalid data, discard
                         return True
 
-
     # -----
 
     def idle20Hz(self):
         self._wd.process()
 
     # =====
-
-    def thread_memory(self):
-        while self._run:
-            #l.debug('.')
-            if self._mx_buffer:
-                a = self._mx_buffer.pop(0)
-                self._rx_buffer.append(a)
-            time.sleep(0.15)
 
     def thread_dial(self):
         # This thread monitors the number-to-dial and initiates the dial
@@ -450,6 +427,19 @@ X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
             self._rx_buffer.append('\x1b#' + self._dial_number)
             self._dial_number = ''
             # TODO have dial command always print an error on fail
+
+    def _watchdog_callback(self, name:str):
+        self.write('\x1bST', 'w')
+
+    # -----
+
+    #def thread_memory(self):
+    #    while self._run:
+    #        #LOG('.')
+    #        if self._mx_buffer:
+    #            a = self._mx_buffer.pop(0)
+    #            self._rx_buffer.append(a)
+    #        time.sleep(0.15)
 
 #######
 

@@ -67,9 +67,9 @@ class TelexLog(txBase.TelexBase):
         add = ''
 
         if a == '\r':
-            a = '<'
+            a = '\\'
         if a == '\n':
-            a = '|'
+            a = '_'
         if a == '\t':
             a = '\\t'
         if len(a) > 1:
@@ -78,14 +78,14 @@ class TelexLog(txBase.TelexBase):
                 return
             a = '{' + a[1:] + '}'
 
-        if source == self._last_source and a == '|':
+        if source == self._last_source and a == '_':
             out = True
-            add = '|'
+            add = '_'
             a = ''
 
         elif source == self._last_source and len(self._line) >= 80:
             out = True
-            add = ' \\'
+            add = '   |'
 
         if source != self._last_source:
             out = True

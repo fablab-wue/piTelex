@@ -62,7 +62,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         self.SERVER.listen(2)
         #print("Waiting for connection...")
-        Thread(target=self.thread_srv_accept_incoming_connections, name='iTelexSaic').start()
+        Thread(target=self.thread_srv_accept_incoming_connections, name='iTelexSrvAC').start()
 
         # Record number of failed tests and TNS updates
         self.update_tns_fail = 0
@@ -86,8 +86,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             Thread(target=self.thread_handle_tns_update, name='iTelexTNSupd').start()
 
     def exit(self):
-        self.disconnect_client()
         self._run = False
+        self.disconnect_client()
         self.SERVER.close()
 
     # =====
@@ -176,7 +176,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 continue
             self.clients[client] = client_address
             self._tx_buffer = []
-            Thread(target=self.thread_srv_handle_client, name='iTelexShc', args=(client,)).start()
+            Thread(target=self.thread_srv_handle_client, name='iTelexSrvHC', args=(client,)).start()
 
 
     def thread_srv_handle_client(self, s):  # Takes client socket as argument.
