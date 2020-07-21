@@ -328,7 +328,9 @@ class TelexMCP(txBase.TelexBase):
                 if not self.wru_fallback or self._fallback_wru_triggered:
                     self._rx_buffer.extend(list('<\r\n' + self.device_id))   # send back device id
                     l.info("Sending software WRU response: {!r}".format(self.device_id))
-                    return True
+                    # Only "swallow" WRU when *not* acting as fallback
+                    if not self._fallback_wru_triggered:
+                        return True
 
 
             if self._mode == 'WB':
