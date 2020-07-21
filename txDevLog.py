@@ -23,7 +23,7 @@ def find_rev() -> str:
     """
     import subprocess
     result = subprocess.run(["git", "log", "--oneline", "-1"], stdout=subprocess.PIPE, check=True)
-    return result.stdout.decode("ascii").strip()
+    return result.stdout.decode("utf-8", errors="replace").strip()
 
 class TelexLog(txBase.TelexBase):
     def __init__(self, **params):
