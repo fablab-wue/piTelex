@@ -111,7 +111,7 @@ class TelexArchive(txBase.TelexBase):
             self._current_msg.append(data)
 
     @classmethod
-    def filename(cls, wru="<unknown>", direction="with", timestamp=None) -> str:
+    def filename(cls, wru="[unknown]", direction="with", timestamp=None) -> str:
         """
         Return filename for an archive file.
 
@@ -167,7 +167,7 @@ class TelexArchive(txBase.TelexBase):
         # Filter out direction shifts
         data = re.sub(pattern=INBOUND+"|"+OUTBOUND, string=data, repl="")
         # Filter out letter/figure shift, CR and CR helper character
-        data = re.sub(pattern="\[|\]|\r|<", string=data, repl="")
+        data = re.sub(pattern="<|>|\r|❮", string=data, repl="")
         # Find WRU answerback match and return it
         try:
             if inbound:
@@ -192,18 +192,17 @@ class TelexArchive(txBase.TelexBase):
           characters by ANSI escape sequences for text colour change.
         - Replace piTelex internal WRU characters by Unicode character U+2720
           (✠).
-        - Insert a "<" character wherever isolated CRs may lead to
+        - Insert a "❮" character wherever isolated CRs may lead to
           overprinting, to make this obvious.
         """
-        # Remove letter/figure shifts (must be before inserting ANSI ESC
-        # sequences because they contain "["!)
-        msg = re.sub(pattern="\[|\]", string=msg, repl="")
+        # Remove letter/figure shifts
+        msg = re.sub(pattern="<|>", string=msg, repl="")
 
         # Replace @/# by ✠
         msg = re.sub(pattern="@", string=msg, repl="✠")
         msg = re.sub(pattern="#", string=msg, repl="✠")
 
-        # If a CR could lead to overprinting, replace it with "<". The
+        # If a CR could lead to overprinting, replace it with "❮". The
         # following conditions apply:
         # - Every CR must be followed by another CR or a newline,
         # - except there are no printable characters between it and the newline
@@ -216,7 +215,7 @@ class TelexArchive(txBase.TelexBase):
         # unprintable direction shift if present
         msg = re.sub(pattern="^([{}]?)\r".format(INBOUND+OUTBOUND), string=msg, repl="\g<1>", flags=re.MULTILINE)
         # 3. Replace by "<" all CRs not followed by newline
-        msg = re.sub(pattern="\r([^\n])", string=msg, repl="<\g<1>")
+        msg = re.sub(pattern="\r([^\n])", string=msg, repl="❮\g<1>")
 
         # Replace direction shifts by ANSI ESC sequences for colour change
         msg = re.sub(pattern=OUTBOUND, string=msg, repl=ANSI_RED_FOREGROUND)
@@ -247,7 +246,7 @@ class TelexArchive(txBase.TelexBase):
             if self._dial_number:
                 wru = self._dial_number
             else:
-                wru = "<unknown>"
+                wru = "[unknown]"
         self._dial_number = None
 
         filename = self.filename(wru=wru, direction=direction, timestamp=self._timestamp)
@@ -266,34 +265,34 @@ Test data\r\r\r
 Last two lines also ok: CR(s) at line ending
 Test data 1\rTest data 2, not OK: First part will be overprinted
 \r\r\rtest1\rtest2\r\r\rtest3\r\r
-The previous line should render as 'test1<test2<test3'
+The previous line should render as 'test1❮test2❮test3'
 """
 
 prettify_lf_test = """There should come a single newline after this
 \r\x0fHow far down am I?"""+OUTBOUND
 
-wru_outbound_test = """12345678+[[[[[[[\r
-]88.88.8888  88:88\r
-@[\r
-]12345678[ example d[]\r
-87654321 [ich d\r
+wru_outbound_test = """12345678+<<<<<<<\r
+>88.88.8888  88:88\r
+@<\r
+>12345678< example d<>\r
+87654321 <ich d\r
 \r
 ---message---\r
-]\r
-87654321 [ich d]@[\r
-]12345678[ example d["""
+>\r
+87654321 <ich d>@<\r
+>12345678< example d<"""
 
-wru_inbound_test = """[[[\r
+wru_inbound_test = """<<<\r
 88.88.8888  88:88\r
-]]#[\r
-]87654321[ ich d[]\r
-12345678[ example d[[[\r\r
+>>#<\r
+>87654321< ich d<>\r
+12345678< example d<<<\r\r
 \r
 ---message---\r
 \r
-]#[\r
-]87654321[ ich d[]\r
-12345678[ example d[[["""
+>#<\r
+>87654321< ich d<>\r
+12345678< example d<<<"""
 
 def main():
     import sys
