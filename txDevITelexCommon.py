@@ -138,6 +138,9 @@ class TelexITelexCommon(txBase.TelexBase):
         # 3: connected, welcome banner has been received completely
         self._connected = 1
 
+        # Store remote protocol version to control negotiation
+        self._remote_protocol_ver = None
+
         # The rationale here is to, after starting the printer, first print the
         # complete welcome banner. Received data must only by printed *after*
         # this.
@@ -273,8 +276,36 @@ class TelexITelexCommon(txBase.TelexBase):
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
                         l.debug('Received i-Telex packet: Version ({})'.format(display_hex(data)))
-                        if not is_server or data[2] != 1:
-                            self.send_version(s)
+                        if self._remote_protocol_ver is None:
+                            if data[2] != 1:
+                                # This is the first time an unsupported version was offered
+                                l.warning("Unsupported version offered by remote ({}), requesting v1".format(display_hex(data[2:])))
+                                self.send_version(s)
+                            else:
+                                # Only send version packet in response to valid
+                                # version when we're server, because as client,
+                                # we sent a version packet directly after
+                                # connecting.
+                                if is_server:
+                                    self.send_version(s)
+                            # Store offered version
+                            self._remote_protocol_ver = data[2]
+                        else:
+                            if data[2] != 1:
+                                # The remote station insists on incompatible
+                                # version. Send the not-officially-defined
+                                # error code "ver".
+                                l.error("Unsupported version insisted on by remote ({})".format(display_hex(data[2:])))
+                                self.send_reject(s, 'ver')
+                                error = True
+                                break
+                            else:
+                                if data[2] != self._remote_protocol_ver:
+                                    l.info("Negotiated protocol version {}, initial request was {}".format(data[2], self._remote_protocol_ver))
+                                    self._remote_protocol_ver = data[2]
+                                else:
+                                    # Ignore multiple good version packets
+                                    l.info("Redundant Version packet")
 
                     # Self test
                     elif data[0] == 8 and packet_len >= 2:
