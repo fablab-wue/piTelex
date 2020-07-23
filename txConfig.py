@@ -150,6 +150,8 @@ def load():
         with open(ARGS.cnf_file, 'r') as fp:
             CFG = json.load(fp)
     except:
+        import sys
+        l.warning("Configuration file error:", exc_info = sys.exc_info())
         CFG = {}
 
     if not CFG.get('devices', None):
