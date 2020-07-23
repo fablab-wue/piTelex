@@ -81,7 +81,8 @@
     },
     "archive": {
       "type": "archive",
-      "enable": false
+      "enable": false,
+      "path": ""
     }
   },
   "verbose": true,

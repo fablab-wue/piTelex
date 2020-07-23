@@ -14,9 +14,6 @@ l = logging.getLogger("piTelex." + __name__)
 
 import txBase
 
-# The subdirectory to place archive files in
-ARCLOG_PATH = "archive"
-
 # ASCII shifts (called "direction shifts" from here on out) for tagging
 # inbound/outbound text
 INBOUND =  "\x0e" # SI
@@ -49,10 +46,20 @@ class TelexArchive(txBase.TelexBase):
         # Time when connection was made
         self._timestamp = None
 
+        # The subdirectory to place archive files in is read from
+        # configuration. Relative paths are taken relative to where piTelex
+        # scripts are stored; absolute paths are just that.
+        self.arclog_path = params.get("path", "archive")
+        if not self.arclog_path:
+            self.arclog_path = "archive"
+        if not os.path.isabs(self.arclog_path):
+            self.arclog_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), self.arclog_path)
+
         try:
-            os.mkdir(ARCLOG_PATH)
+            os.mkdir(self.arclog_path)
         except FileExistsError:
             pass
+        l.info("Archiving in {!r}".format(self.arclog_path))
 
     def __del__(self):
         self.exit()
@@ -110,8 +117,7 @@ class TelexArchive(txBase.TelexBase):
             data = data.lower()
             self._current_msg.append(data)
 
-    @classmethod
-    def filename(cls, wru="[unknown]", direction="with", timestamp=None) -> str:
+    def filename(self, wru="[unknown]", direction="with", timestamp=None) -> str:
         """
         Return filename for an archive file.
 
@@ -129,7 +135,7 @@ class TelexArchive(txBase.TelexBase):
 
         fn["title"] = "msg {} {}".format(direction, wru)
 
-        return os.path.join(ARCLOG_PATH, "{timestamp} {title}.txt".format(**fn))
+        return os.path.join(self.arclog_path, "{timestamp} {title}.txt".format(**fn))
 
     @classmethod
     def find_WRU_answer(cls, data, inbound=False) -> str:

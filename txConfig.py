@@ -246,7 +246,7 @@ def load():
         devices['eliza'] = {'type': 'eliza', 'enable': True}
 
     if ARGS.archive:
-        devices['archive'] = {'type': 'archive', 'enable': True}
+        devices['archive'] = {'type': 'archive', 'enable': True, 'path': 'archive'}
 
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
