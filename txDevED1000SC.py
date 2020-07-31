@@ -70,7 +70,7 @@ class TelexED1000SC(txBase.TelexBase):
         recv_f = [recv_f0, recv_f1]
         self._recv_decode_init(recv_f)
 
-        self.run = True
+        self._run = True
         self._tx_thread = Thread(target=self.thread_tx, name='ED1000tx')
         self._tx_thread.start()
         self._rx_thread = Thread(target=self.thread_rx, name='ED1000rx')
@@ -78,13 +78,13 @@ class TelexED1000SC(txBase.TelexBase):
 
 
     def __del__(self):
-        self.run = False
-
         super().__del__()
 
 
     def exit(self):
         self._run = False
+        # Set online status to wake tx thread
+        self._is_online.set()
 
     # =====
 
@@ -172,7 +172,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         #a = stream.get_write_available()
         try:
-            while self.run:
+            while self._run:
                 # Going online: send Z
                 if self._rx_state == 10:
                     l.debug("[tx] Sending Z level")
@@ -266,7 +266,7 @@ class TelexED1000SC(txBase.TelexBase):
         audio = pyaudio.PyAudio()
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
 
-        while self.run:
+        while self._run:
             # Executing the IIR filter for bit recognition takes a lot of CPU
             # power. Normally, we do it four times per bit or every 5 ms (once
             # per "slice", "quick scan").

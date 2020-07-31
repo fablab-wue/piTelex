@@ -45,6 +45,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
     def exit(self):
         self.disconnect_client()
+        self._run = False
 
     # =====
 

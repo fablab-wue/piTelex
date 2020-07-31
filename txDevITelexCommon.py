@@ -101,6 +101,7 @@ class TelexITelexCommon(txBase.TelexBase):
         self._rx_buffer = []
         self._tx_buffer = []
         self._connected = 0
+        self._run = True
 
 
     def __del__(self):
@@ -109,6 +110,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
 
     def exit(self):
+        self._run = False
         self._connected = 0
 
     # =====
@@ -170,6 +172,10 @@ class TelexITelexCommon(txBase.TelexBase):
                 _connected_before = self._connected
             try:
                 data = s.recv(1)
+
+                # piTelex terminates; close connection
+                if not self._run:
+                    break
 
                 # lost connection
                 if not data:

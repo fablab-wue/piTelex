@@ -241,6 +241,13 @@ def exit():
             pass
     DEVICES = []
     logging.shutdown()
+    return
+    # Comment out the return above to view non-terminating threads
+    while True:
+        for t, stack in sys._current_frames().items():
+            l.info("Thread: {}".format(t))
+            [l.info(i) for i in traceback.format_stack(stack)]
+        time.sleep(5)
 
 # =====
 

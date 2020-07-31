@@ -49,7 +49,6 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self._number = None
             self._tns_pin = None
 
-        self.run = True
         self.clients = {}
 
         self.SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -59,6 +58,11 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         # https://stackoverflow.com/questions/5040491/python-socket-doesnt-close-connection-properly
         self.SERVER.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.SERVER.bind(('', self._port))
+
+        # Set timeout for server socket so that calling accept will not block
+        # indefinitely. Otherwise, the server thread would prevent quitting
+        # piTelex.
+        self.SERVER.settimeout(2.0)
 
         self.SERVER.listen(2)
         #print("Waiting for connection...")
@@ -80,6 +84,10 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         # Flag for blocking inbound connections when an outbound one is active
         self.block_inbound = False
 
+        # Create event just for sleeping. The event is only triggered on
+        # quitting piTelex, to wake up everyone still sleeping.
+        self.term = Event()
+
         if self._number:
             # Own number given: update own information in TNS (telex number
             # server) if needed
@@ -87,6 +95,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
     def exit(self):
         self._run = False
+        self.term.set()
         self.disconnect_client()
         self.SERVER.close()
 
@@ -140,9 +149,17 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
     def thread_srv_accept_incoming_connections(self):
         """Sets up handling for incoming clients."""
-        while self.run:
+        while self._run:
             try:
                 client, client_address = self.SERVER.accept()
+            except (socket.timeout, OSError):
+                # Socket timed out: Just check if we're still running
+                # (self._run) and recall accept. This serves to not prevent
+                # shutting down piTelex.
+                #
+                # An OSError can occur on quitting piTelex, if the server
+                # socket is closed before accept returns. Ignore.
+                continue
             except ConnectionAbortedError:
                 # This exception results from ECONNABORT from "under the hood".
                 # It happens if the client resets the connection after it is
@@ -230,7 +247,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
           problem will be noticed only then.
 
         """
-        while self.run:
+        while self._run:
             # Update TNS record on startup to obtain own IP address. After
             # that, update on hourly schedule (roughly).
             if self.update_tns_record():
@@ -249,13 +266,16 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             # possible. Retry.
             if not self.ip_address:
                 l.error("self-test: IP address unknown, connection test impossible, retrying in 60 min")
-                time.sleep(3600)
+                # Sleep and break only if application is terminated, carry on otherwise
+                if self.term.wait(3600): break
                 continue
 
             for _ in range(180):
                 # Self-test every 20 s for about one hour, then exit this loop
                 # and restart while loop, updating TNS record.
-                time.sleep(20)
+
+                # Sleep and break only if application is terminated, carry on otherwise
+                if self.term.wait(20): break
 
                 # If 2*6 self-tests fail consecutively, cease self-testing and
                 # only retry TNS update hourly.

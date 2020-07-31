@@ -174,6 +174,7 @@ class TelexMCP(txBase.TelexBase):
 
     def exit(self):
         self._run = False
+        self._dial_change.set()
 
 
     def read(self) -> str:
@@ -394,8 +395,8 @@ class TelexMCP(txBase.TelexBase):
 
         while self._run:
             if (not self._dial_number) or self._mode != 'WB':
-                # Number empty or not in dial mode -- wait indefinitely for
-                # next change and recheck afterwards
+                # Number empty or not in dial mode -- wait for next change and
+                # recheck afterwards.
                 change = self._dial_change.wait()
                 self._dial_change.clear()
                 continue
