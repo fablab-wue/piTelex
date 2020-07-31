@@ -34,8 +34,13 @@ def LOG(text:str, level:int=3):
 DEVICES = []
 TIME_20HZ = time.time()
 TIME_DELAY = None
-# Path of error log files
-ERRLOG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "error_log")
+# Path where this file is stored
+try:
+    OUR_PATH = os.path.dirname(os.path.realpath(__file__))
+except NameError:
+    # If __file__ is not defined, fall back to working directory; should be
+    # close enough.
+    OUR_PATH = os.getcwd()
 # Default log level for all modules
 ERRLOG_LEVEL = logging.INFO
 #ERRLOG_LEVEL = logging.DEBUG
@@ -82,9 +87,11 @@ class MonthlyRotatingFileHandler(logging.handlers.RotatingFileHandler):
         if os.path.exists(source):
             os.rename(source, dest)
 
-def init_error_log():
+def init_error_log(log_path):
     """
-    Initialise error logging, i.e. create the root logger.
+    Initialise error logging, i.e. create the root logger. It saves all logged
+    information in a monthly rotating file inside the path given. If the latter
+    is relative, it's interpreted relative to where this Python file is stored.
 
     This is different from the log module, which implements a communication
     trace log (i.e. it logs the data read from all piTelex modules).
@@ -101,11 +108,13 @@ def init_error_log():
     """
     logger = logging.getLogger("piTelex")
     logger.setLevel(ERRLOG_LEVEL) # Log level of this root logger
+    if not os.path.isabs(log_path):
+        log_path = os.path.join(OUR_PATH, log_path)
     try:
-        os.mkdir(ERRLOG_PATH)
+        os.mkdir(log_path)
     except FileExistsError:
         pass
-    handler = MonthlyRotatingFileHandler(filename = os.path.join(ERRLOG_PATH, "piTelex-errors.log"))
+    handler = MonthlyRotatingFileHandler(filename = os.path.join(log_path, "piTelex-errors.log"))
 
     handler.setLevel(logging.DEBUG) # Upper bounds for log level of all loggers
     formatter = logging.Formatter('%(asctime)s %(name)s [%(levelname)s]: %(message)s')
@@ -291,8 +300,10 @@ def loop():
 # =====
 
 def main():
-    init_error_log()
     txConfig.load()
+
+    errlog_path = txConfig.CFG.get('errlog_path', 'error_log')
+    init_error_log(errlog_path)
 
     #test()
     init()

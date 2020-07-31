@@ -131,6 +131,10 @@ def load():
         dest="wru_fallback", default=False, action="store_true",
         help="Enable software ID fallback mode: If printer isn't starting up on command, enable software ID")
 
+    parser.add_argument("--errlog-path",
+        dest="errlog_path", default=False, action="store_true",
+        help="Path of error log; relative paths are referred to where this program is being executed")
+
     #parser.add_argument("-m", "--mode",
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
@@ -263,6 +267,10 @@ def load():
     wru_fallback = ARGS.wru_fallback
     if wru_fallback:
         CFG['wru_fallback'] = ARGS.wru_fallback
+
+    errlog_path = ARGS.errlog_path
+    if errlog_path:
+        CFG['errlog_path'] = ARGS.errlog_path
 
     #mode = ARGS.mode.strip()
     #if mode:
