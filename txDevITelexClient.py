@@ -61,12 +61,20 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 self.disconnect_client()
 
             if a[:2] == '\x1b#':   # dial
-                user = self.get_user(a[2:])
-                if user:
-                    self.connect_client(user)
+                instant_dial = (a[2] == '!')
+                if instant_dial:
+                    # Instant dial: Fail silently if number not found
+                    user = self.get_user(a[3:])
+                    if user:
+                        self.connect_client(user)
                 else:
-                    self._rx_buffer.extend('bk')
-                    self._rx_buffer.append('\x1bZ')
+                    # Normal dial: Fail loudly if number not found
+                    user = self.get_user(a[2:])
+                    if user:
+                        self.connect_client(user)
+                    else:
+                        self._rx_buffer.extend('bk')
+                        self._rx_buffer.append('\x1bZ')
 
 
             if a[:2] == '\x1b?':   # ask TNS

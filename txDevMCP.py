@@ -145,7 +145,7 @@ class TelexMCP(txBase.TelexBase):
                 dial_timeout = float(dial_timeout)
             except (ValueError, TypeError):
                 dial_timeout = 2.0
-            if not 0.0 < dial_timeout < WB_TIMEOUT:
+            if not 0.0 <= dial_timeout < WB_TIMEOUT:
                 l.warning("Invalid dialling timeout, falling back to default: " + repr(dial_timeout))
                 dial_timeout = 2.0
         self._dial_timeout = dial_timeout
@@ -232,6 +232,7 @@ class TelexMCP(txBase.TelexBase):
             if a == '\x1bA':   # start motor
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
+                self._dial_number = '' # Important only on instant dialling
                 self._wd.disable('WB')
 
             # Printer start feedback code follows, which enables us to check if
@@ -361,7 +362,13 @@ class TelexMCP(txBase.TelexBase):
 
     def thread_dial(self):
         # This thread monitors the number-to-dial and initiates the dial
-        # command depending on the set mode (timeout dialling or plus dialling)
+        # command depending on the set mode (instant dialling, timeout dialling
+        # or plus dialling)
+        #
+        # Instant dialling is the classic dial method used in older piTelex
+        # versions. It's selected if the configured timeout is 0. In contrast
+        # to the other methods, dialling is tried after every entered digit,
+        # i.e. incrementally.
         #
         # Timeout dialling behaviour is based on i-Telex r874 (as documented in
         # the comments at trunk/iTelex/iTelex.c:4586) and simplified:
@@ -377,6 +384,9 @@ class TelexMCP(txBase.TelexBase):
         #    nothing further is dialled for 15 seconds
         #
         # Plus dialling simply waits for digits and dials if '+' is entered.
+        #
+        # The condition "five digits minimum" is fulfilled in
+        # txDevITelexClient.
 
         # change holds the return value of _dial_change.wait: False if returning by
         # timeout, True otherwise
@@ -390,6 +400,19 @@ class TelexMCP(txBase.TelexBase):
                 self._dial_change.clear()
                 continue
 
+            if self._dial_timeout == 0:
+                # Instant dialling: Just try dialling on every digit, failing
+                # silently if number not found (ESC-#! instead of ESC-#,
+                # handled in txDevITelexClient).
+                self._rx_buffer.append('\x1b#!' + self._dial_number)
+                # NB: We keep self._dial_number here to allow incremental
+                # dialling. It is reset not inside this thread like with the
+                # other methods, but from the outside (on receipt of ESC-A).
+                change = self._dial_change.wait()
+                self._dial_change.clear()
+                continue
+
+            # Other dialling methods start here.
             while True:
                 # There is a number being dialled. This loop runs once for
                 # every digit dialled and checks if the dial condition is
