@@ -263,6 +263,7 @@ def load():
             'baudrate': 50,
             'devindex': None,
             'zcarrier': False,
+            'unres_threshold': 100,
             }
 
     if ARGS.itelex >= 0:

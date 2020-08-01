@@ -26,7 +26,8 @@
       "recv_f0": 2250,
       "recv_f1": 3150,
       "recv_squelch": 100,
-      "recv_debug": false
+      "recv_debug": false,
+      "unres_threshold": 100
     },
     "RPiTTY": {
       "type": "RPiTTY",
