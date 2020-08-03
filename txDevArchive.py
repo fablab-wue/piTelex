@@ -258,7 +258,7 @@ class TelexArchive(txBase.TelexBase):
         filename = self.filename(wru=wru, direction=direction, timestamp=self._timestamp)
         self._timestamp = None
 
-        l.info("saving {}, length {}".format(filename, len(filename)))
+        l.info("saving {}, length {}".format(filename, len(msg)))
         with open(filename, mode="w", encoding="utf-8", newline="") as f:
             f.write(msg)
         return filename
