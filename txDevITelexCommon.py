@@ -143,6 +143,14 @@ class TelexITelexCommon(txBase.TelexBase):
         # Store remote protocol version to control negotiation
         self._remote_protocol_ver = None
 
+        # Connection type hinting and detection
+        if is_ascii is None:
+            l.info('Connection hint: auto-detect enabled')
+        elif is_ascii:
+            l.info('Connection hint: ASCII connection')
+        else:
+            l.info('Connection hint: i-Telex connection')
+
         # The rationale here is to, after starting the printer, first print the
         # complete welcome banner. Received data must only by printed *after*
         # this.
@@ -327,13 +335,23 @@ class TelexITelexCommon(txBase.TelexBase):
                         packet_error = True
 
                     if not packet_error:
-                        is_ascii = False
+                        if is_ascii is None:
+                            l.info('Detected i-Telex connection')
+                            is_ascii = False
+                        elif is_ascii:
+                            l.warning('Detected i-Telex connection, but ASCII was expected')
+                            is_ascii = False
 
 
                 # ASCII character(s)
                 else:
                     l.debug('Received non-i-Telex data: {} ({})'.format(repr(data), display_hex(data)))
-                    is_ascii = True
+                    if is_ascii is None:
+                        l.info('Detected ASCII connection')
+                        is_ascii = True
+                    elif not is_ascii:
+                        l.warning('Detected ASCII connection, but i-Telex was expected')
+                        is_ascii = True
                     # TODO: Start up printer properly and fail if it
                     # doesn't work.
                     if 0 < self._connected < 2:
