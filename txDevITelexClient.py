@@ -56,6 +56,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
 
     def write(self, a:str, source:str):
+        super().write(a, source)
         l.debug("write from {!r}: {!r}".format(source, a))
         if len(a) != 1:
             if a == '\x1bZ':   # end session
@@ -144,6 +145,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
 
         s.close()
         self._rx_buffer.append('\x1bZ')
+        self._printer_running = False
 
     # =====
 

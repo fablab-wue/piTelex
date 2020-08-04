@@ -144,6 +144,8 @@ def init():
     ctrl = txDevMCP.TelexMCP(**txConfig.CFG)
     DEVICES.append(ctrl)
 
+    # Iterate over configuration items, create configured instances and add
+    # them to DEVICES.
     for dev_name, dev_param in txConfig.CFG['devices'].items():
         if not dev_param.get('enable', False):
             continue
@@ -232,6 +234,7 @@ def init():
 
         else:
             l.warning("Unknown module type in configuration, section {!r}: {!r}".format(dev_name, dev_param['type']))
+
 
 # =====
 

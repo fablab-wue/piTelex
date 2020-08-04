@@ -157,10 +157,13 @@ class TelexMCP(txBase.TelexBase):
         # Fallback WRU state
         self._fallback_wru_triggered = False
 
+        # "Printer has been started" flag
+        self._printer_running = False
+
         self._wd = watchdog()
         self._wd.init('ONLINE', ONLINE_TIMEOUT, self._watchdog_callback_ST)
         self._wd.init('WB', WB_TIMEOUT, self._watchdog_callback_ST)
-        self._wd.init('PRINTER', 5, lambda name: self._rx_buffer.append('\x1bACT'))
+        self._wd.init('PRINTER', 5, self._printer_start_timeout)
 
         self.cli = txCLI.CLI(**params)
         self.cli_text = ''
@@ -190,12 +193,6 @@ class TelexMCP(txBase.TelexBase):
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
 
-        if ret == '\x1bACT' and self.wru_fallback:
-            # Intercept printer timeout signal and replace by a fake ESC-ACK
-            self._fallback_wru_triggered = True
-            l.warning("Printer start attempt timed out, fallback WRU responder enabled")
-            ret = '\x1bACK'
-
         return ret
 
 
@@ -222,6 +219,10 @@ class TelexMCP(txBase.TelexBase):
                 self._mode = 'Z'
                 self._wd.disable('ONLINE')
                 self._wd.disable('WB')
+                # Must be reset explicitly because the ESC-Z we send above
+                # won't be re-sent to us
+                self._wd.disable('PRINTER')
+                self._fallback_wru_triggered = False
                 self.enable_cli(False)
                 return True
 
@@ -238,6 +239,7 @@ class TelexMCP(txBase.TelexBase):
                 self._wd.disable('WB')
                 self._wd.disable('PRINTER')
                 self._fallback_wru_triggered = False
+                self._printer_running = False
                 self.enable_cli(False)
                 
             if a == '\x1bA':   # start motor
@@ -245,47 +247,50 @@ class TelexMCP(txBase.TelexBase):
                 self._wd.reset('ONLINE')
                 self._dial_number = '' # Important only on instant dialling
                 self._wd.disable('WB')
+                if not self._printer_running:
+                    self._wd.reset('PRINTER')
+                    l.info("Printer start timer enabled")
 
             # Printer start feedback code follows, which enables us to check if
-            # the printer hardware has in fact been started.
+            # the printer hardware has in fact been started. Every teleprinter
+            # module must support the ESC-~ command, which is sent upon printer
+            # startup and after that about every 500 ms.
             #
-            # To keep this backwards compatible with other interface modules
-            # not supporting this, a three-step protocol is established:
+            # - Whenever ESC-A is sent, the teleprinter must be started. MCP
+            #   starts a timer upon receipt (see above).
             #
-            # 1. Any interface module that wishes to take part shall, upon
-            #    receipt of ESC-A, send ESC-AC (check).
+            # - When the teleprinter has been started, its module sends ESC-~
+            #   on successful start, which cancels MCP's timer.
             #
-            # 2. ESC-AC activates our printer start timer.
+            # - If the teleprinter cannot be started, ESC-~ must not be sent.
+            #   When the timer runs out, MCP sends ESC-Z to terminate the start
+            #   attempt.
             #
-            # 3. The interface module shall, on successful printer start, send
-            #    ESC-ACK (check okay), which disables our timer. The same
-            #    happens on ESC-Z.
+            # NB: Ready-to-dial state (ESC-WB) is handled in a special way:
             #
-            #    On timeout, we send ESC-ACT (check timeout). Any module may
-            #    evaluate this information though at present, only
-            #    txDevITelexSrv does: An active incoming connection is
-            #    terminated with an i-Telex "der" end packet.
+            # - If the teleprinter needs to run in WB mode depends on its
+            #   model/type: always for keyboard dialling machines, but never
+            #   for number switch dialling. So don't require printer startup
+            #   during WB, but memorise if it does and skip timer activation in
+            #   A state.
             #
-            #    In the future, this may be used by, e.g., a recording module
-            #    which hooks a timeout to step in for an unresponsive printer
-            #    and record an incoming message. For this, sequence of devices
-            #    in telex.py's DEVICES list and the write method's return value
-            #    are critical.
+            # - No other modules depend on WB state yet, it's solely triggered
+            #   by manual AT operation, so the relaxed monitoring for keyboard
+            #   dialling machines should be ok. Feedback on the A state is
+            #   crucial however, in case of incoming i-Telex connections.
 
-            if a == '\x1bAC':
-                self._wd.reset('PRINTER')
-                l.debug("Printer start timer enabled")
-            elif a == '\x1bACK':
-                self._wd.disable('PRINTER')
-                l.debug("Printer has been started successfully, cancelling start timer")
+            if a.startswith('\x1b~'):
+                # Printer was started successfully; cancel start timer if
+                # applicable
+                if not self._printer_running:
+                    l.info("Printer running, timer disabled")
+                    self._printer_running = True
+                    self._wd.disable('PRINTER')
+                self._wd.reset('ONLINE') # still characters in printing FIFO
 
             if a == '\x1bFONT':   # set to font mode
                 self._font_mode = not self._font_mode
                 return True
-
-            if a[:2] == '\x1b~':   # still characters in printing FIFO
-                self._wd.reset('ONLINE')
-
 
             if a in escape_texts:
                 self._rx_buffer.extend(list(escape_texts[a]))   # send text
@@ -353,7 +358,7 @@ class TelexMCP(txBase.TelexBase):
 
 
             if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
-                if not self.wru_fallback or self._fallback_wru_triggered:
+                if (not self.wru_fallback) or self._fallback_wru_triggered:
                     self._rx_buffer.extend(list('<\r\n' + self.device_id))   # send back device id
                     l.info("Sending software WRU response: {!r}".format(self.device_id))
                     # Only "swallow" WRU when *not* acting as fallback
@@ -492,6 +497,17 @@ class TelexMCP(txBase.TelexBase):
         self.write('\x1bST', 'w')
 
     # -----
+
+    def _printer_start_timeout(self, name):
+        if self.wru_fallback:
+            # On teleprinter timeout, send fake ESC-~
+            self._fallback_wru_triggered = True
+            l.warning("Printer start attempt timed out, fallback WRU responder enabled")
+            self._rx_buffer.append("\x1b~0")
+        else:
+            l.warning("Printer start attempt timed out")
+            self._rx_buffer.append("\x1bZ")
+
 
     #def thread_memory(self):
     #    while self._run:
