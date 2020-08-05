@@ -18,6 +18,7 @@ random.seed()
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
+#l.setLevel(logging.DEBUG)
 
 import txCode
 import txBase
@@ -187,6 +188,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                 # lost connection
                 if not data:
+                    l.warning("Remote has closed connection")
                     break
 
                 # Telnet control sequence
@@ -257,7 +259,8 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # End
                     elif data[0] == 3 and packet_len == 0:
-                        l.info('Received i-Telex packet: End ({})'.format(display_hex(data)))
+                        l.debug('Received i-Telex packet: End ({})'.format(display_hex(data)))
+                        l.info('End by remote')
                         break
 
                     # Reject
@@ -504,6 +507,7 @@ class TelexITelexCommon(txBase.TelexBase):
         send = bytearray([4, len(msg)])   # Reject
         send.extend([ord(i) for i in msg])
         l.debug('Sending i-Telex packet: Reject ({})'.format(display_hex(send)))
+        l.info('Reject, reason {!r}'.format(msg))
         s.sendall(send)
 
 
