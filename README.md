@@ -2,6 +2,17 @@
 
 # <img src="piTelexLogo.png" width="42px">- piTelex
 
+## About this fork
+I forked the original project to adapt it to my setup:
+
+ * Raspberry Pi 4B running piTelex
+ * Siemens T1000 teletypewriter (with ED1000 SEU)
+ * Interface is "0d8c:0014 C-Media Electronics, Inc. Audio Adapter (Unitek Y-247A)", sold as *UGREEN external USB sound card*
+ * A [Pi-Plates RELAYplate](https://pi-plates.com/product/relayplate/) switches the TTY's mains to reduce standby power consumption
+ 
+I try to keep my changes generic and well-documented, in the hopes that most commits will be suitable for upstream. If there should be a specific issue with my modifications, feel free to create an issue.
+
+----
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/RPiTW39.JPG" width="240px" align="right">
 
 ### Control a historic Telex device with a Raspberry Pi or PC in Python 3

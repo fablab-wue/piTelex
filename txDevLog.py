@@ -10,9 +10,20 @@ __version__     = "0.0.1"
 
 import time
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txBase
 
 #######
+
+def find_rev() -> str:
+    """
+    Try finding out the git commit id and return it.
+    """
+    import subprocess
+    result = subprocess.run(["git", "log", "--oneline", "-1"], stdout=subprocess.PIPE, check=True)
+    return result.stdout.decode("utf-8", errors="replace").strip()
 
 class TelexLog(txBase.TelexBase):
     def __init__(self, **params):
@@ -25,8 +36,17 @@ class TelexLog(txBase.TelexBase):
 
         self._last_time = self._last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self._last_source = ' '
-        self._line = '================================================================================'
+        self._line = '===== piTelex rev '
+        try:
+            self._line += find_rev()
+            # cut line to head, commit hash and max. 50 characters description
+            # (as widely recommended)
+            self._line = self._line[:77]
+            self._line += ' '
+        except:
+            pass
 
+        self._line += (80 - len(self._line)) * '='
 
     def __del__(self):
         self.exit()
@@ -53,6 +73,9 @@ class TelexLog(txBase.TelexBase):
         if a == '\t':
             a = '\\t'
         if len(a) > 1:
+            # Print all commands, except WELCOME (internal use)
+            if a[1:] == "WELCOME":
+                return
             a = '{' + a[1:] + '}'
 
         if source == self._last_source and a == '_':

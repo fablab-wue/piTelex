@@ -16,19 +16,17 @@ __license__ = "CC0"
 __version__ = "0.0.0"
 
 
-import logging
 import ssl
 import socket
 import threading
 import time
 import queue
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txDevITelexCommon
 import txCode
-
-
-logging.basicConfig(level=logging.WARN)
-logger = logging.getLogger(__name__)
 
 
 class TelexIRC(txDevITelexCommon.TelexITelexCommon):
@@ -129,10 +127,10 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
                     self.add_chars(data)
 
             except socket.error:
-                logger.warn('ERROR socket', 2)
+                l.warning('ERROR socket', 2)
                 break
 
-        logger.warn('end connection', 3)
+        l.warning('end connection', 3)
         self._connected = False
 
 #######
@@ -165,7 +163,7 @@ class IRC_Client():
         self._raw_send(f'JOIN {self.channel}')
 
     def _raw_send(self, data):
-        logger.debug(f'OUT: {data}')
+        l.debug(f'OUT: {data}')
         self.irc.send(bytes(f'{data}\r\n', 'utf-8'))
 
     def send_msg(self, msg, action=False):
@@ -221,7 +219,7 @@ class IRC_Client():
                 if line == '':
                     continue
 
-                logger.debug(f'IN: {line}')
+                l.debug(f'IN: {line}')
 
                 if line.startswith('PING'):
                     self._raw_send(line.replace('PING', 'PONG', 1))

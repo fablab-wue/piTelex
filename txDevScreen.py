@@ -10,6 +10,9 @@ __version__     = "0.0.1"
 
 import os
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txBase
 import txCode
 
@@ -210,6 +213,10 @@ class TelexScreen(txBase.TelexBase):
                                 self._rx_buffer.append('\x1b1T')
                             if a == '\r' or a == '\n':   # bug in print()
                                 print(a, end='')
+
+                                # Print line ending cue for new lines
+                                if a == '\n':
+                                    print('\033[70G'+'|'+'\033[0G'+'\033[0m', end='', flush=True)
                             else:
                                 if a in self._LUT_show_special_chars:
                                     a = self._LUT_show_special_chars[a]
@@ -225,12 +232,17 @@ class TelexScreen(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:   # escape sequ.
-            if a[0] == '\x1b':
-                print('\033[0;30;47m{'+a[1:]+'}\033[0m', end='', flush=True)
+            if a[0] == '\x1b' and not a[1:] == "WELCOME":
+                # Print all commands, except WELCOME (internal use)
+                print('\033[0;30;47m<'+a[1:]+'>\033[0m', end='', flush=True)
             return
 
         if a == '\r' or a == '\n':
             print(a, end='')
+
+            # Print line ending cue for new lines
+            if a == '\n':
+                print('\033[70G'+'|'+'\033[0G'+'\033[0m', end='', flush=True)
         else:
             if not self._show_BuZi and a in '<>':   # Bi Zi
                 return

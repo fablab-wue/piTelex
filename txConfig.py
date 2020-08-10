@@ -13,6 +13,8 @@ from argparse import ArgumentParser
 import json
 
 import log
+import logging
+l = logging.getLogger("piTelex." + __name__)
 
 #######
 # definitions and configuration
@@ -101,6 +103,10 @@ def load():
         dest="eliza", default=False, action="store_true",
         help="Eliza chat bot")
 
+    gg.add_argument("-A", "--archive",
+        dest="archive", default=False, action="store_true",
+        help="Archive module")
+
 
     gd = parser.add_argument_group("Debug")
 
@@ -121,6 +127,14 @@ def load():
         dest="wru_id", default='', metavar="ID",
         help="Set the ID of the telex device. Leave empty to use the hardware ID")
 
+    parser.add_argument("--id-fallback",
+        dest="wru_fallback", default=False, action="store_true",
+        help="Enable software ID fallback mode: If printer isn't starting up on command, enable software ID")
+
+    parser.add_argument("--errlog-path",
+        dest="errlog_path", default=False, action="store_true",
+        help="Path of error log; relative paths are referred to where this program is being executed")
+
     #parser.add_argument("-m", "--mode",
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
@@ -140,6 +154,8 @@ def load():
         with open(ARGS.cnf_file, 'r') as fp:
             CFG = json.load(fp)
     except:
+        import sys
+        l.warning("Configuration file error:", exc_info = sys.exc_info())
         CFG = {}
 
     if not CFG.get('devices', None):
@@ -215,7 +231,7 @@ def load():
             }
 
     if ARGS.itelex >= 0:
-        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex}
+        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'number': 0, 'tns-pin': 12345}
 
     if ARGS.news:
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
@@ -235,6 +251,9 @@ def load():
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}
 
+    if ARGS.archive:
+        devices['archive'] = {'type': 'archive', 'enable': True, 'path': 'archive'}
+
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
 
@@ -244,6 +263,14 @@ def load():
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
         CFG['wru_id'] = wru_id
+
+    wru_fallback = ARGS.wru_fallback
+    if wru_fallback:
+        CFG['wru_fallback'] = ARGS.wru_fallback
+
+    errlog_path = ARGS.errlog_path
+    if errlog_path:
+        CFG['errlog_path'] = ARGS.errlog_path
 
     #mode = ARGS.mode.strip()
     #if mode:

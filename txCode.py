@@ -73,6 +73,9 @@ import time
 import unicodedata
 #from unidecode import unidecode
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 #######
 
 class BaudotMurrayCode:
@@ -274,11 +277,11 @@ class BaudotMurrayCode:
 
         if self._loop_back:
             length  = len(ret)
-            self._loop_back_eat_bytes += length 
+            self._loop_back_eat_bytes += length
             time_act = time.time()
             if self._loop_back_expire_time < time_act:
                 self._loop_back_expire_time = time_act
-            self._loop_back_expire_time += length  * self._character_duration
+            self._loop_back_expire_time += length * self._character_duration
 
         return ret
 

@@ -8,7 +8,7 @@
     },
     "CH340TTY": {
       "type": "CH340TTY",
-      "enable": true,
+      "enable": false,
       "portname": "COM3",
       "baudrate": 75,
       "mode": "TW39",
@@ -65,20 +65,29 @@
     "i-Telex": {
       "type": "i-Telex",
       "enable": true,
-      "port": 2342
+      "port": 2342,
+      "number": 0,
+      "tns-pin": 12345
     },
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "/data/piTelex/log/test.log"
+      "filename": "test.log"
     },
     "news": {
       "type": "news",
       "enable": false,
       "newspath": "/data/piTelex/news/"
+    },
+    "archive": {
+      "type": "archive",
+      "enable": false,
+      "path": ""
     }
   },
   "verbose": true,
-  "wru_id": "234200 FABLAB D",
+  "wru_id": "",
+  "wru_fallback": false,
+  "dial_timeout": 2.0,
   "debug": 3
 }
