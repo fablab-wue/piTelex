@@ -37,6 +37,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         self.id = '#'
         self.params = params
+        self._timing_tick = 0
 
         self._baudrate = params.get('baudrate', 50)
         self._bytesize = params.get('bytesize', 5)
@@ -57,6 +58,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._coding = params.get('coding', 0)
         self._loopback = params.get('loopback', True)
         self._observe_rxd = params.get('observe_rxd', True)
+        self._timing_rxd = params.get('timing_rxd', False)
 
         self._tx_buffer = []
         self._rx_buffer = []
@@ -104,6 +106,9 @@ class TelexRPiTTY(txBase.TelexBase):
             pass
         status = pi.bb_serial_read_open(self._pin_rxd, self._baudrate, self._bytesize)
         pi.bb_serial_invert(self._pin_rxd, self._inv_rxd)
+
+        if self._timing_rxd:
+            self._cb = pi.callback(self._pin_rxd, pigpio.EITHER_EDGE, self._callback_timing)
 
         # init bit bongo serial write
         self.last_wid = None
@@ -303,6 +308,20 @@ class TelexRPiTTY(txBase.TelexBase):
     def _callback_number_switch(self, text:str):
         if text.isnumeric():
             self._rx_buffer.append(text)
+
+   # -----
+
+    def _callback_timing(self, gpio, level, tick):
+        diff = tick - self._timing_tick
+        self._timing_tick = tick
+        if level == 0:
+            text = str(diff) + '¯¯¯\\___'
+        elif level == 1:
+            text = str(diff) + '___/¯¯¯'
+        else:
+            text = '?'
+
+        print(text, end='')
 
 #######
 

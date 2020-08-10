@@ -15,6 +15,7 @@ import logging
 l = logging.getLogger("piTelex." + __name__)
 
 import txBase
+import txCLI
 
 # Timeout in ready-to-dial state in s
 WB_TIMEOUT = 45.0
@@ -53,33 +54,33 @@ escape_texts = {
     '\x1bA1':   # print Bi-Zi-change pattern (? characters = 7.6sec@50baud)
         'A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z%',
     '\x1bLOREM':   # print LOREM IPSUM (460 characters = 69sec@50baud)
-        '''
-LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISICI ELIT,
-SED EIUSMOD TEMPOR INCIDUNT UT LABORE ET DOLORE MAGNA ALIQUA.
-UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO
-LABORIS NISI UT ALIQUID EX EA COMMODI CONSEQUAT. QUIS AUTE IURE
-REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT
-NULLA PARIATUR. EXCEPTEUR SINT OBCAECAT CUPIDITAT NON PROIDENT,
-SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.
+        '''\r
+LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISICI ELIT,\r
+SED EIUSMOD TEMPOR INCIDUNT UT LABORE ET DOLORE MAGNA ALIQUA.\r
+UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO\r
+LABORIS NISI UT ALIQUID EX EA COMMODI CONSEQUAT. QUIS AUTE IURE\r
+REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT\r
+NULLA PARIATUR. EXCEPTEUR SINT OBCAECAT CUPIDITAT NON PROIDENT,\r
+SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.\r
 ''',
     '\x1bLOGO':   # print piTelex logo (380 characters = 57sec@50baud)
-        '''
------------------------------------------------------
-      OOO   OOO  OOOOO  OOOO  O     OOOO  O   O
-      O  O   O     O    O     O     O      O O
-      OOO    O     O    OOO   O     OOO     O
-.....................................................
-      O      O     O    O     O     O      O O
-      O     OOO    O    OOOO  OOOO  OOOO  O   O
------------------------------------------------------
+        '''\r
+-----------------------------------------------------\r
+      OOO   OOO  OOOOO  OOOO  O     OOOO  O   O\r
+      O  O   O     O    O     O     O      O O\r
+      OOO    O     O    OOO   O     OOO     O\r
+.....................................................\r
+      O      O     O    O     O     O      O O\r
+      O     OOO    O    OOOO  OOOO  OOOO  O   O\r
+-----------------------------------------------------\r
 ''',
     '\x1bTEST':   # print test pattern (546 characters = 82sec@50baud)
-        '''
-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.
--=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-
-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=
-X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X
-=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=
+        '''\r
+.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.\r
+-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-\r
+=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=\r
+X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X\r
+=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=\r
 -.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-''',
 }
 
@@ -158,6 +159,10 @@ class TelexMCP(txBase.TelexBase):
         self._wd.init('ONLINE', 180, self._watchdog_callback)
         self._wd.init('WB', WB_TIMEOUT, self._watchdog_callback)
         self._wd.init('PRINTER', 5, lambda name: self._rx_buffer.append('\x1bACT'))
+
+        self.cli = txCLI.CLI(**params)
+        self.cli_text = ''
+        self.cli_enable = False
 
         self._run = True
         #self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
@@ -308,6 +313,9 @@ class TelexMCP(txBase.TelexBase):
                     self._rx_buffer.append('\x1bWELCOME')
                 return True
 
+            if a == '\x1bCLI':   # welcome as server
+                self.enable_cli(True)
+                return True
 
             if a == '\x1bEXIT':   # leave program
                 raise(SystemExit('EXIT'))
@@ -317,6 +325,16 @@ class TelexMCP(txBase.TelexBase):
 
             self._wd.reset('ONLINE')
 
+            if self.cli_enable:
+                if a in ' \n+?':
+                    ans = self.cli.command(self.cli_text)
+                    if ans == 'BYE\r\n':
+                        self.enable_cli(False)
+                    self._rx_buffer.extend(list(ans))
+                    self.cli_text = ''
+                else:
+                    self.cli_text += a
+                    return
 
             if self._font_mode:   #
                 f = self._fontstr.get(a, None)
@@ -344,6 +362,9 @@ class TelexMCP(txBase.TelexBase):
                 if a.isdigit() or a == '-' or (self._dial_timeout is None and a == '+'):
                     self._dial_number += a
                     self._dial_change.set()
+                    if self._dial_number == '000':
+                        self.enable_cli(True)
+                        return True
                 else:
                     # Invalid data for dial mode, except it's an error printed by
                     # txDevITelexClient
@@ -466,6 +487,18 @@ class TelexMCP(txBase.TelexBase):
     #            a = self._mx_buffer.pop(0)
     #            self._rx_buffer.append(a)
     #        time.sleep(0.15)
+
+    # =====
+
+    def enable_cli(self, enable:bool):
+        if enable:
+            self.cli_enable = True
+            self.cli_text = ''
+            self._rx_buffer.append('\x1bA')
+            ans = self.cli.command('WHOAMI')
+            self._rx_buffer.extend(list(ans))
+        else:
+            self.cli_enable = False
 
 #######
 
