@@ -62,7 +62,10 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 self.disconnect_client()
 
             if a[:2] == '\x1b#':   # dial
-                instant_dial = (a[2] == '!')
+                try:
+                    instant_dial = (a[2] == '!')
+                except IndexError:
+                    instant_dial = False
                 if instant_dial:
                     # Instant dial: Fail silently if number not found
                     user = self.get_user(a[3:])
