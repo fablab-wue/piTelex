@@ -364,6 +364,7 @@ class TelexMCP(txBase.TelexBase):
                     self._dial_change.set()
                     if self._dial_number == '000':
                         self.enable_cli(True)
+                        self._dial_number = ''
                         return True
                 else:
                     # Invalid data for dial mode, except it's an error printed by
@@ -471,8 +472,9 @@ class TelexMCP(txBase.TelexBase):
                 self._dial_change.clear()
 
             # We've got a "go" for dialling, either by timeout or by +
-            self._rx_buffer.append('\x1b#' + self._dial_number)
-            self._dial_number = ''
+            if self._dial_number:
+                self._rx_buffer.append('\x1b#' + self._dial_number)
+                self._dial_number = ''
             # TODO have dial command always print an error on fail
 
     def _watchdog_callback(self, name:str):
