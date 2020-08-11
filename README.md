@@ -2,17 +2,6 @@
 
 # <img src="piTelexLogo.png" width="42px">- piTelex
 
-## About this fork
-I forked the original project to adapt it to my setup:
-
- * Raspberry Pi 4B running piTelex
- * Siemens T1000 teletypewriter (with ED1000 SEU)
- * Interface is "0d8c:0014 C-Media Electronics, Inc. Audio Adapter (Unitek Y-247A)", sold as *UGREEN external USB sound card*
- * A [Pi-Plates RELAYplate](https://pi-plates.com/product/relayplate/) switches the TTY's mains to reduce standby power consumption
- 
-I try to keep my changes generic and well-documented, in the hopes that most commits will be suitable for upstream. If there should be a specific issue with my modifications, feel free to create an issue.
-
-----
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/RPiTW39.JPG" width="240px" align="right">
 
 ### Control a historic Telex device with a Raspberry Pi or PC in Python 3
@@ -51,8 +40,16 @@ The software supports also a connection to another telex device in the **[i-Tele
 
 For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.
 
+**[For more informations see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
+
 <hr>
 
-> The software and hardware are still in BETA state. First test releases are out in the field...
+##### Project Status
 
-[**For more informations see the WIKI pages**](https://github.com/fablab-wue/piTelex/wiki)
+The software and hardware are in use by about 10 teletype stations and working fine.
+
+##### Last changes
+
+- 2020-08: Merged Björns fork (https://github.com/b-schliessmann/piTelex) with TNS, ED1000 and i-Telex-connection rework
+- 2020-08: Added device module CLI for commands over teletype
+- 2020-07: Merged Dirks device module for Twitter (https://github.com/dirkenstein/piTelex)
