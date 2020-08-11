@@ -10,7 +10,7 @@
       "type": "CH340TTY",
       "enable": false,
       "portname": "COM3",
-      "baudrate": 75,
+      "baudrate": 50,
       "mode": "TW39",
       "coding": 0,
       "loopback": false
@@ -30,7 +30,7 @@
     },
     "RPiTTY": {
       "type": "RPiTTY",
-      "enable": false,
+      "enable": true,
       "pin_txd": 17,
       "pin_rxd": 27,
       "inv_rxd": false,
@@ -38,16 +38,16 @@
       "inv_relay": false,
       "pin_online": 0,
       "pin_dir": 0,
-      "pin_number_switch": -1,
+      "pin_number_switch": 6,
       "baudrate": 50,
       "coding": 0,
       "loopback": true,
-      "observe_rxd": false
+      "observe_rxd": true
     },
     "RPiCtrl": {
       "type": "RPiCtrl",
       "enable": false,
-      "pin_number_switch": 6,
+      "pin_number_switch": 0,
       "pin_button_1T": 8,
       "pin_button_AT": 0,
       "pin_button_ST": 0,
@@ -59,8 +59,8 @@
       "pin_LED_A": 0,
       "pin_LED_WB": 0,
       "pin_LED_WB_A": 9,
-      "pin_LED_status_R": 24,
-      "pin_LED_status_G": 23
+      "pin_LED_status_R": 23,
+      "pin_LED_status_G": 24
     },
     "i-Telex": {
       "type": "i-Telex",
@@ -82,12 +82,12 @@
     "archive": {
       "type": "archive",
       "enable": false,
-      "path": ""
+      "path": "/data/piTelex/"
     }
   },
   "verbose": true,
   "wru_id": "",
   "wru_fallback": false,
-  "dial_timeout": 2.0,
+  "dial_timeout": 0,
   "debug": 3
 }
