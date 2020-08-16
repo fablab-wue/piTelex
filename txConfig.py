@@ -151,12 +151,17 @@ def load():
     ARGS = parser.parse_args()
 
     try:
-        with open(ARGS.cnf_file, 'r') as fp:
+        with open(ARGS.cnf_file.strip(), 'r') as fp:
             CFG = json.load(fp)
-    except:
-        import sys
-        l.warning("Configuration file error:", exc_info = sys.exc_info())
+    except FileNotFoundError:
+        l.warning("Configuration file '{}' not found. Using CLI params only.".format(ARGS.cnf_file.strip()))
         CFG = {}
+    except json.JSONDecodeError as e:
+        l.warning("Configuration file '{}' error '{}' in line {} column {}".format(ARGS.cnf_file.strip(), e.msg, e.lineno, e.colno))
+        exit()
+    except Exception as e:
+        l.warning("Configuration file '{}' damaged: ".format(ARGS.cnf_file.strip()))
+        raise
 
     if not CFG.get('devices', None):
         CFG['devices'] = {}
@@ -237,6 +242,7 @@ def load():
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
 
     if ARGS.twitter:
+        import os
         twit_creds = ARGS.twitter.split(":")
         os.environ['consumer_key'] = ARGS.consumer_key
         os.environ['consumer_secret'] = ARGS.consumer_secret
