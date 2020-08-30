@@ -65,7 +65,6 @@ class TelexCH340TTY(txBase.TelexBase):
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
 
-        #if baudrate not in self._tty.BAUDRATES:
         if baudrate not in self._tty.BAUDRATES:
             raise Exception('Baudrate not supported')
         if bytesize not in self._tty.BYTESIZES:
@@ -167,7 +166,8 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
-            return self._check_commands(a)
+            self._check_commands(a)
+            return 
 
         if a == '#':
             a = '@'   # ask teletype for hardware ID
@@ -297,7 +297,5 @@ class TelexCH340TTY(txBase.TelexBase):
 
         if enable is not None:
             self._set_enable(enable)
-            if enable:
-                return 1.0
 
 #######

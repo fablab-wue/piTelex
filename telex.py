@@ -21,19 +21,14 @@ import logging.handlers
 import traceback
 import log
 
-def LOG(text:str, level:int=3):
-    log.LOG('\033[0;30;47m '+text+' \033[0m', level)
-
-#######
-# definitions and configuration
-
+#def LOG(text:str, level:int=3):
+#    log.LOG('\033[0;30;47m '+text+' \033[0m', level)
 
 #######
 # global variables
 
 DEVICES = []
-TIME_20HZ = time.time()
-TIME_DELAY = None
+
 # Path where this file is stored
 try:
     OUR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -146,8 +141,6 @@ def threading_excepthook(args):
 def init():
     global DEVICES
 
-    #mode = txConfig.CFG['mode'].strip()
-
     ctrl = txDevMCP.TelexMCP(**txConfig.CFG)
     DEVICES.append(ctrl)
 
@@ -156,8 +149,6 @@ def init():
             continue
 
         dev_param['name'] = dev_name
-        #if 'mode' not in dev_param:
-        #    dev_param['mode'] = mode
 
         if dev_param['type'] == 'screen':
             import txDevScreen
@@ -260,42 +251,35 @@ def exit():
 
 # =====
 
-def loop():
-    global TIME_20HZ, TIME_DELAY
+def process_data():
+    new_data = False
 
-    if TIME_DELAY and time.time() > TIME_DELAY:
-        TIME_DELAY = None
-
-    if not TIME_DELAY:
-        for in_device in DEVICES:
-            c = in_device.read()
-            if c:
-                l.debug("read {!r} from {!r}".format(c, in_device))
-                for out_device in DEVICES:
-                    if out_device != in_device:
-                        l.debug("writing {!r} to {!r}".format(c, out_device))
-                        ret = out_device.write(c, in_device.id)
+    for in_device in DEVICES:
+        c = in_device.read()
+        if c:
+            new_data = True
+            l.debug("read {!r} from {!r}".format(c, in_device))
+            for out_device in DEVICES:
+                if out_device != in_device:
+                    l.debug("writing {!r} to {!r}".format(c, out_device))
+                    ret = out_device.write(c, in_device.id)
+                    if ret:
                         l.debug("writing returned {!r}".format(ret))
-                        # Evaluate write return value:
-                        if ret is not None:
-                            if isinstance(ret, float):
-                                # if it's a float, wait for this time in s
-                                TIME_DELAY = time.time() + ret
-                            else:
-                                # else, stop writing to other devices (discard
-                                # data)
-                                break
+                        break   # stop writing to other devices (discard data)
 
+    return new_data
+
+# -----
+
+def process_idle():
     for device in DEVICES:
         device.idle()
 
-    time_act = time.time()
-    if (time_act - TIME_20HZ) >= 0.05:
-        TIME_20HZ = time_act
-        for device in DEVICES:
-            device.idle20Hz()
+# -----
 
-    return
+def process_idle20Hz():
+    for device in DEVICES:
+        device.idle20Hz()
 
 # =====
 
@@ -305,21 +289,37 @@ def main():
     errlog_path = txConfig.CFG.get('errlog_path', 'error_log')
     init_error_log(errlog_path)
 
-    #test()
+    #test()   # for debug only
     init()
 
-    #print('\033[2J-=TELEX=-')
-    print()
-    LOG(' -=TELEX=- ', 1)
-    print()
+    print('\n\033[0;30;47m -=TELEX=- \033[0m\n')
+
+    time_20Hz = time.time()
+    time_200Hz = time.time()
+    sleep_time = 0.001
 
     try:
         while True:
-            loop()
-            time.sleep(0.001)   # update with max ??? Hz
+            time_act = int(time.time() * 1000)   # time in ms
+
+            new_data = process_data()
+            if new_data:
+                sleep_time = 0.001
+
+            if (time_act - time_200Hz) >= 5:
+                time_200Hz = time_act
+                process_idle()
+
+            if (time_act - time_20Hz) >= 50:
+                time_20Hz = time_act
+                process_idle20Hz()
+
+            time.sleep(sleep_time)   # update with max ??? Hz
+            if sleep_time < 0.010:
+                sleep_time += 0.0001
 
     except (KeyboardInterrupt, SystemExit):
-        LOG('Exit by Keyboard', 2)
+        l.info('Exit by Keyboard')
 
     except:
         raise
