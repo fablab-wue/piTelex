@@ -52,6 +52,10 @@ def load():
         dest="RPiCtrl", default=False, action="store_true",
         help="GPIO (pigpio) on RPi with button controls and LEDs")
 
+    gi.add_argument("-X", "--terminal",
+        dest="terminal", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
+        help="Serial terminal in 8-bit ASCII")
+
     gi.add_argument("-Y", "--tty",
         dest="CH340", default='', metavar="TTY",   # '/dev/serial0'   '/dev/ttyUSB0'
         help="USB-serial-adapter (CH340-chip) with teletype (without dialing)")
@@ -169,7 +173,26 @@ def load():
     devices = CFG['devices']
 
     if ARGS.screen and 'screen' not in devices:
-        devices['screen'] = {'type': 'screen', 'enable': True, 'show_BuZi': True, 'show_capital': False}
+        devices['screen'] = {
+            'type': 'screen', 
+            'enable': True, 
+            'show_BuZi': True, 
+            'show_capital': False, 
+            'show_ctrl': True, 
+            'show_info': True
+            }
+
+    if ARGS.terminal:
+        devices['terminal'] = {
+            'type': 'terminal', 
+            'enable': True, 
+            'portname': ARGS.terminal.strip(), 
+            'baudrate': 300,
+            'bytesize': 8,
+            'stopbits': 1,
+            'parity': 'N',
+            'loc_echo': True,
+        }
 
     if ARGS.CH340:
         devices['CH340'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340.strip(), 'mode': '', 'baudrate': 50, 'loopback': True}

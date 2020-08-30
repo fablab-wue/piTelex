@@ -165,6 +165,11 @@ def init():
             serial = txDevCH340TTY.TelexCH340TTY(**dev_param)
             DEVICES.append(serial)
 
+        elif dev_param['type'] == 'terminal':
+            import txDevTerminal
+            serial = txDevTerminal.TelexTerminal(**dev_param)
+            DEVICES.append(serial)
+
         elif dev_param['type'] == 'RPiTTY':
             import txDevRPiTTY
             serial = txDevRPiTTY.TelexRPiTTY(**dev_param)
