@@ -17,8 +17,10 @@ l = logging.getLogger("piTelex." + __name__)
 import txBase
 import txCLI
 
-# Timeout in ready-to-dial state in s
-WB_TIMEOUT = 45.0
+# Timeout in ready-to-dial state in sec
+WB_TIMEOUT = 45
+# Timeout in ready-to-dial state in sec
+ONLINE_TIMEOUT = 180
 
 #######
 
@@ -156,8 +158,8 @@ class TelexMCP(txBase.TelexBase):
         self._fallback_wru_triggered = False
 
         self._wd = watchdog()
-        self._wd.init('ONLINE', 180, self._watchdog_callback)
-        self._wd.init('WB', WB_TIMEOUT, self._watchdog_callback)
+        self._wd.init('ONLINE', ONLINE_TIMEOUT, self._watchdog_callback_ST)
+        self._wd.init('WB', WB_TIMEOUT, self._watchdog_callback_ST)
         self._wd.init('PRINTER', 5, lambda name: self._rx_buffer.append('\x1bACT'))
 
         self.cli = txCLI.CLI(**params)
@@ -211,6 +213,7 @@ class TelexMCP(txBase.TelexBase):
                 self._rx_buffer.append('\x1bWB')   # send text
                 self._mode = 'WB'
                 self._dial_number = ''
+                self._wd.disable('ONLINE')
                 self._wd.reset('WB')
                 return True
 
@@ -234,7 +237,8 @@ class TelexMCP(txBase.TelexBase):
                 self._wd.disable('WB')
                 self._wd.disable('PRINTER')
                 self._fallback_wru_triggered = False
-
+                self.enable_cli(False)
+                
             if a == '\x1bA':   # start motor
                 self._mode = 'A'
                 self._wd.reset('ONLINE')
@@ -361,11 +365,12 @@ class TelexMCP(txBase.TelexBase):
                 # thread to check
                 if a.isdigit() or a == '-' or (self._dial_timeout is None and a == '+'):
                     self._dial_number += a
-                    self._dial_change.set()
                     if self._dial_number == '000':
                         self.enable_cli(True)
                         self._dial_number = ''
+                        self._dial_change.clear()
                         return True
+                    self._dial_change.set()
                 else:
                     # Invalid data for dial mode, except it's an error printed by
                     # txDevITelexClient
@@ -477,7 +482,9 @@ class TelexMCP(txBase.TelexBase):
                 self._dial_number = ''
             # TODO have dial command always print an error on fail
 
-    def _watchdog_callback(self, name:str):
+    # -----
+
+    def _watchdog_callback_ST(self, name:str):
         self.write('\x1bST', 'w')
 
     # -----
@@ -499,6 +506,7 @@ class TelexMCP(txBase.TelexBase):
             self._rx_buffer.append('\x1bA')
             ans = self.cli.command('WHOAMI')
             self._rx_buffer.extend(list(ans))
+            self._wd.disable('WB')
         else:
             self.cli_enable = False
 
