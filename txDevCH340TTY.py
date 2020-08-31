@@ -22,9 +22,8 @@ import txCode
 import txBase
 import log
 
-def LOG(text:str, level:int=3):
-    #log.LOG('\033[30;43m<'+text+'>\033[0m', level)
-    pass
+#def LOG(text:str, level:int=3):
+#    #log.LOG('\033[30;43m<'+text+'>\033[0m', level)
 
 #######
 
@@ -121,8 +120,12 @@ class TelexCH340TTY(txBase.TelexBase):
 
     # -----
 
-    def __del__(self):
+    def exit(self):
         self._tty.close()
+
+    # -----
+
+    def __del__(self):
         super().__del__()
 
     # =====
@@ -195,7 +198,6 @@ class TelexCH340TTY(txBase.TelexBase):
                 self._cts_counter += 1
                 if self._cts_counter == 10:   # 0.5sec
                     self._cts_stable = cts
-                    LOG(cts, 4)   # debug
                     if not cts:   # rxd=Low
                         self._rx_buffer.append('\x1bST')
                         pass

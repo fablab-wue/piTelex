@@ -19,8 +19,8 @@ import txBase
 import log
 from RPiIO import Button, LED, LED_PWM, NumberSwitch, pi, pi_exit
 
-def LOG(text:str, level:int=3):
-    log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
+#def LOG(text:str, level:int=3):
+#    log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
 
 #######
 

@@ -26,8 +26,8 @@ import txBase
 import log
 from RPiIO import NumberSwitch, pi, pi_exit
 
-def LOG(text:str, level:int=3):
-    log.LOG('\033[30;43m<'+text+'>\033[0m', level)
+#def LOG(text:str, level:int=3):
+#    log.LOG('\033[30;43m<'+text+'>\033[0m', level)
 
 #######
 
@@ -171,7 +171,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._rxd_counter += 1
                 if self._rxd_counter == 40:   # 2sec
                     self._rxd_stable = rxd
-                    LOG('Line state change: '+str(rxd), 3)
+                    #LOG('Line state change: '+str(rxd), 3)
                     if not rxd:   # rxd=Low
                         self._rx_buffer.append('\x1bST')
                         pass
@@ -183,7 +183,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._rxd_counter = 0
 
         count, bb = pi.bb_serial_read(self._pin_rxd)
-        LOG('.', 5)
+        #LOG('.', 5)
         if count \
             and not(self._use_squelch and (time.time() <= self._time_squelch)) \
             and not self._is_pulse_dial:

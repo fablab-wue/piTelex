@@ -222,6 +222,7 @@ class TelexMCP(txBase.TelexBase):
                 self._mode = 'Z'
                 self._wd.disable('ONLINE')
                 self._wd.disable('WB')
+                self.enable_cli(False)
                 return True
 
             if a == '\x1bLT':   # LT

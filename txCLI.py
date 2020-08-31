@@ -1,5 +1,11 @@
 import logging
 l = logging.getLogger("piTelex." + __name__)
+import os
+
+if os.name == 'nt':
+    pass
+else:   # Linux and RPi
+    pass
 
 class CLI():
     def __init__(self, **params):
