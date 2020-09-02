@@ -53,6 +53,8 @@ class TelexCH340TTY(txBase.TelexBase):
         self._time_squelch = 0
         self._is_enabled = False
         self._is_online = False
+        self._waiting_info_counter = 0
+        self._last_waiting = 0
 
         self._set_mode(params['mode'])
         if loopback is not None:
@@ -208,13 +210,25 @@ class TelexCH340TTY(txBase.TelexBase):
             else:
                 self._cts_counter = 0
 
+        self._waiting_info_counter += 1
+        if self._waiting_info_counter > 10:
+            self._waiting_info_counter = 0
+            waiting = self._tty.out_waiting
+            if waiting is not self._last_waiting:
+                self._rx_buffer.append('\x1b~' + str(waiting))
+                #print(waiting)
+                self._last_waiting = waiting
+
+
     # -----
 
     def idle(self):
         if not self._use_squelch or time.time() >= self._time_squelch:
             if self._tx_buffer:
-                a = self._tx_buffer.pop(0)
-                bb = self._mc.encodeA2BM(a)
+                #a = self._tx_buffer.pop(0)
+                aa = ''.join(self._tx_buffer)
+                self._tx_buffer = []
+                bb = self._mc.encodeA2BM(aa)
                 if bb:
                     self._tty.write(bb)
 
