@@ -210,15 +210,14 @@ class TelexCH340TTY(txBase.TelexBase):
             else:
                 self._cts_counter = 0
 
-        self._waiting_info_counter += 1
-        if self._waiting_info_counter > 10:
-            self._waiting_info_counter = 0
-            waiting = self._tty.out_waiting
-            if waiting is not self._last_waiting:
-                self._rx_buffer.append('\x1b~' + str(waiting))
-                #print(waiting)
-                self._last_waiting = waiting
+    # -----
 
+    def idle2Hz(self):
+        waiting = self._tty.out_waiting
+        if waiting != self._last_waiting:
+            self._rx_buffer.append('\x1b~' + str(waiting))
+            #print(waiting)
+            self._last_waiting = waiting
 
     # -----
 

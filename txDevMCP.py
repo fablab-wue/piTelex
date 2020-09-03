@@ -283,6 +283,9 @@ class TelexMCP(txBase.TelexBase):
                 self._font_mode = not self._font_mode
                 return True
 
+            if a[:2] == '\x1b~':   # still characters in printing FIFO
+                self._wd.reset('ONLINE')
+
 
             if a in escape_texts:
                 self._rx_buffer.extend(list(escape_texts[a]))   # send text

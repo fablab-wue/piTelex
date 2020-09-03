@@ -286,6 +286,12 @@ def process_idle20Hz():
     for device in DEVICES:
         device.idle20Hz()
 
+# -----
+
+def process_idle2Hz():
+    for device in DEVICES:
+        device.idle2Hz()
+
 # =====
 
 def main():
@@ -299,6 +305,7 @@ def main():
 
     print('\n\033[0;30;47m -=TELEX=- \033[0m\n')
 
+    time_2Hz = time.time()
     time_20Hz = time.time()
     time_200Hz = time.time()
     sleep_time = 0.001
@@ -315,9 +322,13 @@ def main():
                 time_200Hz = time_act
                 process_idle()
 
-            if (time_act - time_20Hz) >= 50:
-                time_20Hz = time_act
-                process_idle20Hz()
+                if (time_act - time_20Hz) >= 50:
+                    time_20Hz = time_act
+                    process_idle20Hz()
+
+                    if (time_act - time_2Hz) >= 500:
+                        time_2Hz = time_act
+                        process_idle2Hz()
 
             time.sleep(sleep_time)   # update with max ??? Hz
             if sleep_time < 0.010:
