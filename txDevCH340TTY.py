@@ -53,7 +53,6 @@ class TelexCH340TTY(txBase.TelexBase):
         self._time_squelch = 0
         self._is_enabled = False
         self._is_online = False
-        self._waiting_info_counter = 0
         self._last_waiting = 0
 
         self._set_mode(params['mode'])
@@ -137,11 +136,12 @@ class TelexCH340TTY(txBase.TelexBase):
             a = ''
 
             bb = self._tty.read(1)
-            #if self._local_echo:
-            #    self._tty.write(bb)
 
             if bb and (not self._use_squelch or time.time() >= self._time_squelch):
                 if self._is_enabled or self._use_dedicated_line:
+                    if self._local_echo:
+                        self._tty.write(bb)
+                    
                     a = self._mc.decodeBM2A(bb)
 
                     if a:
@@ -160,8 +160,8 @@ class TelexCH340TTY(txBase.TelexBase):
 
                 if a:
                     self._rx_buffer.append(a)
-                    if self._local_echo:
-                        self._tx_buffer.append(a)
+                    #if self._local_echo:
+                    #    self._tx_buffer.append(a)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
@@ -182,6 +182,18 @@ class TelexCH340TTY(txBase.TelexBase):
                 self._tx_buffer.append(a)
 
     # =====
+
+    def idle(self):
+        if not self._use_squelch or time.time() >= self._time_squelch:
+            if self._tx_buffer:
+                #a = self._tx_buffer.pop(0)
+                aa = ''.join(self._tx_buffer)
+                self._tx_buffer = []
+                bb = self._mc.encodeA2BM(aa)
+                if bb:
+                    self._tty.write(bb)
+
+    # -----
 
     def idle20Hz(self):
         time_act = time.time()
@@ -213,23 +225,11 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def idle2Hz(self):
+        # send printer FIFO info
         waiting = self._tty.out_waiting
         if waiting != self._last_waiting:
             self._rx_buffer.append('\x1b~' + str(waiting))
-            #print(waiting)
             self._last_waiting = waiting
-
-    # -----
-
-    def idle(self):
-        if not self._use_squelch or time.time() >= self._time_squelch:
-            if self._tx_buffer:
-                #a = self._tx_buffer.pop(0)
-                aa = ''.join(self._tx_buffer)
-                self._tx_buffer = []
-                bb = self._mc.encodeA2BM(aa)
-                if bb:
-                    self._tty.write(bb)
 
     # -----
 

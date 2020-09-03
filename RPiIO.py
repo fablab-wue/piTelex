@@ -20,7 +20,7 @@ def LOG(text:str, level:int=3):
     log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
 
 if os.name == 'nt':   # debug on windows PC
-    REMOTE_IP = '10.0.0.61'   # IP of the remote RPi with its GPIO
+    REMOTE_IP = '10.0.0.62'   # IP of the remote RPi with its GPIO
 else:
     REMOTE_IP = None   # GPIO on RPi itself
 
@@ -99,7 +99,8 @@ class LED():
         pi.write(pin, 0)   # off
 
     def __del__(self):
-        pi.write(self._pin, 0)   # off
+        pass
+        #pi.write(self._pin, 0)   # off
 
     def value(self, val:bool=None):
         if val is None:

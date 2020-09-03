@@ -316,7 +316,7 @@ def main():
 
             new_data = process_data()
             if new_data:
-                sleep_time = 0.001
+                sleep_time = 0.0001
 
             if (time_act - time_200Hz) >= 5:
                 time_200Hz = time_act
