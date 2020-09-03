@@ -38,6 +38,8 @@ class TelexRPiTTY(txBase.TelexBase):
         self.id = '#'
         self.params = params
         self._timing_tick = 0
+        self._time_EOT = 0
+        self._last_waiting = 0
 
         self._baudrate = params.get('baudrate', 50)
         self._bytesize = params.get('bytesize', 5)
@@ -72,8 +74,8 @@ class TelexRPiTTY(txBase.TelexBase):
         self._use_squelch = True
 
         # init codec
-        character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate
-        self._mc = txCode.BaudotMurrayCode(self._loopback, coding=self._coding, character_duration=character_duration)
+        self._character_duration = (self._bytesize + 1.0 + self._stopbits) / self._baudrate
+        self._mc = txCode.BaudotMurrayCode(self._loopback, coding=self._coding, character_duration=self._character_duration)
 
         pi.set_mode(self._pin_rxd, pigpio.INPUT)
         pi.set_pull_up_down(self._pin_rxd, pigpio.PUD_UP)
@@ -160,6 +162,15 @@ class TelexRPiTTY(txBase.TelexBase):
 
     # =====
 
+    def idle(self):
+        if self._use_squelch and (time.time() <= self._time_squelch):
+            return
+
+        if self._tx_buffer:
+            self._write_wave()
+
+    # -----
+
     def idle20Hz(self):
         #time_act = time.time()
 
@@ -199,12 +210,14 @@ class TelexRPiTTY(txBase.TelexBase):
 
     # -----
 
-    def idle(self):
-        if self._use_squelch and (time.time() <= self._time_squelch):
-            return
-
-        if self._tx_buffer:
-            self._write_wave()
+    def idle2Hz(self):
+        # send printer FIFO info
+        waiting = int((self._time_EOT - time.time()) / self._character_duration + 0.9)
+        if waiting < 0:
+            waiting = 0
+        if waiting != self._last_waiting:
+            self._rx_buffer.append('\x1b~' + str(waiting))
+            self._last_waiting = waiting
 
     # =====
 
@@ -297,6 +310,10 @@ class TelexRPiTTY(txBase.TelexBase):
 
         new_wid = pi.wave_create() # commit waveform
         pi.wave_send_once(new_wid) # transmit waveform
+
+        micros = pi.wave_get_micros()
+        #print(micros/1000000)
+        self._time_EOT = time.time() + micros/1000000
 
         if self.last_wid is not None:
             pi.wave_delete(self.last_wid) # delete no longer used waveform
