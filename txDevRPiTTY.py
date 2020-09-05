@@ -246,11 +246,12 @@ class TelexRPiTTY(txBase.TelexBase):
             if self._pin_number_switch:   # 0:keyboard pos:TW39 neg:TW39@RPiCtrl
                 if self._use_squelch:
                     self._set_time_squelch(0.5)
-                if self._number_switch:
-                    self._number_switch.enable(True)
                 self._is_pulse_dial = True
                 self._tx_buffer = ['<']   # send "Bu" for 20ms pulse
                 self._write_wave()
+                time.sleep(0.050)   #TODO replace by state machine
+                if self._number_switch:
+                    self._number_switch.enable(True)
                 enable = False
             else:   # dedicated line, TWM, V.10
                 enable = True
