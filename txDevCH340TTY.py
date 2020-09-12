@@ -227,7 +227,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def idle2Hz(self):
         # send printer FIFO info
         out_waiting = self._tty.out_waiting
-        if out_waiting != self._last_out_waiting:
+        if out_waiting != self._last_out_waiting and self._is_enabled:
             self._rx_buffer.append('\x1b~' + str(out_waiting))
             self._last_out_waiting = out_waiting
 
@@ -240,6 +240,9 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def _set_enable(self, enable:bool):
+        if enable and not self._is_enabled:
+            # Confirm enable status for MCP
+            self._rx_buffer.append('\x1b~0')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
         self._mc.reset()
