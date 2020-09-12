@@ -58,7 +58,8 @@ class TelexED1000SC(txBase.TelexBase):
         # - 10 going online by ESC-WB/-A
         # - 20 online
         # - 30 going offline by ESC-Z
-        # - 40 offline delay
+        # - 40 offline delay after buffer is empty
+        # - 50 offline, wait for A level
         self._rx_state = 0
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
@@ -426,7 +427,7 @@ class TelexED1000SC(txBase.TelexBase):
                 else:
                     if offline_delay_counter % 100 == 0:
                         l.debug("[rx] Offline delay running: {!r}/600".format(offline_delay_counter))
-            elif self._rx_state >= 50: # offline, wait for Z level =============
+            elif self._rx_state >= 50: # offline, wait for A level =============
                 if _bit_counter_0 > 100:
                     self._rx_state = 0
                     _bit_counter_0 = 0
