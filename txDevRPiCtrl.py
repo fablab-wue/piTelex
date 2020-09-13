@@ -146,7 +146,7 @@ class TelexRPiCtrl(txBase.TelexBase):
     # =====
 
     def idle20Hz(self):
-        #time_act = time.time()
+        #time_act = time.monotonic()
 
         if self._LED_status_R and self._LED_status_G:
             self._LED_status_R.process_fade()

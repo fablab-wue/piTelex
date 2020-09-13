@@ -180,7 +180,7 @@ class NumberSwitch():
                 pi.set_watchdog(self._pin, 0)   # disable
 
     def _callback_pulse_dial(self, gpio, level, tick):
-        if time.time() <= self._time_squelch:
+        if time.monotonic() <= self._time_squelch:
             return
         if not self._is_enabled:
             return
@@ -201,7 +201,7 @@ class NumberSwitch():
             #print('$', end='')
 
     def _set_time_squelch(self, t_diff:float):
-        t = time.time() + t_diff
+        t = time.monotonic() + t_diff
         if self._time_squelch < t:
             self._time_squelch = t
 

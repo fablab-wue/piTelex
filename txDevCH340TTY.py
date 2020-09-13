@@ -137,7 +137,7 @@ class TelexCH340TTY(txBase.TelexBase):
 
             bb = self._tty.read(1)
 
-            if bb and (not self._use_squelch or time.time() >= self._time_squelch):
+            if bb and (not self._use_squelch or time.monotonic() >= self._time_squelch):
                 if self._is_enabled or self._use_dedicated_line:
                     if self._local_echo:
                         self._tty.write(bb)
@@ -154,7 +154,7 @@ class TelexCH340TTY(txBase.TelexBase):
                         pass
                     elif (b & 0x13) == 0x10:   # valid dial pulse - min 3 bits = 40ms, max 5 bits = 66ms
                         self._counter_dial += 1
-                        self._time_last_dial = time.time()
+                        self._time_last_dial = time.monotonic()
 
                 self._cts_counter = 0
 
@@ -184,7 +184,7 @@ class TelexCH340TTY(txBase.TelexBase):
     # =====
 
     def idle(self):
-        if not self._use_squelch or time.time() >= self._time_squelch:
+        if not self._use_squelch or time.monotonic() >= self._time_squelch:
             if self._tx_buffer:
                 #a = self._tx_buffer.pop(0)
                 aa = ''.join(self._tx_buffer)
@@ -199,7 +199,7 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def idle20Hz(self):
-        time_act = time.time()
+        time_act = time.monotonic()
 
         if self._use_pulse_dial and self._counter_dial and (time_act - self._time_last_dial) > 0.2:
             if self._counter_dial >= 10:
@@ -257,7 +257,7 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def _set_time_squelch(self, t_diff):
-        t = time.time() + t_diff
+        t = time.monotonic() + t_diff
         if self._time_squelch < t:
             self._time_squelch = t
 

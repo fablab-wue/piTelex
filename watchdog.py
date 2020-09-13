@@ -35,9 +35,9 @@ class Watchdog():
         if temp_time_out_period:
             top = temp_time_out_period
         if top:
-            wd['time_out'] = time.time() + top
+            wd['time_out'] = time.monotonic() + top
         if not wd['time_abort'] and wd['abort_period']:
-            wd['time_abort'] = time.time() + wd['abort_period']
+            wd['time_abort'] = time.monotonic() + wd['abort_period']
 
     def restart_if_active(self, name:str):
         if self._wds[name]['time_out']:
@@ -51,7 +51,7 @@ class Watchdog():
         return self._wds[name]['time_out']
 
     def process(self):
-        time_act = time.time()
+        time_act = time.monotonic()
 
         for name, wd in self._wds.items():
             if wd['time_out']:

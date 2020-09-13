@@ -218,7 +218,7 @@ class BaudotMurrayCode:
         if self._loop_back:
             length  = len(ret)
             self._loop_back_eat_bytes += length
-            time_act = time.time()
+            time_act = time.monotonic()
             if self._loop_back_expire_time < time_act:
                 self._loop_back_expire_time = time_act
             self._loop_back_expire_time += length * self._character_duration
@@ -236,12 +236,12 @@ class BaudotMurrayCode:
 
         for b in code:
             if self._loop_back and self._loop_back_eat_bytes:
-                if time.time()-self._loop_back_expire_time > 6:   # about 40 characters
+                if time.monotonic()-self._loop_back_expire_time > 6:   # about 40 characters
                     self._loop_back_eat_bytes = 0
                 else:
                     self._loop_back_eat_bytes -= 1
                     #if b == 2:
-                    #    print(self._loop_back_eat_bytes, time.time()-self._loop_back_expire_time)   # debug
+                    #    print(self._loop_back_eat_bytes, time.monotonic()-self._loop_back_expire_time)   # debug
                     continue
 
             try:

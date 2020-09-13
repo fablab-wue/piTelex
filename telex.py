@@ -315,14 +315,14 @@ def main():
 
     print('\n\033[0;30;47m -=TELEX=- \033[0m\n')
 
-    time_2Hz = time.time()
-    time_20Hz = time.time()
-    time_200Hz = time.time()
+    time_2Hz = time.monotonic()
+    time_20Hz = time.monotonic()
+    time_200Hz = time.monotonic()
     sleep_time = 0.001
 
     try:
         while True:
-            time_act = int(time.time() * 1000)   # time in ms
+            time_act = int(time.monotonic() * 1000)   # time in ms
 
             new_data = process_data()
             if new_data:

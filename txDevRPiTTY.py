@@ -173,7 +173,7 @@ class TelexRPiTTY(txBase.TelexBase):
     def idle(self):
         ''' called by system as often as possible to do background staff '''
         if not self._tx_buffer \
-            or (self._use_squelch and (time.time() <= self._time_squelch)) \
+            or (self._use_squelch and (time.monotonic() <= self._time_squelch)) \
             or self._is_writing_wave():
             return
 
@@ -211,7 +211,7 @@ class TelexRPiTTY(txBase.TelexBase):
         count, bb = pi.bb_serial_read(self._pin_rxd)
         #LOG('.', 5)
         if count \
-            and not(self._use_squelch and (time.time() <= self._time_squelch)) \
+            and not(self._use_squelch and (time.monotonic() <= self._time_squelch)) \
             and self._state != S_DIAL_PULSE:
 
             aa = self._mc.decodeBM2A(bb)
@@ -233,7 +233,7 @@ class TelexRPiTTY(txBase.TelexBase):
         ''' called by system every 500ms to do background staff '''
         # send printer FIFO info
         if self._state == S_ACTIVE:
-            waiting = int((self._time_EOT - time.time()) / self._character_duration + 0.9)
+            waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
             waiting += len(self._tx_buffer)   # estimation of left chars in buffer
             if waiting < 0:
                 waiting = 0
@@ -350,7 +350,7 @@ class TelexRPiTTY(txBase.TelexBase):
         ''' set time to ignore input characters and dely output characters '''
         if not self._use_squelch:
             return
-        t = time.time() + t_diff
+        t = time.monotonic() + t_diff
         if self._time_squelch < t:
             self._time_squelch = t
 
@@ -397,7 +397,7 @@ class TelexRPiTTY(txBase.TelexBase):
         micros = pi.wave_get_micros()
         l.debug('write_wave {}chr {}ms'.format(len(text), micros/1000000))
 
-        self._time_EOT = time.time() + micros/1000000
+        self._time_EOT = time.monotonic() + micros/1000000
 
         if self.last_wid is not None:
             pi.wave_delete(self.last_wid) # delete no longer used waveform

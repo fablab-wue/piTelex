@@ -442,7 +442,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         if unprinted < 7:   # about 1 sec
                             time_next_send = None
                         else:
-                            time_next_send = time.time() + (unprinted-6)*0.15
+                            time_next_send = time.monotonic() + (unprinted-6)*0.15
                         # Send Acknowledge if printer is running and remote end
                         # has printed all sent characters
                         # ! Better not, this will create an Ack flood !
@@ -566,14 +566,14 @@ class TelexITelexCommon(txBase.TelexBase):
                                 self.send_ack(s, self._acknowledge_counter)
 
                         if self._tx_buffer:
-                            if time_next_send and time.time() < time_next_send:
-                                l.debug('Sending paused for {:.3f} s'.format(time_next_send-time.time()))
+                            if time_next_send and time.monotonic() < time_next_send:
+                                l.debug('Sending paused for {:.3f} s'.format(time_next_send-time.monotonic()))
                                 pass
                             else:
                                 sent = self.send_data_baudot(s, bmc)
                                 sent_counter += sent
                                 if sent > 7:
-                                    time_next_send = time.time() + (sent-6)*0.15
+                                    time_next_send = time.monotonic() + (sent-6)*0.15
 
                         elif (timeout_counter % 15) == 0:   # every 3 sec
                             #self.send_heartbeat(s)
