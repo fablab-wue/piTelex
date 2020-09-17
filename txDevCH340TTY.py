@@ -53,7 +53,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._time_squelch = 0
         self._is_enabled = False
         self._is_online = False
-        self._last_waiting = 0
+        self._last_out_waiting = 0
 
         self._set_mode(params['mode'])
         if loopback is not None:
@@ -226,10 +226,10 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def idle2Hz(self):
         # send printer FIFO info
-        waiting = self._tty.out_waiting
-        if waiting != self._last_waiting:
-            self._rx_buffer.append('\x1b~' + str(waiting))
-            self._last_waiting = waiting
+        out_waiting = self._tty.out_waiting
+        if out_waiting != self._last_out_waiting:
+            self._rx_buffer.append('\x1b~' + str(out_waiting))
+            self._last_out_waiting = out_waiting
 
     # -----
 
