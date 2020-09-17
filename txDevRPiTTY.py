@@ -24,7 +24,7 @@ l = logging.getLogger("piTelex." + __name__)
 import txCode
 import txBase
 import log
-from RPiIO import NumberSwitch, pi, pi_exit
+from RPiIO import NumberSwitch, Observer, pi, pi_exit
 
 #def LOG(text:str, level:int=3):
 #    log.LOG('\033[30;43m<'+text+'>\033[0m', level)
@@ -50,22 +50,26 @@ class TelexRPiTTY(txBase.TelexBase):
         #self._inv_txd = params.get('inv_txd', False)   # not possible with PIGPIO
         self._pin_rxd = params.get('pin_rxd', 27)
         self._inv_rxd = params.get('inv_rxd', False)
-        self._pin_number_switch = params.get('pin_number_switch', params.get('pin_fsg_ns', 6))   # typical connected to rxd
-        self._inv_number_switch = params.get('inv_number_switch', False)
+        self._pin_number_switch = params.get('pin_number_switch', params.get('pin_fsg_ns', 6))   # pin typical wired to rxd pin
+        self._inv_number_switch = params.get('inv_number_switch', True)
         self._pin_relay = params.get('pin_relay', 22)
         self._inv_relay = params.get('inv_relay', False)
         self._pin_dir = params.get('pin_dir', 0)
         self._pin_online = params.get('pin_online', 0)
 
+        self._line_observer = None
+        if params.get('use_observe_line', True):
+            self._pin_observe_line = params.get('pin_observe_line', self._pin_rxd)
+            self._inv_observe_line = params.get('inv_observe_line', self._inv_rxd)
+            self._line_observer = Observer(self._pin_observe_line, self._inv_observe_line, 10)
+
         self._coding = params.get('coding', 0)
         self._loopback = params.get('loopback', True)
-        self._observe_rxd = params.get('observe_rxd', True)
         self._timing_rxd = params.get('timing_rxd', False)
+        self._WB_pulse_length = params.get('WB_pulse_length', 40)
 
         self._tx_buffer = []
         self._rx_buffer = []
-        self._rxd_stable = False   # rxd=Low
-        self._rxd_counter = 0
         self._time_squelch = 0
         self._is_online = False
         self._is_enabled = False
@@ -172,26 +176,13 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def idle20Hz(self):
-        #time_act = time.time()
-
-        if self._observe_rxd:
+        if self._line_observer:
             #rxd = pi.read(self._pin_rxd)
-            rxd = (not pi.read(self._pin_rxd)) == self._inv_rxd   # int->bool, logical xor
-            if rxd != self._rxd_stable:
-
-                self._rxd_counter += 1
-                if self._rxd_counter == 40:   # 2sec
-                    self._rxd_stable = rxd
-                    #LOG('Line state change: '+str(rxd), 3)
-                    if not rxd:   # rxd=Low
-                        self._rx_buffer.append('\x1bST')
-                        pass
-                    elif not self._is_enabled:   # rxd=High
-                        self._rx_buffer.append('\x1bAT')
-                        pass
-                    pass
-            else:
-                self._rxd_counter = 0
+            line = self._line_observer.process()
+            if not self._is_enabled and line is True:   # rxd=High
+                self._rx_buffer.append('\x1bAT')
+            elif self._is_enabled and line is False:   # rxd=Low
+                self._rx_buffer.append('\x1bST')
 
         count, bb = pi.bb_serial_read(self._pin_rxd)
         #LOG('.', 5)
@@ -206,7 +197,7 @@ class TelexRPiTTY(txBase.TelexBase):
                     #self._check_special_sequences(a)
                     self._rx_buffer.append(a)
 
-            self._rxd_counter = 0
+            self._line_observer.reset()
 
     # -----
 
@@ -237,23 +228,23 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._number_switch.enable(False)
             self._is_pulse_dial = False
             self._set_online(False)
-            enable = False   #self._use_dedicated_line
-            if not enable and self._use_squelch:
+            if self._use_squelch:
                 self._set_time_squelch(1.5)
+            enable = False   #self._use_dedicated_line
 
         if a == '\x1bWB':
             self._set_online(True)
             if self._pin_number_switch:   # 0:keyboard pos:TW39 neg:TW39@RPiCtrl
                 if self._use_squelch:
                     self._set_time_squelch(0.5)
-                self._is_pulse_dial = True
-                self._tx_buffer = ['<']   # send "Bu" for 20ms pulse
-                self._write_wave()
-                time.sleep(0.050)   #TODO replace by state machine
                 if self._number_switch:
                     self._number_switch.enable(True)
+                self._tx_buffer = ['§']   # special control character to send WB-pulse to FSG
+                self._write_wave()
+                self._is_pulse_dial = True
+                #time.sleep(1.050)   #TODO replace by state machine
                 enable = False
-            else:   # dedicated line, TWM, V.10
+            else:   # dedicated line, TWM
                 enable = True
 
         if enable is not None:
@@ -291,23 +282,31 @@ class TelexRPiTTY(txBase.TelexBase):
         if not self._tx_buffer \
             or pi.wave_tx_busy():   # last wave is still transmitting
             return
+        
+        #pi.wave_clear()
 
         #a = self._tx_buffer.pop(0)
         aa = ''.join(self._tx_buffer)
         self._tx_buffer = []
-        bb = self._mc.encodeA2BM(aa)
-        if not bb:
-            return
+        if aa == '§':
+            #bb = [0x11110]   # 40ms pulse  @50Bd
+            pi.wave_add_generic([   # add WB-pulse with XXXms to waveform
+                pigpio.pulse(0, 1<<self._pin_txd, self._WB_pulse_length * 1000),
+                pigpio.pulse(1<<self._pin_txd, 0, 1)
+                ])
 
-        #pi.wave_clear()
+        else:
+            bb = self._mc.encodeA2BM(aa)
+            if not bb:
+                return
 
-        if self._pin_dir:
-            pi.wave_add_generic([pigpio.pulse(1<<self._pin_dir, 0, 1)]) # add dir pulse to waveform
+            if self._pin_dir:
+                pi.wave_add_generic([pigpio.pulse(1<<self._pin_dir, 0, 1)]) # add dir pulse to waveform
 
-        pi.wave_add_serial(self._pin_txd, self._baudrate, bb, 0, self._bytesize, self._stopbits2)
+            pi.wave_add_serial(self._pin_txd, self._baudrate, bb, 0, self._bytesize, self._stopbits2)
 
-        if self._pin_dir:
-            pi.wave_add_generic([pigpio.pulse(0, 1<<self._pin_dir, 1)]) # add dir pulse to waveform
+            if self._pin_dir:
+                pi.wave_add_generic([pigpio.pulse(0, 1<<self._pin_dir, 1)]) # add dir pulse to waveform
 
         new_wid = pi.wave_create() # commit waveform
         pi.wave_send_once(new_wid) # transmit waveform
