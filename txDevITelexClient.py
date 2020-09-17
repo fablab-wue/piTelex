@@ -77,6 +77,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                     if user:
                         self.connect_client(user)
                     else:
+                        self._rx_buffer.append('\x1bA')
                         self._rx_buffer.extend('bk')
                         self._rx_buffer.append('\x1bZ')
 
@@ -124,6 +125,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                     s.connect(address)
                 except OSError as e:
                     # Error during connect: print error and switch off printer
+                    self._rx_buffer.append('\x1bA')
                     self._rx_buffer.extend('nc')
                     l.warning("Could not connect: {!s}".format(e))
                     self.disconnect_client()
