@@ -112,7 +112,7 @@ class TelexScreen(txBase.TelexBase):
         self._show_BuZi = self.params.get('show_BuZi', True)
         self._show_capital = self.params.get('show_capital', False)
         self._show_ctrl = self.params.get('show_ctrl', True)
-        self._show_info = self.params.get('show_info', True)
+        self._show_info = self.params.get('show_info', False)
         self._show_line = self.params.get('show_line', True)
 
         if os.name == 'nt':
@@ -237,7 +237,7 @@ class TelexScreen(txBase.TelexBase):
         if len(a) != 1:   # escape sequ.
             if a[0] == '\x1b' and not a[1:] == "WELCOME":
                 # Print all commands, except WELCOME (internal use)
-                if (self._show_ctrl and a[1:1].isalpha()) or (self._show_info and not a[1:1].isalpha()):
+                if (self._show_ctrl and a[1:2].isalpha()) or (self._show_info and not a[1:2].isalpha()):
                     print('\033[0;30;47m<'+a[1:]+'>\033[0m', end='', flush=True)
             return
 
