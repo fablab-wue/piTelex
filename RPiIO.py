@@ -231,3 +231,5 @@ class Observer():
     def reset(self):    
         self._counter = 0
 
+    def get_state(self) -> bool:
+        return self._line_stable
