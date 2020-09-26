@@ -58,8 +58,13 @@ class TelexED1000SC(txBase.TelexBase):
         # - 10 going online by ESC-WB/-A
         # - 20 online
         # - 30 going offline by ESC-Z
-        # - 40 offline delay
+        # - 40 offline delay after buffer is empty
+        # - 50 offline, wait for A level
         self._rx_state = 0
+
+        # Helper variables for printer feedback
+        self._last_tx_buf_len = 0
+        self._send_feedback = False
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
@@ -70,12 +75,14 @@ class TelexED1000SC(txBase.TelexBase):
         recv_f = [recv_f0, recv_f1]
         self._recv_decode_init(recv_f)
 
+        # Save how many characters have been printed per session
+        self.printed_chars = 0
+
         self._run = True
         self._tx_thread = Thread(target=self.thread_tx, name='ED1000tx')
         self._tx_thread.start()
         self._rx_thread = Thread(target=self.thread_rx, name='ED1000rx')
         self._rx_thread.start()
-
 
     def __del__(self):
         super().__del__()
@@ -130,9 +137,6 @@ class TelexED1000SC(txBase.TelexBase):
 
     def _set_online(self, online:bool):
         if online:
-            # Start timer in MCP if we're going from offline to online
-            if not self._is_online.is_set():
-                self._rx_buffer.append('\x1bAC')
             l.debug("set online")
             self._is_online.set()
         else:
@@ -183,6 +187,8 @@ class TelexED1000SC(txBase.TelexBase):
                 elif 20 <= self._rx_state <= 30:
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
+                        if len(a) == 1:
+                            self.printed_chars += 1
                         l.debug("[tx] Sending {!r} (buffer length {})".format(a, len(self._tx_buffer)))
                         if a == '§W':   # signal WB (ready for dial)
                             bb = (0xF9FFFFFF,)   # 40ms pulse after 500ms pause, may be interpreted as 'V'
@@ -351,8 +357,6 @@ class TelexED1000SC(txBase.TelexBase):
                 #   properly wait for a stable Z reading.
                 if _bit_counter_1 >= 20:
                     self._rx_state = 20
-                    # Send printer start confirmation
-                    self._rx_buffer.append('\x1bACK')
                     # Reset character recognition
                     slice_counter = 0
                 # If the teleprinter doesn't switch to Z, but stays in A for at
@@ -394,7 +398,7 @@ class TelexED1000SC(txBase.TelexBase):
             elif self._rx_state == 30: # going offline by ESC-Z ================
                 # Write out tx buffer
                 if not self._tx_buffer:
-                    l.info("[rx] tx buffer empty")
+                    l.info("[rx] tx buffer empty, printed characters: {}".format(self.printed_chars))
                     self._rx_state = 40
                 # ... but break on ST (if the operator wishes to go offline
                 # immediately).
@@ -426,11 +430,12 @@ class TelexED1000SC(txBase.TelexBase):
                 else:
                     if offline_delay_counter % 100 == 0:
                         l.debug("[rx] Offline delay running: {!r}/600".format(offline_delay_counter))
-            elif self._rx_state >= 50: # offline, wait for Z level =============
+            elif self._rx_state >= 50: # offline, wait for A level =============
                 if _bit_counter_0 > 100:
                     self._rx_state = 0
                     _bit_counter_0 = 0
                     _bit_counter_1 = 0
+                    self.printed_chars = 0
                     l.debug("[rx] Received A level, offline confirmed")
 
             #l.debug("[rx] _is_online: {} bit: {}".format(self._is_online.is_set(), bit))
@@ -616,6 +621,30 @@ class TelexED1000SC(txBase.TelexBase):
         if (val[0] + val[1]) < self.recv_squelch:   # no carrier
             bit = None
         return bit
+
+    def idle2Hz(self):
+        # Send printer feedback (ESC-~)
+        # It contains the current printer buffer length, i.e. the number of
+        # characters that remain to be printed.
+        #
+        # Printer feedback is sent only after the printer has been started, so
+        # it doubles as a printer start feedback.
+        printer_online = (20 <= self._rx_state <= 30)
+        if printer_online or self._send_feedback:
+            tx_buf_len = len(self._tx_buffer)
+            if not self._send_feedback:
+                self._send_feedback = True
+                # We came online, send buffer length as printer start feedback
+                self._rx_buffer.append('\x1b~' + str(tx_buf_len))
+            elif self._last_tx_buf_len != tx_buf_len:
+                # Normal feedback (when buffer changed)
+                self._rx_buffer.append('\x1b~' + str(tx_buf_len))
+
+            if not printer_online:
+                # We went offline: turn off feedback
+                self._send_feedback = False
+
+            self._last_tx_buf_len = tx_buf_len
 
 #######
 

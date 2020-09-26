@@ -103,7 +103,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
     def read(self) -> str:
         if self._rx_buffer:
-            if self._connected == 2:
+            if 0 < self._connected <= 3:
                 # Welcome banner hasn't been sent yet. Pop only non-printable
                 # items.
                 for nr, item in enumerate(self._rx_buffer):
@@ -113,8 +113,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 return self._rx_buffer.pop(0)
 
 
-
     def write(self, a:str, source:str):
+        super().write(a, source)
         if len(a) != 1:
             if self._connected <= 0:
                 if a in ('\x1bWB', '\x1bA'):
@@ -128,15 +128,18 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                     l.debug("Unblocking inbound connections")
             elif self._connected > 0:
                 if a == '\x1bZ':   # end session
-                    self.disconnect_client()
-                elif a == '\x1bACT':
-                    # Printer start attempt timed out; initiate disconnect
-                    self.printer_start_timed_out = True
-                elif self._connected == 2 and a == '\x1bWELCOME' and source == '^':
+                    if self._connected < 3 and source == '^':
+                        # Printer start failed, initiate disconnect with error
+                        # message
+                        self.printer_start_timed_out = True
+                    else:
+                        # Printer had already been started, disconnect normally
+                        self.disconnect_client()
+                elif self._connected == 3 and a == '\x1bWELCOME' and source == '^':
                     # MCP says: Welcome banner has been received completely. Enable
                     # non-command reads in read method so that normal communication
                     # can begin.
-                    self._connected = 3
+                    self._connected = 4
             return
 
         if source in '<>':
@@ -207,6 +210,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         s.close()
         self._rx_buffer.append('\x1bZ')
+        self._printer_running = False
         del self.clients[s]
 
     def thread_handle_tns_update(self):
