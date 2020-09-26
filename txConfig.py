@@ -103,13 +103,20 @@ def load():
         dest="rest", default='', metavar="TEMPLATE",
         help="REST client")
 
-    gg.add_argument("-Z", "--eliza",
+
+    gt = parser.add_argument_group("Tools / Toys")
+
+    gt.add_argument("-Z", "--eliza",
         dest="eliza", default=False, action="store_true",
         help="Eliza chat bot")
 
-    gg.add_argument("-A", "--archive",
+    gt.add_argument("-A", "--archive",
         dest="archive", default=False, action="store_true",
         help="Archive module")
+
+    gt.add_argument("-S", "--shellcmd",
+        dest="shellcmd", default=False, action="store_true",
+        help="Execute shell command of ESC sequ.")
 
 
     gd = parser.add_argument_group("Debug")
@@ -179,7 +186,7 @@ def load():
             'show_BuZi': True, 
             'show_capital': False, 
             'show_ctrl': True, 
-            'show_info': True
+            'show_info': False
             }
 
     if ARGS.terminal:
@@ -282,6 +289,9 @@ def load():
 
     if ARGS.archive:
         devices['archive'] = {'type': 'archive', 'enable': True, 'path': 'archive'}
+
+    if ARGS.shellcmd:
+        devices['shellcmd'] = {'type': 'shellcmd', 'enable': True, 'LUT': { 'X': 'xxx'} }
 
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}

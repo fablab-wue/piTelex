@@ -227,6 +227,11 @@ def init():
             archive = txDevArchive.TelexArchive(**dev_param)
             DEVICES.append(archive)
 
+        elif dev_param['type'] == 'shellcmd':
+            import txDevShellCmd
+            module = txDevShellCmd.TelexShellCmd(**dev_param)
+            DEVICES.append(module)
+
         elif dev_param['type'] == 'log':
             import txDevLog
             log = txDevLog.TelexLog(**dev_param)
