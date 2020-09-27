@@ -227,7 +227,8 @@ class TelexRPiTTY(txBase.TelexBase):
                     #self._check_special_sequences(a)
                     self._rx_buffer.append(a)
 
-            self._line_observer.reset()
+            if self._line_observer:
+                self._line_observer.reset()
 
     # -----
 
@@ -302,9 +303,9 @@ class TelexRPiTTY(txBase.TelexBase):
             self._enable_number_switch(False)
             if not self._line_observer:
                 new_state = self.S_WRITE
+                self._last_waiting = -1
             if self._mode == 'V10':
                 self._write_wave('%\\_')
-                self._last_waiting = -1
 
         elif new_state == self.S_WRITE:
             self._last_waiting = -1
