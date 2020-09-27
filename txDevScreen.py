@@ -238,7 +238,7 @@ class TelexScreen(txBase.TelexBase):
             if a[0] == '\x1b' and not a[1:] == "WELCOME":
                 # Print all commands, except WELCOME (internal use)
                 if (self._show_ctrl and a[1:2].isalpha()) or (self._show_info and not a[1:2].isalpha()):
-                    print('\033[0;30;47m<'+a[1:]+'>\033[0m', end='', flush=True)
+                    print('\033[0;30;47m<'+str(source)+':'+a[1:]+'>\033[0m', end='', flush=True)
             return
 
         if a == '\r' or a == '\n':
