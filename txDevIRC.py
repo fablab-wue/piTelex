@@ -35,6 +35,7 @@ class TelexIRC(txDevITelexCommon.TelexITelexCommon):
 
         self.directed_only = params.get('directed_only', False)
 
+        self.id = 'IRC'
         self.running = True
         self.chars_buffer = ''
         self._is_online = False

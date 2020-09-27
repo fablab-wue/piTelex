@@ -29,7 +29,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '<'
+        self.id = 'iTs'
         self.params = params
 
         self._port = params.get('port', 2342)
@@ -128,21 +128,21 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                     l.debug("Unblocking inbound connections")
             elif self._connected > 0:
                 if a == '\x1bZ':   # end session
-                    if self._connected < 3 and source == '^':
+                    if self._connected < 3 and source == 'MCP':
                         # Printer start failed, initiate disconnect with error
                         # message
                         self.printer_start_timed_out = True
                     else:
                         # Printer had already been started, disconnect normally
                         self.disconnect_client()
-                elif self._connected == 3 and a == '\x1bWELCOME' and source == '^':
+                elif self._connected == 3 and a == '\x1bWELCOME' and source == 'MCP':
                     # MCP says: Welcome banner has been received completely. Enable
                     # non-command reads in read method so that normal communication
                     # can begin.
                     self._connected = 4
             return
 
-        if source in '<>':
+        if source in ['iTc', 'iTs']:
             # Don't send back data from ITelexClient/Srv
             return
 

@@ -29,13 +29,13 @@ class TelexLog(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '"'
+        self.id = 'Log'
         self.params = params
 
         self._filename = params.get('filename', 'log.txt')
 
         self._last_time = self._last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        self._last_source = ' '
+        self._last_source = '   '
         self._line = '===== piTelex rev '
         try:
             self._line += find_rev()

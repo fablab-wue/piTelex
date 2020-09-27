@@ -36,7 +36,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '>'
+        self.id = 'iTc'
         self.params = params
 
         TelexITelexClient._tns_port = params.get('tns_port', 11811)
@@ -88,7 +88,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
                 print(user)
             return
 
-        if source in '<>':
+        if source in ['iTc', 'iTs']:
             return
 
         if not self._connected:

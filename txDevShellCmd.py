@@ -41,7 +41,7 @@ class TelexShellCmd(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '/'
+        self.id = 'ShC'
         self.params = params
 
         self._LUT = params.get('LUT', {})

@@ -14,7 +14,7 @@ import txCode
 
 class TelexBase:
     def __init__(self):
-        self.id = '?'
+        self.id = '???'
         self.loopback = True
 
 

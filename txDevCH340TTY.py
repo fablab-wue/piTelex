@@ -31,7 +31,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '~'
+        self.id = 'chT'
         self.params = params
 
         portname = params.get('portname', '/dev/ttyUSB0')

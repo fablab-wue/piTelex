@@ -32,7 +32,7 @@ class TelexREST(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '/'
+        self.id = 'Rst'
         self.params = params
 
 

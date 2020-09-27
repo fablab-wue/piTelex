@@ -41,6 +41,7 @@ def LOG(text:str, level:int=3):
 class TelexTwitter(txDevITelexCommon.TelexITelexCommon):
     def __init__(self, **params):
         super().__init__()
+        self.id = 'Twt'
         self.running = True
         self.chars_buffer = ''
         self._is_online = False

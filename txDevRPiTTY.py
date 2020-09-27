@@ -41,7 +41,7 @@ class TelexRPiTTY(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '#'
+        self.id = 'piT'
         self.params = params
         self._timing_tick = 0
         self._time_EOT = 0

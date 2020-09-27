@@ -46,7 +46,7 @@ class TelexED1000SC(txBase.TelexBase):
 
         self._mc = txCode.BaudotMurrayCode(loop_back=False)
 
-        self.id = '='
+        self.id = 'edS'
         self.params = params
 
         self._tx_buffer = []

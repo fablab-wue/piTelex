@@ -126,7 +126,7 @@ class TelexMCP(txBase.TelexBase):
         super().__init__()
 
 
-        self.id = '^'
+        self.id = 'MCP'
         self.params = params
 
         self.device_id = params.get('wru_id', '')
@@ -319,7 +319,7 @@ class TelexMCP(txBase.TelexBase):
                 #else:
                 #    text += '#'
                 self._rx_buffer.extend(list(text))   # send text
-                if source == '<':
+                if source == 'iTs':
                     # Send command to inform ITelexSrv that the welcome banner has
                     # been queued completely (unlocks non-command reads from
                     # ITelexSrv)
@@ -383,7 +383,7 @@ class TelexMCP(txBase.TelexBase):
                 else:
                     # Invalid data for dial mode, except it's an error printed by
                     # txDevITelexClient
-                    if source == '>':
+                    if source == 'iTc':
                         # Error message, print
                         return None
                     else:

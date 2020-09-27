@@ -103,7 +103,7 @@ class TelexScreen(txBase.TelexBase):
         '''Creates a Screen object that you can call to do various keyboard things. '''
         super().__init__()
 
-        self.id = '_'
+        self.id = 'Scn'
         self.params = params
 
         self._rx_buffer = []
@@ -254,7 +254,7 @@ class TelexScreen(txBase.TelexBase):
                 a = self._LUT_show_special_chars[a]
             if not self._show_capital:
                 a = a.lower()
-            if source == '^':   # DevMCP
+            if source == 'MCP':   # DevMCP
                 a = '\033[0;33m'+a+'\033[0m'
             print(a, end='', flush=True)
 

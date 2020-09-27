@@ -66,7 +66,7 @@ class TelexNews(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '"'
+        self.id = 'Nws'
         self.params = params
 
         self._newspath = params.get('newspath', './news')

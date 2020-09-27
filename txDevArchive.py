@@ -27,7 +27,7 @@ class TelexArchive(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = 'A'
+        self.id = 'Arc'
         self.params = params
 
         self._current_msg = []
@@ -107,7 +107,7 @@ class TelexArchive(txBase.TelexBase):
                 return
             # Data direction: Everything from </> (i-Telex server/client
             # module) is inbound, rest outbound
-            direction_out = source not in "<>"
+            direction_out = source not in ['iTc', 'iTs']
             if not direction_out == self._direction_out:
                 # Direction changed, need to insert direction shift
                 self._current_msg.append(OUTBOUND if direction_out else INBOUND)

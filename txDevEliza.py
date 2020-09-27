@@ -266,7 +266,7 @@ class TelexEliza(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '"'
+        self.id = 'Eza'
         self.params = params
 
         # init Eliza

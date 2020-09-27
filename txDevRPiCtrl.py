@@ -28,7 +28,7 @@ class TelexRPiCtrl(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = ':'
+        self.id = 'piC'
         self.params = params
 
         self._pin_number_switch = params.get('pin_number_switch', 0)   # connected to NS
