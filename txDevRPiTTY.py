@@ -72,13 +72,13 @@ class TelexRPiTTY(txBase.TelexBase):
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
         self._pin_number_switch = params.get('pin_number_switch', params.get('pin_fsg_ns', 6))   # pin typical wired to rxd pin
-        self._inv_number_switch = params.get('inv_number_switch', True)
+        self._inv_number_switch = params.get('inv_number_switch', False)
 
         self._line_observer = None
         if params.get('use_observe_line', True):
             self._pin_observe_line = params.get('pin_observe_line', self._pin_rxd)
             self._inv_observe_line = params.get('inv_observe_line', self._inv_rxd)
-            self._line_observer = Observer(self._pin_observe_line, self._inv_observe_line, 15)   # 15ticks = 0.75sec
+            self._line_observer = Observer(self._pin_observe_line, self._inv_observe_line, 10)   # 10ticks = 0.5sec
 
         self._coding = params.get('coding', 0)
         self._loopback = params.get('loopback', True)
@@ -226,6 +226,9 @@ class TelexRPiTTY(txBase.TelexBase):
                 for a in aa:
                     #self._check_special_sequences(a)
                     self._rx_buffer.append(a)
+                    # T68d printer is set for BU after sending WRU, set it back to Zi immediately, won't hurt on other TTYs
+                    if a == '@':
+                        self._tx_buffer.insert(0, '>')
 
             if self._line_observer:
                 self._line_observer.reset()
@@ -235,16 +238,17 @@ class TelexRPiTTY(txBase.TelexBase):
     def idle2Hz(self):
         ''' called by system every 500ms to do background staff '''
         # send printer FIFO info
-        waiting = int((self._time_EOT - time.time()) / self._character_duration + 0.9)
-        waiting += len(self._tx_buffer)   # estimation of left chars in buffer
-        if waiting < 0:
-            waiting = 0
-        if waiting != self._last_waiting:
-            self._rx_buffer.append('\x1b~' + str(waiting))
-            self._last_waiting = waiting
+        if self._state == self.S_WRITE:
+            waiting = int((self._time_EOT - time.time()) / self._character_duration + 0.9)
+            waiting += len(self._tx_buffer)   # estimation of left chars in buffer
+            if waiting < 0:
+                waiting = 0
+            if waiting != self._last_waiting:
+                self._rx_buffer.append('\x1b~' + str(waiting))
+                self._last_waiting = waiting
 
-        if self._line_observer:
-            if self._state == self.S_WRITE_INIT:
+        elif self._state == self.S_WRITE_INIT:
+            if self._line_observer:
                 line = self._line_observer.get_state()
                 if not line:
                     self._rx_buffer.append('\x1b^')
@@ -365,6 +369,8 @@ class TelexRPiTTY(txBase.TelexBase):
         #pi.wave_clear()
 
         if text == '§':
+            if self._WB_pulse_length <= 0:
+                return
             #bb = [0x11110]   # experimental: 40ms pulse  @50Bd
             pi.wave_add_generic([   # add WB-pulse with XXXms to waveform
                 pigpio.pulse(0, 1<<self._pin_txd, self._WB_pulse_length * 1000),
