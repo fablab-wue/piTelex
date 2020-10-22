@@ -34,7 +34,11 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         self._port = params.get('port', 2342)
 
-        self._number = int(params.get('number', 0))
+        self._number = int(params.get('tns-dynip-number', 0))
+        if not self._number:
+            self._number = int(params.get('number', 0))
+            if self._number:
+                l.warning("Configuration option \"number\" is deprecated and will be removed in a future version. Use \"tns-dynip-number\" instead.")
         if self._number <= 0 or self._number > 0xffffffff:
             # Own number no valid integer inside 32 bit; client_update requires
             # this though, so ignore
