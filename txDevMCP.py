@@ -138,6 +138,15 @@ class TelexMCP(txBase.TelexBase):
                     l.info("Printer running, timer disabled")
                     self._set_state(S_ACTIVE_P)
                 self._wd.restart('ACTIVE')
+                # If we're already in S_OFFLINE after a connection terminated,
+                # but have still data to print, avoid cutting power too early
+                # by resetting the timer on each ESC-~. On empty printer
+                # buffer, ESC-~'s will stop.
+                if self._wd.is_active('POWER'):
+                    self._wd.restart('POWER')
+                if self._wd.is_active('WRU'):
+                    self._wd.restart('WRU')
+                return
 
             if a == '^':   # printer busy
                 pass
