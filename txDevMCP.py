@@ -8,112 +8,29 @@ __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
 __version__     = "0.1.0"
 
-from threading import Thread, Event
 import time
+import os
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
 
+import txCode
 import txBase
 import txCLI
+from txDevMCP_escape_texts import escape_texts
+from watchdog import Watchdog
 
 # Timeout in ready-to-dial state in sec
-WB_TIMEOUT = 45
+DIAL_TIMEOUT = 55  # 45sec
 # Timeout in ready-to-dial state in sec
-ONLINE_TIMEOUT = 180
+ACTIVE_TIMEOUT = 3*60  # 3min
 
-#######
-
-# Error messages, based on r874 of i-Telex source and personal conversation
-# with Fred
-#
-# Types:
-# - A: printed at the calling party during keyboard dial
-# - B: sent as reject packet payload by called party
-#
-# Error Type Handled in  Description
-# bk    A    iTxClient   dial failure (called party not found in TNS)
-# nc    A    iTxClient   cannot establish TCP connection to called party
-# abs   A                line disabled
-# abs   B                line disabled
-# occ   B    iTxSrv      line occupied
-# der   B    iTxCommon   derailed: line connected, but called teleprinter
-#                        not starting up
-# na    B    iTxCommon   called extension not allowed
-#
-# B type errors are handled in txDevITelexCommon.send_reject. It defaults to
-# "abs", but this error isn't used yet.
-
-escape_texts = {
-    '\x1bRY':   # print RY pattern (64 characters = 10sec@50baud)
-        'RY'*32,
-    '\x1bFOX':   # print RY pattern (? characters = 10sec@50baud)
-        'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG',
-    '\x1bPELZE':   # print RY pattern (? characters = 10sec@50baud)
-        'KAUFEN SIE JEDE WOCHE VIER GUTE BEQUEME PELZE XY 1234567890',
-    '\x1bABC':   # print ABC pattern (51 characters = 7.6sec@50baud)
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890 .,-+=/()?\'%',
-    '\x1bA1':   # print Bi-Zi-change pattern (? characters = 7.6sec@50baud)
-        'A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z%',
-    '\x1bLOREM':   # print LOREM IPSUM (460 characters = 69sec@50baud)
-        '''\r
-LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISICI ELIT,\r
-SED EIUSMOD TEMPOR INCIDUNT UT LABORE ET DOLORE MAGNA ALIQUA.\r
-UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO\r
-LABORIS NISI UT ALIQUID EX EA COMMODI CONSEQUAT. QUIS AUTE IURE\r
-REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT\r
-NULLA PARIATUR. EXCEPTEUR SINT OBCAECAT CUPIDITAT NON PROIDENT,\r
-SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.\r
-''',
-    '\x1bLOGO':   # print piTelex logo (380 characters = 57sec@50baud)
-        '''\r
------------------------------------------------------\r
-      OOO   OOO  OOOOO  OOOO  O     OOOO  O   O\r
-      O  O   O     O    O     O     O      O O\r
-      OOO    O     O    OOO   O     OOO     O\r
-.....................................................\r
-      O      O     O    O     O     O      O O\r
-      O     OOO    O    OOOO  OOOO  OOOO  O   O\r
------------------------------------------------------\r
-''',
-    '\x1bTEST':   # print test pattern (546 characters = 82sec@50baud)
-        '''\r
-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.\r
--=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-\r
-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=\r
-X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X\r
-=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=\r
--.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-.-=X=-''',
-}
-
-#######
-
-class watchdog():
-    def __init__(self):
-        self._wds = {}
-
-    def init(self, name:str, timer:int, callback):
-        wd = {}
-        wd['time_reset'] = None
-        wd['time_offset'] = timer
-        wd['callback'] = callback
-        self._wds[name] = wd
-
-    def reset(self, name:str):
-        self._wds[name]['time_reset'] = time.time()
-
-    def disable(self, name:str):
-        self._wds[name]['time_reset'] = None
-
-    def process(self):
-        time_act = time.time()
-
-        for name, wd in self._wds.items():
-            if wd['time_reset']:
-                if  time_act > (wd['time_reset'] + wd['time_offset']):
-                    wd['time_reset'] = None
-                    wd['callback'](name)
-                    l.debug("Watchdog {!r}: {!r}".format(name, wd["callback"]))
+S_SLEEPING = -1
+S_OFFLINE = 0
+S_DIALING = 1
+S_ACTIVE = 2
+S_ACTIVE_P = 3
+S_ACTIVE_FONT = 4
 
 #######
 
@@ -125,197 +42,127 @@ class TelexMCP(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-
         self.id = 'MCP'
         self.params = params
 
-        self.device_id = params.get('wru_id', '')
-        self.wru_fallback = params.get('wru_fallback', False)
+        self._WRU_ID = params.get('wru_id', '')
+        self._WRU_replace_always = params.get('wru_replace_always', False)
+        self._continue_with_no_printer = params.get('continue_with_no_printer', True)
 
         self._rx_buffer = []
-        self._mx_buffer = []
 
-        self._font_mode = False
-        self._mode = 'Z'
+        self._state = S_SLEEPING
         self._dial_number = ''
         # Default dial timeout to 2.0 s like i-Telex; set to '+' for plus
         # dialling
         dial_timeout = params.get('dial_timeout', 2.0)
         if dial_timeout == '+':
-            dial_timeout = None
+            dial_timeout = 99999
         else:
             try:
                 dial_timeout = float(dial_timeout)
             except (ValueError, TypeError):
                 dial_timeout = 2.0
-            if not 0.0 <= dial_timeout < WB_TIMEOUT:
+            if not 0.0 <= dial_timeout < DIAL_TIMEOUT:
                 l.warning("Invalid dialling timeout, falling back to default: " + repr(dial_timeout))
                 dial_timeout = 2.0
         self._dial_timeout = dial_timeout
-        self._dial_change = Event()
 
-        # Fallback WRU state
-        self._fallback_wru_triggered = False
-
-        # "Printer has been started" flag
-        self._printer_running = False
-
-        self._wd = watchdog()
-        self._wd.init('ONLINE', ONLINE_TIMEOUT, self._watchdog_callback_ST)
-        self._wd.init('WB', WB_TIMEOUT, self._watchdog_callback_ST)
-        self._wd.init('PRINTER', 5, self._printer_start_timeout)
+        self._wd = Watchdog()
+        self._wd.init('ACTIVE', self._stop_watchdog_callback, ACTIVE_TIMEOUT)
+        self._wd.init('DIAL', self._dial_watchdog_callback, self._dial_timeout, DIAL_TIMEOUT)
+        self._wd.init('PRINTER', self._printer_start_watchdog_callback, 5)
+        self._wd.init('POWER', self._power_watchdog_callback, 20)
+        self._wd.init('WRU', self._WRU_watchdog_callback, 1)
+        #self._wd.init('WELCOME', self._welcome_watchdog_callback, 1)
 
         self.cli = txCLI.CLI(**params)
         self.cli_text = ''
         self.cli_enable = False
 
-        self._run = True
-        #self._tx_thread = Thread(target=self.thread_memory, name='CtrlMem')
-        #self._tx_thread.start()
-
-        self._dial_thread = Thread(target=self.thread_dial, name='Dialler')
-        self._dial_thread.start()
-
 
     def __del__(self):
-        self._run = False
         super().__del__()
 
 
     def exit(self):
-        self._run = False
-        self._dial_change.set()
+        pass
 
 
     def read(self) -> str:
-        ret = ''
-
         if self._rx_buffer:
-            ret = self._rx_buffer.pop(0)
-
-        return ret
+            return self._rx_buffer.pop(0)
 
 
     def write(self, a:str, source:str):
-        if len(a) != 1:
-            if a == '\x1b1T':   # 1T
-                if self._mode == 'Z':
-                    a = '\x1bAT'
-                elif self._mode == 'WB':
-                    a = '\x1bLT'
+        if len(a) > 1:
+            a = a[1:]
+            if a == '1T':   # 1T
+                if self._state <= S_OFFLINE:
+                    a = 'AT'
+                elif self._state == S_DIALING:
+                    a = 'LT'
                 else:
-                    a = '\x1bST'
+                    a = 'ST'
 
-            if a == '\x1bAT':   # AT
-                self._rx_buffer.append('\x1bWB')   # send text
-                self._mode = 'WB'
-                self._dial_number = ''
-                self._wd.disable('ONLINE')
-                self._wd.reset('WB')
+            if a == 'AT':   # AT
+                self._set_state(S_DIALING, True)
                 return True
 
-            if a == '\x1bST':   # ST
-                self._rx_buffer.append('\x1bZ')   # send text
-                self._mode = 'Z'
-                self._wd.disable('ONLINE')
-                self._wd.disable('WB')
-                # Must be reset explicitly because the ESC-Z we send above
-                # won't be re-sent to us
-                self._wd.disable('PRINTER')
-                self._fallback_wru_triggered = False
-                self.enable_cli(False)
+            if a == 'ST':   # ST
+                self._set_state(S_OFFLINE, True)
                 return True
 
-            if a == '\x1bLT':   # LT
-                self._rx_buffer.append('\x1bA')   # send text
-                self._mode = 'A'
-                self._wd.reset('ONLINE')
-                self._wd.disable('WB')
+            if a == 'LT':   # LT
+                self._set_state(S_ACTIVE, True)
                 return True
 
-            if a == '\x1bZ':   # stop motor
-                self._mode = 'Z'
-                self._wd.disable('ONLINE')
-                self._wd.disable('WB')
-                self._wd.disable('PRINTER')
-                self._fallback_wru_triggered = False
-                self._printer_running = False
-                self.enable_cli(False)
+            if a == 'PT':   # PT
+                if self._state == S_SLEEPING:
+                    self._set_state(S_OFFLINE)
+                    self._wd.restart('POWER', 5*60)
+                else:
+                    self._set_state(S_OFFLINE)
+                    self._wd.restart('POWER', 1)
+                return True
+
+            if a == 'Z':   # stop motor
+                self._set_state(S_OFFLINE)
                 
-            if a == '\x1bA':   # start motor
-                self._mode = 'A'
-                self._wd.reset('ONLINE')
-                self._dial_number = '' # Important only on instant dialling
-                self._wd.disable('WB')
-                if not self._printer_running:
-                    self._wd.reset('PRINTER')
-                    l.info("Printer start timer enabled")
+            if a == 'A':   # start motor
+                self._set_state(S_ACTIVE)
 
-            # Printer start feedback code follows, which enables us to check if
-            # the printer hardware has in fact been started. Every teleprinter
-            # module must support the ESC-~ command, which is sent upon printer
-            # startup and after that about every 500 ms.
-            #
-            # - Whenever ESC-A is sent, the teleprinter must be started. MCP
-            #   starts a timer upon receipt (see above).
-            #
-            # - When the teleprinter has been started, its module sends ESC-~
-            #   on successful start, which cancels MCP's timer.
-            #
-            # - If the teleprinter cannot be started, ESC-~ must not be sent.
-            #   When the timer runs out, MCP sends ESC-Z to terminate the start
-            #   attempt.
-            #
-            # NB: Ready-to-dial state (ESC-WB) is handled in a special way:
-            #
-            # - If the teleprinter needs to run in WB mode depends on its
-            #   model/type: always for keyboard dialling machines, but never
-            #   for number switch dialling. So don't require printer startup
-            #   during WB, but memorise if it does and skip timer activation in
-            #   A state.
-            #
-            # - No other modules depend on WB state yet, it's solely triggered
-            #   by manual AT operation, so the relaxed monitoring for keyboard
-            #   dialling machines should be ok. Feedback on the A state is
-            #   crucial however, in case of incoming i-Telex connections.
-
-            if a.startswith('\x1b~'):
-                # Printer was started successfully; cancel start timer if
-                # applicable
-                if not self._printer_running:
+            if a.startswith('~'):
+                # Printer was started successfully; cancel start timer if applicable
+                if self._state == S_ACTIVE:
                     l.info("Printer running, timer disabled")
-                    self._printer_running = True
-                    self._wd.disable('PRINTER')
-                self._wd.reset('ONLINE') # still characters in printing FIFO
+                    self._set_state(S_ACTIVE_P)
+                self._wd.restart('ACTIVE')
 
-            if a == '\x1bFONT':   # set to font mode
-                self._font_mode = not self._font_mode
+            if a == '^':   # printer busy
+                pass
+
+            if a == 'FONT':   # set to font mode
+                if self._state == S_ACTIVE_FONT:
+                    self._set_state(S_ACTIVE_P)
+                else:
+                    self._set_state(S_ACTIVE_FONT)
                 return True
 
             if a in escape_texts:
                 self._rx_buffer.extend(list(escape_texts[a]))   # send text
                 return True
 
-
-            #if a[:3] == '\x1bM=':   # set memory text
-            #    self._mx_buffer.extend(list(a[3:]))   # send text
-            #    return True
-
-            #if a == '\x1bMC':   # clear memory text
-            #    self._mx_buffer = []
-            #    return True
-
-
-            if a == '\x1bDATE':   # current date and time
+            if a == 'DATE':   # current date and time
                 text = time.strftime("%Y-%m-%d  %H:%M", time.localtime()) + '\r\n'
                 self._rx_buffer.extend(list(text))   # send text
                 return True
 
-            if a == '\x1bI':   # welcome as server
+            if a == 'I':   # welcome as server
                 # The welcome banner itself has a fixed total length of 24 characters:
                 text = '<<<\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
-                #if self.device_id:
-                #    text += self.device_id   # send back device id
+                #if self._WRU_ID:
+                #    text += self._WRU_ID   # send back device id
                 #else:
                 #    text += '#'
                 self._rx_buffer.extend(list(text))   # send text
@@ -323,21 +170,30 @@ class TelexMCP(txBase.TelexBase):
                     # Send command to inform ITelexSrv that the welcome banner has
                     # been queued completely (unlocks non-command reads from
                     # ITelexSrv)
-                    self._rx_buffer.append('\x1bWELCOME')
+                    self._rx_buffer.append('WELCOME')
                 return True
 
-            if a == '\x1bCLI':   # welcome as server
+            if a == 'CLI':   # welcome as server
+                l.info("Start CLI")
                 self.enable_cli(True)
                 return True
 
-            if a == '\x1bEXIT':   # leave program
+            if a.startswith('READ'):
+                self.read_file(a[6:])
+
+            if a == 'EXIT':   # leave program
+                l.info("ESC-EXIT")
+                #self._set_state(S_OFFLINE)
                 raise(SystemExit('EXIT'))
 
 
-        else:   # single char
+        else:   # single char -------------------------------------------------
 
-            self._wd.reset('ONLINE')
+            # reset watchdog timers
+            if self._state > S_OFFLINE:
+                self._wd.restart('ACTIVE')
 
+            # command line interface
             if self.cli_enable:
                 if a in ' \n+?':
                     ans = self.cli.command(self.cli_text)
@@ -349,37 +205,43 @@ class TelexMCP(txBase.TelexBase):
                     self.cli_text += a
                     return
 
-            if self._font_mode:   #
+            # print punch tape characters
+            if self._state == S_ACTIVE_FONT:   #
                 f = self._fontstr.get(a, None)
                 if f:
                     f += self._fontsep
                     self._rx_buffer.extend(list(f))   # send back font pattern
                 return True
 
+            # WRU request to teletype
+            if self._WRU_ID and a == '#':   # found 'Wer da?' / 'WRU'
+                if self._WRU_replace_always:
+                    self._WRU_watchdog_callback(None)
+                    return True
+                self._wd.restart('WRU')
+                return None
 
-            if self.device_id and a == '#':   # found 'Wer da?' / 'WRU'
-                if (not self.wru_fallback) or self._fallback_wru_triggered:
-                    self._rx_buffer.extend(list('<\r\n' + self.device_id))   # send back device id
-                    l.info("Sending software WRU response: {!r}".format(self.device_id))
-                    # Only "swallow" WRU when *not* acting as fallback
-                    if not self._fallback_wru_triggered:
-                        return True
+            if self._wd.is_active('WRU'):
+                if a in '<~':   # found Bu or Null
+                    self._wd.restart('WRU')   #  -> hardware WRU-unit has no drum -> wait for end of trans. and send soft-WRU
+                else:
+                    self._wd.disable('WRU')   #  -> hardware WRU-unit has answered
 
 
-            if self._mode == 'WB':
+            if self._state == S_DIALING:
                 #if a == '0':   # hack!!!! to test the pulse dial
-                #    self._rx_buffer.append('\x1bA')   # send text
+                #    self._send_control_sequence('A')   # send text
 
                 # A digit or +/- is being dialled; record digit and trigger dial
                 # thread to check
-                if a.isdigit() or a == '-' or (self._dial_timeout is None and a == '+'):
+                if a.isdigit() or a == '-':
                     self._dial_number += a
-                    if self._dial_number == '000':
-                        self.enable_cli(True)
-                        self._dial_number = ''
-                        self._dial_change.clear()
-                        return True
-                    self._dial_change.set()
+                    self._wd.restart('DIAL')
+                    if self._dial_timeout <= 0:
+                        self._dial_watchdog_callback('DIAL_TRY')
+                elif a == '+':
+                    self._wd.disable('DIAL')
+                    self._dial_watchdog_callback('DIAL_PLUS')
                 else:
                     # Invalid data for dial mode, except it's an error printed by
                     # txDevITelexClient
@@ -397,125 +259,62 @@ class TelexMCP(txBase.TelexBase):
 
     # =====
 
-    def thread_dial(self):
-        # This thread monitors the number-to-dial and initiates the dial
-        # command depending on the set mode (instant dialling, timeout dialling
-        # or plus dialling)
-        #
-        # Instant dialling is the classic dial method used in older piTelex
-        # versions. It's selected if the configured timeout is 0. In contrast
-        # to the other methods, dialling is tried after every entered digit,
-        # i.e. incrementally.
-        #
-        # Timeout dialling behaviour is based on i-Telex r874 (as documented in
-        # the comments at trunk/iTelex/iTelex.c:4586) and simplified:
-        #
-        # 1. After each digit, the local user list is searched in i-Telex.
-        #    In piTelex, we don't, because in the current architecture it would
-        #    complicate things quite a bit.
-        # 2. TNS server is queried if at least five digits have been dialled
-        #    and no further digit is dialled for two seconds
-        # 3. If there is a positive result from a local or TNS query, try to
-        #    establish a connection
-        # 4. Dialling is cancelled if a connection attempt in 3. failed or if
-        #    nothing further is dialled for 15 seconds
-        #
-        # Plus dialling simply waits for digits and dials if '+' is entered.
-        #
-        # The condition "five digits minimum" is fulfilled in
-        # txDevITelexClient.
+    def _set_state(self, new_state:int, broadcast_state:bool=False):
+        ''' set new state and change hardware propperties '''
+        if self._state == new_state:
+            return
+        l.debug('set_state {} -> {}'.format(self._state, new_state))
 
-        # change holds the return value of _dial_change.wait: False if returning by
-        # timeout, True otherwise
-        change = True
+        # leaving old state
 
-        while self._run:
-            if (not self._dial_number) or self._mode != 'WB':
-                # Number empty or not in dial mode -- wait for next change and
-                # recheck afterwards.
-                change = self._dial_change.wait()
-                self._dial_change.clear()
-                continue
+        if self._state == S_SLEEPING:
+            self._send_control_sequence('TP1')   # send power on
 
-            if self._dial_timeout == 0:
-                # Instant dialling: Just try dialling on every digit, failing
-                # silently if number not found (ESC-#! instead of ESC-#,
-                # handled in txDevITelexClient).
-                self._rx_buffer.append('\x1b#!' + self._dial_number)
-                # NB: We keep self._dial_number here to allow incremental
-                # dialling. It is reset not inside this thread like with the
-                # other methods, but from the outside (on receipt of ESC-A).
-                change = self._dial_change.wait()
-                self._dial_change.clear()
-                continue
+        # enter new state
 
-            # Other dialling methods start here.
-            while True:
-                # There is a number being dialled. This loop runs once for
-                # every digit dialled and checks if the dial condition is
-                # fulfilled:
-                #
-                # - '+' dialling: number complete when finished by +
-                # - timeout dialling: number complete when timeout occurs
-                #
-                # On dial, we break out of the loop and queue the dial command,
-                # which is executed by txDevMCP. For details see
-                # txDevMCP.get_user.
+        if new_state == S_SLEEPING:
+            self._send_control_sequence('TP0')   # send power off
+            self._wd.disable('POWER')
 
-                if change:
-                    # A change in self._dial_number has occurred
-                    if self._dial_timeout is None:
-                        # We are in + dial mode: Check if the last change was a
-                        # plus, otherwise ignore
-                        if self._dial_number[-1] == '+':
-                            # Remove trailing + and dial
-                            self._dial_number = self._dial_number[:-1]
-                            break
-                    else:
-                        # We are in timeout dial mode, just save the digit and
-                        # continue
-                        pass
-                else:
-                    # No change in dialled number; wait method timed out. This
-                    # can only happen in timeout dialling mode and if at least
-                    # one digit has been dialled. Dial now.
-                    break
+        elif new_state == S_OFFLINE:
+            self._wd.disable('ACTIVE')
+            self._wd.disable('DIAL')
+            self._wd.disable('PRINTER')
+            self._wd.restart('POWER')
+            self.enable_cli(False)
 
-                # Before the next iteration, wait on the next change
-                change = self._dial_change.wait(self._dial_timeout)
-                self._dial_change.clear()
+            if broadcast_state:
+                self._send_control_sequence('Z')
 
-            # We've got a "go" for dialling, either by timeout or by +
-            if self._dial_number:
-                self._rx_buffer.append('\x1b#' + self._dial_number)
-                self._dial_number = ''
-            # TODO have dial command always print an error on fail
+        elif new_state == S_DIALING:
+            self._dial_number = ''
+            self._wd.disable('ACTIVE')
+            self._wd.restart('DIAL', 0)
+            self._wd.disable('POWER')
 
-    # -----
+            if broadcast_state:
+                self._send_control_sequence('WB')
 
-    def _watchdog_callback_ST(self, name:str):
-        self.write('\x1bST', 'w')
+        elif new_state == S_ACTIVE:
+            if self._state > S_ACTIVE:
+                return
+            self._wd.restart('ACTIVE')
+            self._dial_number = '' # Important only on instant dialling
+            self._wd.disable('DIAL')
+            self._wd.restart('PRINTER')
+            self._wd.disable('POWER')
+            l.info("Printer start timer enabled")
 
-    # -----
+            if broadcast_state:
+                self._send_control_sequence('A')
 
-    def _printer_start_timeout(self, name):
-        if self.wru_fallback:
-            # On teleprinter timeout, send fake ESC-~
-            self._fallback_wru_triggered = True
-            l.warning("Printer start attempt timed out, fallback WRU responder enabled")
-            self._rx_buffer.append("\x1b~0")
-        else:
-            l.warning("Printer start attempt timed out")
-            self._rx_buffer.append("\x1bZ")
+        elif new_state == S_ACTIVE_P:
+            self._wd.disable('PRINTER')
+        
+        elif new_state == S_ACTIVE_FONT:
+            pass
 
-
-    #def thread_memory(self):
-    #    while self._run:
-    #        #LOG('.')
-    #        if self._mx_buffer:
-    #            a = self._mx_buffer.pop(0)
-    #            self._rx_buffer.append(a)
-    #        time.sleep(0.15)
+        self._state = new_state
 
     # =====
 
@@ -523,12 +322,125 @@ class TelexMCP(txBase.TelexBase):
         if enable:
             self.cli_enable = True
             self.cli_text = ''
-            self._rx_buffer.append('\x1bA')
+            self._set_state(S_ACTIVE, True)
             ans = self.cli.command('WHOAMI')
             self._rx_buffer.extend(list(ans))
-            self._wd.disable('WB')
         else:
             self.cli_enable = False
+
+    # -----
+
+    def send_abort(self, last_words:str=None):
+        if last_words:
+            self._set_state(S_ACTIVE, True)
+            self._rx_buffer.extend(list(last_words))
+        self._set_state(S_OFFLINE, True)
+    
+    # -----
+
+    def _send_control_sequence(self, cmd:str):
+        self._rx_buffer.append('\x1b'+cmd)
+
+    # -----
+
+    def read_file(self, file_name:str):
+        base_name = os.path.join('read', file_name.lower())
+        try:
+            name = self.read_file_exist(base_name, ('txt',))
+            text = ''
+
+            if name:
+                with open(name, 'r') as fp:
+                    text = fp.read()
+                    text = text.replace('\n', '\r\n')
+                    text = txCode.BaudotMurrayCode.translate(text)
+
+            name = self.read_file_exist(base_name, ('pix', 'pox'))
+            if name:
+                with open(name, 'rb') as fp:
+                    text = fp.read().decode('ASCII', errors='ignore')
+                    for us, eu in (('&','8'), ('#','M'), ('$','S'), ('"',"'"), (';',','), ('!','1'), ('\x1A','')):
+                        text = text.replace(us, eu)
+                    text = txCode.BaudotMurrayCode.translate(text)
+                    if True:
+                        mc = txCode.BaudotMurrayCode()
+                        bintext = mc.encodeA2BM(text)
+                        with open(base_name+'_.bin', 'wb') as wfp:
+                            wfp.write(bintext)
+
+            name = self.read_file_exist(base_name, ('bin', 'ls'))
+            if name:
+                with open(name, 'rb') as fp:
+                    bintext = fp.read()
+                    mc = txCode.BaudotMurrayCode(flip_bits=name.endswith('ls'))
+                    text = mc.decodeBM2A(bintext)
+
+            if text:
+                self._rx_buffer.extend(list(text))
+                l.info("Read file: {!r} ({} chars)".format(name, len(text)))
+
+        except:
+            l.error("Error in read file")
+
+    # -----
+    
+    def read_file_exist(self, base_name:str, extensions:list):
+        for extension in extensions:
+            name = base_name + '.' + extension
+            if os.path.isfile(name):
+                return name
+
+    # =====
+
+    def _stop_watchdog_callback(self, name:str):
+        self.write('\x1bST', 'wdg')
+
+    # -----
+
+    def _dial_watchdog_callback(self, name:str):
+        if name.endswith('ABORT'):
+            #self.write('\x1bST', 'wdg')
+            self.send_abort('<<<ABORT')
+        elif self._dial_number:
+            if self._dial_number == '000':
+                self.enable_cli(True)
+                self._dial_number = ''
+            else:
+                if self._dial_timeout > 0 or name.endswith('DIREKT'):
+                    self._send_control_sequence('#' + self._dial_number)
+                    self._dial_number = ''
+                else:
+                    self._send_control_sequence('#!' + self._dial_number)
+
+
+    def _printer_start_watchdog_callback(self, name:str):
+        #return #JK test
+        if self._continue_with_no_printer:
+            # On teleprinter timeout, send fake ESC-~
+            l.warning("Printer start attempt timed out, fallback WRU responder enabled")
+            self._set_state(S_ACTIVE_P)
+            self._rx_buffer.append("\x1b~0")
+        else:
+            l.warning("Printer start attempt timed out")
+            self.send_abort()
+
+    # -----
+
+    def _power_watchdog_callback(self, name:str):
+        if self._state != S_OFFLINE:
+            self.send_abort()
+        self._set_state(S_SLEEPING)
+
+    # -----
+
+    def _welcome_watchdog_callback(self, name:str):
+        pass
+
+    # -----
+
+    def _WRU_watchdog_callback(self, name:str):
+        self._rx_buffer.extend(list('<\r\n' + self._WRU_ID))   # send back device id
+        l.info("Sending software WRU response: {!r}".format(self._WRU_ID))
 
 #######
 
