@@ -84,6 +84,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._loopback = params.get('loopback', True)
         self._timing_rxd = params.get('timing_rxd', False)
         self._WB_pulse_length = params.get('WB_pulse_length', 40)
+        self._double_WR = params.get('double_WR', False)
 
         # init codec
 
@@ -161,10 +162,11 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         ''' called by system to output next character or send control sequence '''
-        if a == '#':
-            a = '@'   # WRU - ask teletype for hardware ID (KG)
         if a:
+            if a == '#':   a = '@'   # WRU - ask teletype for hardware ID (KG)
             self._tx_buffer.append(a)
+            if self._double_WR and a == '\r':
+                self._tx_buffer.append(a)
 
     # =====
 
@@ -263,7 +265,7 @@ class TelexRPiTTY(txBase.TelexBase):
         elif a == 'A':
             self._set_state(S_ACTIVE_INIT)
 
-        elif a == 'TP0':
+        elif a in ('TP0', 'ZZ'):
             self._enable_power(False)
 
         elif a == 'TP1':
