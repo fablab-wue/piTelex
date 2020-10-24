@@ -20,7 +20,7 @@ def LOG(text:str, level:int=3):
     log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
 
 if os.name == 'nt':   # debug on windows PC
-    REMOTE_IP = '10.0.0.35'   # IP of the remote RPi with its GPIO
+    REMOTE_IP = '10.0.0.40'   # IP of the remote RPi with its GPIO
 else:
     REMOTE_IP = None   # GPIO on this RPi itself
 
@@ -227,8 +227,8 @@ class Observer():
                     return line
             else:
                 self._counter = 0
-        
-    def reset(self):    
+
+    def reset(self):
         self._counter = 0
 
     def get_state(self) -> bool:

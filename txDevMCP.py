@@ -95,7 +95,7 @@ class TelexMCP(txBase.TelexBase):
 
 
     def write(self, a:str, source:str):
-        if len(a) > 1:
+        if len(a) > 1 and a[0] == '\x1b':
             a = a[1:]
             if a == '1T':   # 1T
                 if self._state <= S_OFFLINE:
@@ -128,7 +128,7 @@ class TelexMCP(txBase.TelexBase):
 
             if a == 'Z':   # stop motor
                 self._set_state(S_OFFLINE)
-                
+
             if a == 'A':   # start motor
                 self._set_state(S_ACTIVE)
 
@@ -319,7 +319,7 @@ class TelexMCP(txBase.TelexBase):
 
         elif new_state == S_ACTIVE_P:
             self._wd.disable('PRINTER')
-        
+
         elif new_state == S_ACTIVE_FONT:
             pass
 
@@ -344,7 +344,7 @@ class TelexMCP(txBase.TelexBase):
             self._set_state(S_ACTIVE, True)
             self._rx_buffer.extend(list(last_words))
         self._set_state(S_OFFLINE, True)
-    
+
     # -----
 
     def _send_control_sequence(self, cmd:str):
@@ -392,7 +392,7 @@ class TelexMCP(txBase.TelexBase):
             l.error("Error in read file")
 
     # -----
-    
+
     def read_file_exist(self, base_name:str, extensions:list):
         for extension in extensions:
             name = base_name + '.' + extension

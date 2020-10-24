@@ -36,7 +36,7 @@ class TelexRPiCtrl(txBase.TelexBase):
 
         self._pin_number_switch = params.get('pin_number_switch', 0)   # connected to NS
         self._inv_number_switch = params.get('inv_number_switch', True)
-        
+
         self._pin_button_1T = params.get('pin_button_1T', 0)   # single button optional
         self._pin_button_AT = params.get('pin_button_AT', 0)   # button AT optional
         self._pin_button_ST = params.get('pin_button_ST', 0)   # button ST optional
@@ -45,13 +45,13 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_button_U2 = params.get('pin_button_U2', 0)   # button user 2 optional
         self._pin_button_U3 = params.get('pin_button_U3', 0)   # button user 3 optional
         self._pin_button_U4 = params.get('pin_button_U4', 0)   # button user 4 optional
-        
+
         self._pin_LED_A = params.get('pin_LED_A', 0)
         self._pin_LED_WB = params.get('pin_LED_WB', 0)
         self._pin_LED_WB_A = params.get('pin_LED_WB_A', 0)
         self._pin_LED_status_R = params.get('pin_LED_status_R', 0)   # LED red
         self._pin_LED_status_G = params.get('pin_LED_status_G', 0)   # LED green
-        
+
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
 
@@ -160,18 +160,13 @@ class TelexRPiCtrl(txBase.TelexBase):
     # =====
 
     def _check_commands(self, a:str):
-        if a == 'A':
-            self._set_mode('A')
+        if a in ('Z', 'WB', 'A', 'AA'):
+            self._set_mode(a)
+            self._enable_power(True)
 
-        elif a == 'Z':
-            self._set_mode('Z')
-
-        elif a == 'WB':
-            self._set_mode('WB')
-
-        elif a == 'TP0':
-            self._enable_power(False)
+        elif a in ('TP0', 'ZZ'):
             self._set_mode('ZZ')
+            self._enable_power(False)
 
         elif a == 'TP1':
             self._enable_power(True)
@@ -181,7 +176,7 @@ class TelexRPiCtrl(txBase.TelexBase):
 
     def _set_mode(self, mode:str):
         self._mode = mode
-        if mode in ['A']:
+        if mode in ('A', 'AA'):
             if self._LED_A:
                 self._LED_A.on()
             if self._LED_WB:
@@ -191,7 +186,7 @@ class TelexRPiCtrl(txBase.TelexBase):
             if self._number_switch:
                 self._number_switch.enable(False)
 
-        if mode in ['Z']:
+        if mode in ('Z', 'ZZ'):
             if self._LED_A:
                 self._LED_A.off()
             if self._LED_WB:
@@ -201,7 +196,7 @@ class TelexRPiCtrl(txBase.TelexBase):
             if self._number_switch:
                 self._number_switch.enable(False)
 
-        if mode in ['WB']:
+        if mode in ('WB',):
             if self._LED_A:
                 self._LED_A.off()
             if self._LED_WB:

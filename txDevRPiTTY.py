@@ -133,7 +133,7 @@ class TelexRPiTTY(txBase.TelexBase):
         # init state
 
         self._set_state(S_OFFLINE)
-        
+
         # debug
         #cbs = pi.wave_get_max_cbs()
         #micros = pi.wave_get_max_micros()
@@ -182,13 +182,14 @@ class TelexRPiTTY(txBase.TelexBase):
             and len(self._tx_buffer[0]) == 1 \
             and len(text) <= 66:
             text += self._tx_buffer.pop(0)
-        
+
         if text:
             self._write_wave(text)
-        
+
         elif self._tx_buffer and len(self._tx_buffer[0]) > 1:   # control sequence
-            a = self._tx_buffer.pop(0)[1:]
-            self._check_commands(a)
+            a = self._tx_buffer.pop(0)
+            if a[0] == '\x1b':
+                self._check_commands(a[1:])
 
     # -----
 
@@ -365,7 +366,7 @@ class TelexRPiTTY(txBase.TelexBase):
         ''' use wave transmitter to write text as baudot serial sequence '''
         if not text or self._is_writing_wave():   # last wave is still transmitting
             return
-        
+
         #pi.wave_clear()
 
         if text == '§':

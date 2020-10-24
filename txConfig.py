@@ -181,19 +181,19 @@ def load():
 
     if ARGS.screen and 'screen' not in devices:
         devices['screen'] = {
-            'type': 'screen', 
-            'enable': True, 
-            'show_BuZi': True, 
-            'show_capital': False, 
-            'show_ctrl': True, 
+            'type': 'screen',
+            'enable': True,
+            'show_BuZi': True,
+            'show_capital': False,
+            'show_ctrl': True,
             'show_info': False
             }
 
     if ARGS.terminal:
         devices['terminal'] = {
-            'type': 'terminal', 
-            'enable': True, 
-            'portname': ARGS.terminal.strip(), 
+            'type': 'terminal',
+            'enable': True,
+            'portname': ARGS.terminal.strip(),
             'baudrate': 300,
             'bytesize': 8,
             'stopbits': 1,
