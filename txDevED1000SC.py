@@ -69,6 +69,7 @@ class TelexED1000SC(txBase.TelexBase):
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
         self.send_WB_pulse = self.params.get('send_WB_pulse', False)
+        self.unres_threshold = self.params.get('unres_threshold', 100)
 
         recv_f0 = self.params.get('recv_f0', 2250)
         recv_f1 = self.params.get('recv_f1', 3150)
@@ -272,6 +273,8 @@ class TelexED1000SC(txBase.TelexBase):
         audio = pyaudio.PyAudio()
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
 
+        bit_last = None
+
         while self._run:
             # Executing the IIR filter for bit recognition takes a lot of CPU
             # power. Normally, we do it four times per bit or every 5 ms (once
@@ -307,6 +310,27 @@ class TelexED1000SC(txBase.TelexBase):
 
             # Run FSK demodulation (bit detection)
             bit = self._recv_decode(data)
+
+            if bit_last != bit and not (20 <= self._rx_state < 40):
+                if bit is None:
+                    l.debug("[rx] Squelch active, last bit {}, previous counter value: {}".format(
+                        "Z" if bit_last else "A",
+                        _bit_counter_1 if bit_last else _bit_counter_0
+                        )
+                    )
+                elif bit_last is None:
+                    l.debug("[rx] Squelch off, bit changed to {}, previous counter value: {}".format(
+                        "Z" if bit else "A",
+                        _bit_counter_0
+                        )
+                    )
+                else:
+                    l.debug("[rx] Bit changed to {}, previous counter value: {}".format(
+                        "Z" if bit else "A",
+                        _bit_counter_1 if bit_last else _bit_counter_0
+                        )
+                    )
+                bit_last = bit
 
             # The purpose of these bit counters is to detect a stable level of
             # A or Z, which triggers state changes.
@@ -369,7 +393,7 @@ class TelexED1000SC(txBase.TelexBase):
                 # keep this transparent and allow fallback mechanisms like the
                 # archive module to continue receiving, just set offline and
                 # reset our internal state to 0.
-                if _bit_counter_0 == 100:
+                if _bit_counter_0 == self.unres_threshold:
                     l.info("[rx] Detected unresponsive teleprinter")
                     self._set_online(False)
                     self._rx_state = 0

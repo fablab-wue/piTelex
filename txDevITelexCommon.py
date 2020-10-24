@@ -175,7 +175,20 @@ class TelexITelexCommon(txBase.TelexBase):
     # =====
 
     def update_acknowledge_counter(self, print_buf_len):
-        self._acknowledge_counter = self._received_counter - print_buf_len
+        """
+        Update i-Telex Acknowledge counter, which communicates the number of
+        printed characters. The following needs to be taken into account:
+
+        - self._received_counter: number of received characters from peer
+        - print_buf_len: number of characters currently in teleprinter buffer
+        - unread_len: number of printable characters still waiting our rx queue
+
+        The number of printed characters equals the received characters minus
+        all characters "on the way", i.e. residing in any buffer.
+        """
+        unread_len = len([i for i in self._rx_buffer if not i.startswith("\x1b")])
+        self._acknowledge_counter = self._received_counter - print_buf_len - unread_len
+        l.debug("{}(rcv) - {}(tpbuf) - {}(unread) = {}(ackctr)".format(self._received_counter, print_buf_len, unread_len, self._acknowledge_counter))
         self._print_buf_len = print_buf_len
         if self._acknowledge_counter < self._last_acknowledge_counter:
             # New count is smaller than before: reset it to the old value to

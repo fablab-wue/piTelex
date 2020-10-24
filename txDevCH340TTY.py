@@ -191,6 +191,9 @@ class TelexCH340TTY(txBase.TelexBase):
                 self._tx_buffer = []
                 bb = self._mc.encodeA2BM(aa)
                 if bb:
+                    self._rx_buffer.append('\x1b~' + str(self._tty.out_waiting + len(bb)))
+                    # Force-update last out_waiting value to trigger idle2Hz update
+                    self._last_out_waiting += len(bb)
                     self._tty.write(bb)
 
     # -----
@@ -227,7 +230,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def idle2Hz(self):
         # send printer FIFO info
         out_waiting = self._tty.out_waiting
-        if out_waiting != self._last_out_waiting and self._is_enabled:
+        if out_waiting != self._last_out_waiting:
             self._rx_buffer.append('\x1b~' + str(out_waiting))
             self._last_out_waiting = out_waiting
 

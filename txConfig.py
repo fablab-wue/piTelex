@@ -263,10 +263,11 @@ def load():
             'baudrate': 50,
             'devindex': None,
             'zcarrier': False,
+            'unres_threshold': 100,
             }
 
     if ARGS.itelex >= 0:
-        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'number': 0, 'tns-pin': 12345}
+        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'tns-dynip-number': 0, 'tns-pin': 12345}
 
     if ARGS.news:
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
