@@ -179,7 +179,7 @@ class TelexMCP(txBase.TelexBase):
                     # Send command to inform ITelexSrv that the welcome banner has
                     # been queued completely (unlocks non-command reads from
                     # ITelexSrv)
-                    self._rx_buffer.append('WELCOME')
+                    self._rx_buffer.append('\x1bWELCOME')
                 return True
 
             if a == 'CLI':   # welcome as server
