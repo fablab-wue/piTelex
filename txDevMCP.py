@@ -243,7 +243,7 @@ class TelexMCP(txBase.TelexBase):
 
                 # A digit or +/- is being dialled; record digit and trigger dial
                 # thread to check
-                if a.isdigit() or a == '-':
+                if a.isalnum() or a == '-':
                     self._dial_number += a
                     self._wd.restart('DIAL')
                     if self._dial_timeout <= 0:
