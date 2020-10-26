@@ -44,7 +44,12 @@ class TelexShellCmd(txBase.TelexBase):
         self.id = 'ShC'
         self.params = params
 
-        self._LUT = params.get('LUT', {})
+        self._LUT = {}
+        lut = params.get('LUT', {})
+        for keystr, cmd in lut.items():
+            keys = keystr.split(',')
+            for key in keys:
+                self._LUT[key.upper().strip()] = cmd
 
         self._rx_buffer = []
 
