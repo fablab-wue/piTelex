@@ -188,7 +188,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         elif self._tx_buffer and len(self._tx_buffer[0]) > 1:   # control sequence
             a = self._tx_buffer.pop(0)
-            if a[0] == '\x1b':
+            if len(a) > 1 and a[0] == '\x1b':
                 self._check_commands(a[1:])
 
     # -----

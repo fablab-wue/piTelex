@@ -126,10 +126,10 @@ class TelexMCP(txBase.TelexBase):
                     self._wd.restart('POWER', 1)
                 return True
 
-            if a == 'Z':   # stop motor
+            if a in ('Z', 'ZZ'):   # stop motor
                 self._set_state(S_OFFLINE)
 
-            if a == 'A':   # start motor
+            if a in ('A', 'AA'):   # start motor
                 self._set_state(S_ACTIVE)
 
             if a.startswith('~'):

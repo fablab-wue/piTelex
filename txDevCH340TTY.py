@@ -170,8 +170,8 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def write(self, a:str, source:str):
-        if len(a) != 1:
-            self._check_commands(a)
+        if len(a) > 1 and a[0] == '\x1b':
+            self._check_commands(a[1:])
             return 
 
         if a == '#':
@@ -246,6 +246,7 @@ class TelexCH340TTY(txBase.TelexBase):
         if enable and not self._is_enabled:
             # Confirm enable status for MCP
             self._rx_buffer.append('\x1b~0')
+            self._rx_buffer.append('\x1bAA')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
         self._mc.reset()
@@ -294,12 +295,12 @@ class TelexCH340TTY(txBase.TelexBase):
     def _check_commands(self, a:str):
         enable = None
 
-        if a == '\x1bA':
+        if a in ('A', 'AA'):
             self._set_pulse_dial(False)
             self._set_online(True)
             enable = True
 
-        if a == '\x1bZ':
+        if a in ('Z', 'ZZ'):
             self._tx_buffer = []    # empty write buffer...
             self._set_pulse_dial(False)
             self._set_online(False)
@@ -307,7 +308,7 @@ class TelexCH340TTY(txBase.TelexBase):
             if not enable and self._use_squelch:
                 self._set_time_squelch(1.5)
 
-        if a == '\x1bWB':
+        if a in ('WB',):
             self._set_online(True)
             if self._use_pulse_dial:   # TW39
                 self._set_pulse_dial(True)

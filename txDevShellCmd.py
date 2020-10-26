@@ -78,7 +78,7 @@ class TelexShellCmd(txBase.TelexBase):
             cmd = self._LUT.get(a, '')
             if cmd:
                 l.info('execut for {} command {}'.format(a, cmd))
-                print('execut for {} command {}'.format(a, cmd))
+                #print('execut for {} command {}'.format(a, cmd))
                 #subprocess.check_call(['iptables', '-t', 'nat', '-A',
                 #       'PREROUTING', '-p', 'tcp',
                 #       '--destination-port', '80',
