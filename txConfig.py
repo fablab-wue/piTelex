@@ -10,7 +10,10 @@ __version__     = "0.0.2"
 
 import time
 from argparse import ArgumentParser
-import json
+try:
+    import commentjson as json
+except:
+    import json
 
 import log
 import logging
