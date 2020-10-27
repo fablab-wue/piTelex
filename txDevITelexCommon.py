@@ -15,6 +15,7 @@ import datetime
 import sys
 import random
 random.seed()
+import enum
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -95,13 +96,35 @@ def display_hex(data:bytes) -> str:
     return " ".join(hex(i) for i in data)
 
 
+class ST(enum.IntEnum):
+    """
+    Represent i-Telex connection state.
+    """
+    # Disconnected
+    DISCON = enum.auto()
+
+    # Connected, but printer not yet started
+    CON_INIT = enum.auto()
+
+    # Connected, printer start requested
+    CON_TP_REQ = enum.auto()
+
+    # Connected, printer has been started:
+    # - client: good to go (state will be advanced w/o condition)
+    # - server: waiting for welcome banner, we'll withhold other data in read
+    #   method
+    CON_TP_RUN = enum.auto()
+
+    # Connected, good to go
+    CON_FULL = enum.auto()
+
 class TelexITelexCommon(txBase.TelexBase):
     def __init__(self):
         super().__init__()
 
         self._rx_buffer = []
         self._tx_buffer = []
-        self._connected = 0
+        self._connected = ST.DISCON
         self._run = True
 
         # Printer start feedback is saved here
@@ -122,7 +145,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def exit(self):
         self._run = False
-        self._connected = 0
+        self._connected = ST.DISCON
 
     # =====
 
@@ -145,12 +168,12 @@ class TelexITelexCommon(txBase.TelexBase):
             # keyboard dial), save started state.
             self._printer_running = True
 
-            if self._connected == 2:
+            if self._connected == ST.CON_TP_REQ:
                 # Printer has been started successfully; advance connection
                 # state; welcome banner will be sent in process_connection if
                 # we're server
-                self._connected = 3
-            elif self._connected >= 4:
+                self._connected = ST.CON_TP_RUN
+            elif self._connected >= ST.CON_FULL:
                 # Evaluate only if welcome banner has been sent, if applicable, to
                 # minimise chances to prematurely increment the Acknowledge counter
                 try:
@@ -161,7 +184,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def disconnect_client(self):
         self._tx_buffer = []
-        self._connected = 0
+        self._connected = ST.DISCON
 
 
     def idle2Hz(self):
@@ -169,7 +192,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
         # Send Acknowledge if fully connected (only set flag because we're out
         # of context)
-        if self._connected >= 4:
+        if self._connected >= ST.CON_FULL:
             self._send_acknowledge_idle = True
 
     # =====
@@ -210,15 +233,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
         s.settimeout(0.2)
 
-        # Connection states:
-        # 0: disconnected
-        # 1: connected, but printer not yet started
-        # 2: connected, printer start requested
-        # 3: connected, printer has been started, waiting for welcome banner
-        #    (if server), we'll withhold other data in read method
-        # 4: connected, welcome banner has been received completely (server
-        #    only), now all data can be received from i-Telex
-        self._connected = 1
+        self._connected = ST.CON_INIT
 
         # Store remote protocol version to control negotiation
         self._remote_protocol_ver = None
@@ -270,24 +285,24 @@ class TelexITelexCommon(txBase.TelexBase):
         #   completely. On this command, our read method is unlocked and
         #   previously received data is available for main loop. (state 4)
 
-        # Start with 0 to trigger log message
-        _connected_before = 0
-        while self._connected > 0:
+        # Start with ST.DISCON to trigger log message
+        _connected_before = ST.DISCON
+        while self._connected > ST.DISCON:
             if _connected_before != self._connected:
-                l.info("State transition: {}=>{}".format(_connected_before, self._connected))
+                l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
                 _connected_before = self._connected
-                # We just entered state 3 (printer running, waiting for welcome
-                # banner)
-                if self._connected == 3:
+                # We just entered ST.CON_TP_RUN (printer running, waiting for
+                # welcome banner)
+                if self._connected == ST.CON_TP_RUN:
                     if is_server:
                         # Send welcome banner
                         self._tx_buffer = []
                         self.send_welcome(s)
                     else:
-                        # We're client: skip state 3
-                        self._connected = 4
+                        # We're client: skip ST.CON_TP_RUN
+                        self._connected = ST.CON_FULL
                         continue
-                elif self._connected == 4:
+                elif self._connected == ST.CON_FULL:
                     # Send first Acknowledge
                     if not is_ascii:
                         # Send fixed value in Acknowledge packet, mainly for
@@ -354,38 +369,38 @@ class TelexITelexCommon(txBase.TelexBase):
                             error = True
                             break
                         else:
-                            if self._connected == 1:
+                            if self._connected == ST.CON_INIT:
                                 if not self._printer_running:
                                     # Request printer start; confirmation will
                                     # arrive as ESC-~ (write method will
-                                    # advance to state 3 and do what's in the
-                                    # following else block)
-                                    self._connected = 2
+                                    # advance to ST.CON_TP_RUN and do what's in
+                                    # the following else block)
+                                    self._connected = ST.CON_TP_REQ
                                     self._rx_buffer.append('\x1bA')
                                 else:
                                     # Printer already running; welcome banner
                                     # will be sent above in next iteration if
                                     # we're server
-                                    self._connected = 3
+                                    self._connected = ST.CON_TP_RUN
                                     self._rx_buffer.append('\x1bA')
 
                     # Baudot Data
                     elif data[0] == 2 and packet_len >= 1 and packet_len <= 50:
                         l.debug('Received i-Telex packet: Baudot data ({})'.format(display_hex(data)))
                         aa = bmc.decodeBM2A(data[2:])
-                        if self._connected == 1:
+                        if self._connected == ST.CON_INIT:
                             if not self._printer_running:
                                 # Request printer start; confirmation will
                                 # arrive as ESC-~ (write method will
-                                # advance to state 3 and do what's in the
-                                # following else block)
-                                self._connected = 2
+                                # advance to ST.CON_TP_RUN and do what's in
+                                # the following else block)
+                                self._connected = ST.CON_TP_REQ
                                 self._rx_buffer.append('\x1bA')
                             else:
                                 # Printer already running; welcome banner
                                 # will be sent above in next iteration if
                                 # we're server
-                                self._connected = 3
+                                self._connected = ST.CON_TP_RUN
                                 self._rx_buffer.append('\x1bA')
                         for a in aa:
                             if a == '@':
@@ -394,7 +409,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         self._received_counter += len(data[2:])
                         # Send Acknowledge if printer is running and we've got
                         # at least 16 characters left to print
-                        if self._connected >= 4 and self._print_buf_len >= 16:
+                        if self._connected >= ST.CON_FULL and self._print_buf_len >= 16:
                             self.send_ack(s, self._acknowledge_counter)
 
                     # End
@@ -431,7 +446,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         # Send Acknowledge if printer is running and remote end
                         # has printed all sent characters
                         # ! Better not, this will create an Ack flood !
-                        # if self._connected >= 4 and unprinted == 0:
+                        # if self._connected >= ST.CON_FULL and unprinted == 0:
                         #     self.send_ack(s, self._acknowledge_counter)
 
                     # Version
@@ -503,19 +518,19 @@ class TelexITelexCommon(txBase.TelexBase):
                     elif not is_ascii:
                         l.warning('Detected ASCII connection, but i-Telex was expected')
                         is_ascii = True
-                    if self._connected == 1:
+                    if self._connected == ST.CON_INIT:
                         if not self._printer_running:
                             # Request printer start; confirmation will
                             # arrive as ESC-~ (write method will
-                            # advance to state 3 and do what's in the
-                            # following else block)
-                            self._connected = 2
+                            # advance to ST.CON_TP_RUN and do what's in
+                            # the following else block)
+                            self._connected = ST.CON_TP_REQ
                             self._rx_buffer.append('\x1bA')
                         else:
                             # Printer already running; welcome banner
                             # will be sent above in next iteration if
                             # we're server
-                            self._connected = 3
+                            self._connected = ST.CON_TP_RUN
                             self._rx_buffer.append('\x1bA')
                     data = data.decode('ASCII', errors='ignore').upper()
                     data = txCode.BaudotMurrayCode.translate(data)
@@ -547,7 +562,7 @@ class TelexITelexCommon(txBase.TelexBase):
                     else:   # baudot
                         if (timeout_counter % 5) == 0:   # every 1 sec
                             # Send Acknowledge if printer is running
-                            if self._connected >= 4:
+                            if self._connected >= ST.CON_FULL:
                                 self.send_ack(s, self._acknowledge_counter)
 
                         if self._tx_buffer:
@@ -593,9 +608,9 @@ class TelexITelexCommon(txBase.TelexBase):
             if not error:
                 self.send_end(s)
         l.info('end connection')
-        self._connected = 0
+        self._connected = ST.DISCON
         if _connected_before != self._connected:
-            l.info("State transition: {}=>{}".format(_connected_before, self._connected))
+            l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
 
 
     def send_heartbeat(self, s):
@@ -614,8 +629,8 @@ class TelexITelexCommon(txBase.TelexBase):
         # 2. SHOULDN'T be sent before printer is started
         # 3. MUST be sent once the teleprinter has been started
         #
-        # No. 1 is achieved through self._connected; it is set to 2 once the
-        # condition is fulfilled.
+        # No. 1 is achieved through self._connected; it is set to ST.CON_TP_REQ
+        # once the condition is fulfilled.
         #
         # No. 2 is always fulfilled since the printer is started only after
         # condition 1, or is already running if we're the caller.
