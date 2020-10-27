@@ -129,7 +129,9 @@ def init_error_log(log_path):
         logger.info("===== piTelex rev " + rev)
 
 def excepthook(etype, value, tb):
-    l.critical("".join(traceback.format_exception(etype, value, tb)))
+    to_log = "".join(traceback.format_exception(etype, value, tb))
+    l.critical(to_log)
+    print(to_log)
 
 def unraisablehook(unraisable):
     excepthook(unraisable.exc_type, unraisable.exc_value, unraisable.exc_traceback)
