@@ -137,7 +137,10 @@ class TelexMCP(txBase.TelexBase):
                 if self._state == S_ACTIVE:
                     l.info("Printer running, timer disabled")
                     self._set_state(S_ACTIVE_P)
-                self._wd.restart('ACTIVE')
+                # Reset ACTIVE watchdog only if we're still online, to prevent
+                # re-enabling teleprinter power later
+                if self._state > S_OFFLINE:
+                    self._wd.restart('ACTIVE')
                 # If we're already in S_OFFLINE after a connection terminated,
                 # but have still data to print, avoid cutting power too early
                 # by resetting the timer on each ESC-~. On empty printer
