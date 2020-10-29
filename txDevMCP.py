@@ -129,14 +129,14 @@ class TelexMCP(txBase.TelexBase):
             if a in ('Z', 'ZZ'):   # stop motor
                 self._set_state(S_OFFLINE)
 
-            if a in ('A', 'AA'):   # start motor
+            if a == 'A':   # start motor
                 self._set_state(S_ACTIVE)
 
-            if a.startswith('~'):
-                # Printer was started successfully; cancel start timer if applicable
-                if self._state == S_ACTIVE:
-                    l.info("Printer running, timer disabled")
-                    self._set_state(S_ACTIVE_P)
+            if a == 'AA': # Printer was started successfully
+                l.info("Printer running, timer disabled")
+                self._set_state(S_ACTIVE_P) # (resets start timer)
+
+            if a.startswith('~'): # Printer buffer feedback
                 # Reset ACTIVE watchdog only if we're still online, to prevent
                 # re-enabling teleprinter power later
                 if self._state > S_OFFLINE:
@@ -147,6 +147,8 @@ class TelexMCP(txBase.TelexBase):
                 # buffer, ESC-~'s will stop.
                 if self._wd.is_active('POWER'):
                     self._wd.restart('POWER')
+                # Also reset WRU timer to avoid the fallback WRU responder from
+                # triggering before the teleprinter's has had a chance
                 if self._wd.is_active('WRU'):
                     self._wd.restart('WRU')
                 return
@@ -426,12 +428,11 @@ class TelexMCP(txBase.TelexBase):
 
 
     def _printer_start_watchdog_callback(self, name:str):
-        #return #JK test
         if self._continue_with_no_printer:
-            # On teleprinter timeout, send fake ESC-~
+            # On teleprinter timeout, send fake ESC-AA
             l.warning("Printer start attempt timed out, fallback WRU responder enabled")
             self._set_state(S_ACTIVE_P)
-            self._rx_buffer.append("\x1b~0")
+            self._rx_buffer.append("\x1bAA")
         else:
             l.warning("Printer start attempt timed out")
             self.send_abort()

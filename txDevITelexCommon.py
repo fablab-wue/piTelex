@@ -159,11 +159,7 @@ class TelexITelexCommon(txBase.TelexBase):
             # which is why we need to explicitly set it to False when the
             # connection is terminated (typically inside the derived class's
             # connection handling thread).
-        elif a.startswith("\x1b~"):
-            # Printer buffer feedback transports two things:
-            # - Printer has been started (on first receipt)
-            # - Current printer buffer length
-
+        elif a == "\x1bAA": # Printer started
             # In case we're not connected when the printer starts (e.g. for
             # keyboard dial), save started state.
             self._printer_running = True
@@ -173,7 +169,9 @@ class TelexITelexCommon(txBase.TelexBase):
                 # state; welcome banner will be sent in process_connection if
                 # we're server
                 self._connected = ST.CON_TP_RUN
-            elif self._connected >= ST.CON_FULL:
+
+        elif a.startswith("\x1b~"): # Printer buffer feedback
+            if self._connected >= ST.CON_FULL:
                 # Evaluate only if welcome banner has been sent, if applicable, to
                 # minimise chances to prematurely increment the Acknowledge counter
                 try:
