@@ -73,7 +73,7 @@ class TelexMCP(txBase.TelexBase):
         self._wd.init('DIAL', self._dial_watchdog_callback, self._dial_timeout, DIAL_TIMEOUT)
         self._wd.init('PRINTER', self._printer_start_watchdog_callback, 5)
         self._wd.init('POWER', self._power_watchdog_callback, 20)
-        self._wd.init('WRU', self._WRU_watchdog_callback, 1)
+        self._wd.init('WRU', self._WRU_watchdog_callback, 2)
         #self._wd.init('WELCOME', self._welcome_watchdog_callback, 1)
 
         self.cli = txCLI.CLI(**params)
