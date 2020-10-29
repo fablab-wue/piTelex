@@ -25,12 +25,20 @@ DIAL_TIMEOUT = 55  # 45sec
 # Timeout in ready-to-dial state in sec
 ACTIVE_TIMEOUT = 3*60  # 3min
 
+# offline, teleprinter power off
 S_SLEEPING = -1
+# offline, teleprinter power on
 S_OFFLINE = 0
+# dial mode
 S_DIALING = 1
+# online, printer start requested
 S_ACTIVE = 2
+# online, printer running
 S_ACTIVE_P = 3
-S_ACTIVE_FONT = 4
+# online, printer startup failed
+S_ACTIVE_NO_P = 4
+# punch tape font mode
+S_ACTIVE_FONT = 5
 
 #######
 
@@ -271,6 +279,11 @@ class TelexMCP(txBase.TelexBase):
     def idle20Hz(self):
         self._wd.process()
 
+    def idle2Hz(self):
+        if self._state == S_ACTIVE_NO_P and self._continue_with_no_printer:
+            # Fake buffer feedback in case the teleprinter failed
+            self._send_control_sequence('~0')
+
     # =====
 
     def _set_state(self, new_state:int, broadcast_state:bool=False):
@@ -430,8 +443,8 @@ class TelexMCP(txBase.TelexBase):
     def _printer_start_watchdog_callback(self, name:str):
         if self._continue_with_no_printer:
             # On teleprinter timeout, send fake ESC-AA
-            l.warning("Printer start attempt timed out, fallback WRU responder enabled")
-            self._set_state(S_ACTIVE_P)
+            l.warning("Printer start attempt timed out, feedback simulation enabled")
+            self._set_state(S_ACTIVE_NO_P)
             self._rx_buffer.append("\x1bAA")
         else:
             l.warning("Printer start attempt timed out")
