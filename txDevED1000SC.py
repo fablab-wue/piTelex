@@ -392,8 +392,9 @@ class TelexED1000SC(txBase.TelexBase):
                 # Send ESC-AT after 20 consecutive Zs (100 ms + rest of
                 # _is_online.wait delay, see above). Don't advance state;
                 # ESC-AT will cause us to receive ESC-WB/ESC-A by txDevMCP and
-                # this will toggle is_online.
-                if _bit_counter_1 >= 20:
+                # this will toggle is_online. Use == 20 to ensure sending
+                # ESC-AT only once.
+                if _bit_counter_1 == 20:
                     l.info("[rx] Detected AT press")
                     self._rx_buffer.append('\x1bAT')
                     # Don't send printer start confirmation since AT was
