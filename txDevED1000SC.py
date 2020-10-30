@@ -104,6 +104,9 @@ class TelexED1000SC(txBase.TelexBase):
         # Save how many characters have been printed per session
         self.printed_chars = 0
 
+        # Track MCP active state for printer start feedback
+        self._MCP_active = False
+
         self._run = True
         self._tx_thread = Thread(target=self.thread_tx, name='ED1000tx')
         self._tx_thread.start()
@@ -147,10 +150,12 @@ class TelexED1000SC(txBase.TelexBase):
         if a == '\x1bA':
             l.debug("received online command")
             self._tx_buffer.append('§A')   # signaling type A - connection
+            self._MCP_active = True
             self._set_online(True)
 
         if a == '\x1bZ':
             l.debug("received offline command (ST pressed: {})".format(self._ST_pressed))
+            self._MCP_active = False
             self._set_online(False)
 
         if a == '\x1bWB':
@@ -675,14 +680,16 @@ class TelexED1000SC(txBase.TelexBase):
     def idle2Hz(self):
         # Send printer start (ESC-AA) and buffer feedback (ESC-~)
         #
-        # ESC-AA is sent as soon as the teleprinter is running.
+        # ESC-AA is sent as soon as the teleprinter is running and MCP is in
+        # S_ACTIVE* state (i.e. ESC-A has been received; otherwise we'd cancel
+        # dialling).
         #
         # ESC-~ communicates the current printer buffer length, i.e. the number
         # of characters that remain to be printed.
         printer_online = (ST.ONLINE <= self._rx_state <= ST.OFFLINE_REQ)
         if printer_online or self._send_feedback:
             tx_buf_len = len(self._tx_buffer)
-            if not self._send_feedback:
+            if (not self._send_feedback) and self._MCP_active:
                 self._send_feedback = True
                 # Confirm that we just came online
                 self._rx_buffer.append('\x1bAA')
