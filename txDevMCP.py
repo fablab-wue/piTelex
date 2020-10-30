@@ -134,16 +134,16 @@ class TelexMCP(txBase.TelexBase):
                     self._wd.restart('POWER', 1)
                 return True
 
-            if a in ('Z'):   # stop motor
+            if a == 'Z':   # stop motor
                 self._set_state(S_OFFLINE)
 
-            if a in ('ZZ'):   # sleeping
+            if a == 'ZZ':   # sleeping
                 self._set_state(S_SLEEPING)
 
-            if a in ('A'):   # start printer motor
+            if a == 'A':   # start printer motor
                 self._set_state(S_ACTIVE_INIT)
 
-            if a in ('AA'):   # printer ready
+            if a == 'AA':   # printer ready
                 self._set_state(S_ACTIVE_READY)
 
             if a.startswith('~'):   # printer buffer feedback
