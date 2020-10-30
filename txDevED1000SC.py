@@ -392,8 +392,9 @@ class TelexED1000SC(txBase.TelexBase):
                 # Send ESC-AT after 20 consecutive Zs (100 ms + rest of
                 # _is_online.wait delay, see above). Don't advance state;
                 # ESC-AT will cause us to receive ESC-WB/ESC-A by txDevMCP and
-                # this will toggle is_online.
-                if _bit_counter_1 >= 20:
+                # this will toggle is_online. Use == 20 to ensure sending
+                # ESC-AT only once.
+                if _bit_counter_1 == 20:
                     l.info("[rx] Detected AT press")
                     self._rx_buffer.append('\x1bAT')
                     # Don't send printer start confirmation since AT was
@@ -672,19 +673,19 @@ class TelexED1000SC(txBase.TelexBase):
         return bit
 
     def idle2Hz(self):
-        # Send printer feedback (ESC-~)
-        # It contains the current printer buffer length, i.e. the number of
-        # characters that remain to be printed.
+        # Send printer start (ESC-AA) and buffer feedback (ESC-~)
         #
-        # Printer feedback is sent only after the printer has been started, so
-        # it doubles as a printer start feedback.
+        # ESC-AA is sent as soon as the teleprinter is running.
+        #
+        # ESC-~ communicates the current printer buffer length, i.e. the number
+        # of characters that remain to be printed.
         printer_online = (ST.ONLINE <= self._rx_state <= ST.OFFLINE_REQ)
         if printer_online or self._send_feedback:
             tx_buf_len = len(self._tx_buffer)
             if not self._send_feedback:
                 self._send_feedback = True
-                # We came online, send buffer length as printer start feedback
-                self._rx_buffer.append('\x1b~' + str(tx_buf_len))
+                # Confirm that we just came online
+                self._rx_buffer.append('\x1bAA')
             elif self._last_tx_buf_len != tx_buf_len:
                 # Normal feedback (when buffer changed)
                 self._rx_buffer.append('\x1b~' + str(tx_buf_len))

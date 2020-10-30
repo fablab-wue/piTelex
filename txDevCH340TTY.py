@@ -245,7 +245,6 @@ class TelexCH340TTY(txBase.TelexBase):
     def _set_enable(self, enable:bool):
         if enable and not self._is_enabled:
             # Confirm enable status for MCP
-            self._rx_buffer.append('\x1b~0')
             self._rx_buffer.append('\x1bAA')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
