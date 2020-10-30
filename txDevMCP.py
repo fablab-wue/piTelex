@@ -146,11 +146,9 @@ class TelexMCP(txBase.TelexBase):
             if a in ('AA'):   # printer ready
                 self._set_state(S_ACTIVE_READY)
 
-            if a.startswith('~'):
-                # Printer was started successfully; cancel start timer if applicable
-                if self._state == S_ACTIVE_INIT:
-                    l.info("Printer running, timer disabled")
-                    self._set_state(S_ACTIVE_READY)
+            if a.startswith('~'):   # printer buffer feedback
+                # Reset ACTIVE watchdog only if we're still online, to prevent
+                # re-enabling teleprinter power later
                 if self._state > S_OFFLINE:
                     self._wd.restart('ACTIVE')
                 # If we're already in S_OFFLINE after a connection terminated,
@@ -456,11 +454,10 @@ class TelexMCP(txBase.TelexBase):
 
     def _printer_start_watchdog_callback(self, name:str):
         if self._continue_with_no_printer:
-            # On teleprinter timeout, send fake ESC-~
-            l.warning("Printer start attempt timed out, fallback WRU responder enabled")
-            self._set_state(S_ACTIVE_READY, True)
-            #JK self._set_state(S_ACTIVE_NO_P)
-            self._send_control_sequence("~0")
+            # On teleprinter timeout, send fake ESC-AA
+            l.warning("Printer start attempt timed out, feedback simulation enabled")
+            self._set_state(S_ACTIVE_NO_P, True)
+            self._send_control_sequence("AA")
         else:
             l.warning("Printer start attempt timed out")
             self.send_abort()
