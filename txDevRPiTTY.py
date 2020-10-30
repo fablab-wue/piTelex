@@ -29,11 +29,12 @@ from RPiIO import NumberSwitch, Observer, pi, pi_exit
 #def LOG(text:str, level:int=3):
 #    log.LOG('\033[30;43m<'+text+'>\033[0m', level)
 
+S_SLEEPING = -10
 S_OFFLINE = 0
-S_DIAL_PULSE = 1
-S_DIAL_KEYBOARD = 2
-S_ACTIVE_INIT = 3
-S_ACTIVE = 4
+S_DIALING_PULSE = 11
+S_DIALING_KEYBOARD = 12
+S_ACTIVE_INIT = 20
+S_ACTIVE_READY = 21
 
 #######
 
@@ -199,20 +200,20 @@ class TelexRPiTTY(txBase.TelexBase):
             line = self._line_observer.process()
             if line is True:   # rxd=High
                 self._send_control_sequence('___/¯¯¯')
-                if self._state == S_OFFLINE:
+                if self._state in (S_SLEEPING, S_OFFLINE):
                     self._send_control_sequence('AT')
                 if self._state == S_ACTIVE_INIT:
-                    self._set_state(S_ACTIVE)
+                    self._set_state(S_ACTIVE_READY)
             elif line is False:   # rxd=Low
                 self._send_control_sequence('¯¯¯\\___')
-                if self._state != S_OFFLINE:
+                if self._state not in (S_SLEEPING, S_OFFLINE):
                     self._send_control_sequence('ST')
 
         count, bb = pi.bb_serial_read(self._pin_rxd)
         #LOG('.', 5)
         if count \
             and not(self._use_squelch and (time.monotonic() <= self._time_squelch)) \
-            and self._state != S_DIAL_PULSE:
+            and self._state != S_DIALING_PULSE:
 
             aa = self._mc.decodeBM2A(bb)
 
@@ -232,7 +233,7 @@ class TelexRPiTTY(txBase.TelexBase):
     def idle2Hz(self):
         ''' called by system every 500ms to do background staff '''
         # send printer FIFO info
-        if self._state == S_ACTIVE:
+        if self._state == S_ACTIVE_READY:
             waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
             waiting += len(self._tx_buffer)   # estimation of left chars in buffer
             if waiting < 0:
@@ -242,9 +243,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._last_waiting = waiting
 
         elif self._state == S_ACTIVE_INIT:
-            if self._mode == 'V10' or not self._line_observer:
-                self._set_state(S_ACTIVE)
-            elif self._line_observer:
+            if self._line_observer:
                 line = self._line_observer.get_state()
                 if not line:
                     self._send_control_sequence('^')
@@ -253,20 +252,26 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         ''' check for control sequences and set new state '''
-        if a == 'Z':
+        if a == 'ZZ':
+            self._set_state(S_SLEEPING)
+
+        elif a == 'Z':
             self._set_state(S_OFFLINE)
             self._tx_buffer = []    # empty write buffer...
 
         elif a == 'WB':
             if self._mode == 'TW39':
-                self._set_state(S_DIAL_PULSE)
+                self._set_state(S_DIALING_PULSE)
             else:
-                self._set_state(S_DIAL_KEYBOARD)
+                self._set_state(S_DIALING_KEYBOARD)
 
         elif a == 'A':
             self._set_state(S_ACTIVE_INIT)
 
-        elif a in ('TP0', 'ZZ'):
+        elif a == 'AA':
+            self._set_state(S_ACTIVE_READY)
+
+        elif a == 'TP0':
             self._enable_power(False)
 
         elif a == 'TP1':
@@ -280,36 +285,47 @@ class TelexRPiTTY(txBase.TelexBase):
             return
 
         l.debug('set_state {}'.format(new_state))
-        if new_state == S_OFFLINE:
+        if new_state == S_SLEEPING:
+            self._set_time_squelch(2.5)
+            self._enable_relay(False)
+            self._enable_number_switch(False)
+            self._mc.reset()
+            self._enable_power(False)
+
+        elif new_state == S_OFFLINE:
             self._set_time_squelch(1.5)
             self._enable_relay(False)
             self._enable_number_switch(False)
             self._mc.reset()
+            self._enable_power(True)
 
-        elif new_state == S_DIAL_PULSE:
+        elif new_state == S_DIALING_PULSE:
             self._set_time_squelch(0.5)
             self._enable_relay(False)
             self._enable_number_switch(True)
             self._write_wave('§')   # special control character to send WB-pulse to FSG
+            self._enable_power(True)
 
-        elif new_state == S_DIAL_KEYBOARD:
+        elif new_state == S_DIALING_KEYBOARD:
             self._set_time_squelch(0.25)
             self._enable_relay(True)
             self._enable_number_switch(False)
+            self._enable_power(True)
 
         elif new_state == S_ACTIVE_INIT:
             self._set_time_squelch(0.25)
             self._enable_relay(True)
             self._enable_number_switch(False)
-            if not self._line_observer:
-                new_state = S_ACTIVE
-                self._last_waiting = -1
+            self._enable_power(True)
+            if self._mode == 'V10' or not self._line_observer:
+                new_state = S_ACTIVE_READY
+                self._send_control_sequence('AA')
+
+        if new_state == S_ACTIVE_READY:
+            self._last_waiting = -1
+            self._enable_power(True)
             if self._mode == 'V10':
                 self._write_wave('%\\_')
-
-        elif new_state == S_ACTIVE:
-            self._last_waiting = -1
-            pass
 
         self._state = new_state
         pass

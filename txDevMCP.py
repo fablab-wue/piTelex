@@ -25,12 +25,12 @@ DIAL_TIMEOUT = 55  # 45sec
 # Timeout in ready-to-dial state in sec
 ACTIVE_TIMEOUT = 3*60  # 3min
 
-S_SLEEPING = -1
+S_SLEEPING = -10
 S_OFFLINE = 0
-S_DIALING = 1
-S_ACTIVE = 2
-S_ACTIVE_P = 3
-S_ACTIVE_FONT = 4
+S_DIALING = 10
+S_ACTIVE_INIT = 20
+S_ACTIVE_READY = 21
+S_ACTIVE_FONT = 22
 
 #######
 
@@ -114,7 +114,7 @@ class TelexMCP(txBase.TelexBase):
                 return True
 
             if a == 'LT':   # LT
-                self._set_state(S_ACTIVE, True)
+                self._set_state(S_ACTIVE_INIT, True)
                 return True
 
             if a == 'PT':   # PT
@@ -126,21 +126,24 @@ class TelexMCP(txBase.TelexBase):
                     self._wd.restart('POWER', 1)
                 return True
 
-            if a in ('Z', 'ZZ'):   # stop motor
+            if a in ('Z'):   # stop motor
                 self._set_state(S_OFFLINE)
 
-            if a in ('A', 'AA'):   # start motor
-                self._set_state(S_ACTIVE)
+            if a in ('ZZ'):   # sleeping
+                self._set_state(S_SLEEPING)
+
+            if a in ('A'):   # start printer motor
+                self._set_state(S_ACTIVE_INIT)
+
+            if a in ('AA'):   # printer ready
+                self._set_state(S_ACTIVE_READY)
 
             if a.startswith('~'):
                 # Printer was started successfully; cancel start timer if applicable
-                if self._state == S_ACTIVE:
+                if self._state == S_ACTIVE_INIT:
                     l.info("Printer running, timer disabled")
-                    self._set_state(S_ACTIVE_P)
-                # Reset ACTIVE watchdog only if we're still online, to prevent
-                # re-enabling teleprinter power later
-                if self._state > S_OFFLINE:
-                    self._wd.restart('ACTIVE')
+                    self._set_state(S_ACTIVE_READY)
+                self._wd.restart('ACTIVE')
                 # If we're already in S_OFFLINE after a connection terminated,
                 # but have still data to print, avoid cutting power too early
                 # by resetting the timer on each ESC-~. On empty printer
@@ -156,7 +159,7 @@ class TelexMCP(txBase.TelexBase):
 
             if a == 'FONT':   # set to font mode
                 if self._state == S_ACTIVE_FONT:
-                    self._set_state(S_ACTIVE_P)
+                    self._set_state(S_ACTIVE_READY)
                 else:
                     self._set_state(S_ACTIVE_FONT)
                 return True
@@ -288,6 +291,9 @@ class TelexMCP(txBase.TelexBase):
             self._send_control_sequence('TP0')   # send power off
             self._wd.disable('POWER')
 
+            if broadcast_state:
+                self._send_control_sequence('ZZ')
+
         elif new_state == S_OFFLINE:
             self._wd.disable('ACTIVE')
             self._wd.disable('DIAL')
@@ -307,8 +313,8 @@ class TelexMCP(txBase.TelexBase):
             if broadcast_state:
                 self._send_control_sequence('WB')
 
-        elif new_state == S_ACTIVE:
-            if self._state > S_ACTIVE:
+        elif new_state == S_ACTIVE_INIT:
+            if self._state > S_ACTIVE_INIT:
                 return
             self._wd.restart('ACTIVE')
             self._dial_number = '' # Important only on instant dialling
@@ -320,8 +326,14 @@ class TelexMCP(txBase.TelexBase):
             if broadcast_state:
                 self._send_control_sequence('A')
 
-        elif new_state == S_ACTIVE_P:
+        elif new_state == S_ACTIVE_READY:
+            self._wd.restart('ACTIVE')
+            self._wd.disable('DIAL')
             self._wd.disable('PRINTER')
+            self._wd.disable('POWER')
+
+            if broadcast_state:
+                self._send_control_sequence('AA')
 
         elif new_state == S_ACTIVE_FONT:
             pass
@@ -334,7 +346,7 @@ class TelexMCP(txBase.TelexBase):
         if enable:
             self.cli_enable = True
             self.cli_text = ''
-            self._set_state(S_ACTIVE, True)
+            self._set_state(S_ACTIVE_INIT, True)
             ans = self.cli.command('WHOAMI')
             self._rx_buffer.extend(list(ans))
         else:
@@ -344,7 +356,8 @@ class TelexMCP(txBase.TelexBase):
 
     def send_abort(self, last_words:str=None):
         if last_words:
-            self._set_state(S_ACTIVE, True)
+            self._set_state(S_ACTIVE_INIT, True)
+            self._set_state(S_ACTIVE_READY, True)
             self._rx_buffer.extend(list(last_words))
         self._set_state(S_OFFLINE, True)
 
@@ -430,8 +443,8 @@ class TelexMCP(txBase.TelexBase):
         if self._continue_with_no_printer:
             # On teleprinter timeout, send fake ESC-~
             l.warning("Printer start attempt timed out, fallback WRU responder enabled")
-            self._set_state(S_ACTIVE_P)
-            self._rx_buffer.append("\x1b~0")
+            self._set_state(S_ACTIVE_READY, True)
+            self._send_control_sequence("~0")
         else:
             l.warning("Printer start attempt timed out")
             self.send_abort()
@@ -441,7 +454,7 @@ class TelexMCP(txBase.TelexBase):
     def _power_watchdog_callback(self, name:str):
         if self._state != S_OFFLINE:
             self.send_abort()
-        self._set_state(S_SLEEPING)
+        self._set_state(S_SLEEPING, True)
 
     # -----
 
