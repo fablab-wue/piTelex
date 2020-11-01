@@ -146,7 +146,7 @@ class TelexMCP(txBase.TelexBase):
             if a == 'AA':   # printer ready
                 self._set_state(S_ACTIVE_READY)
 
-            if a.startswith('~'):   # printer buffer feedback
+            if a.startswith('~') or a.startswith('°'):   # printer buffer feedback
                 # Reset ACTIVE watchdog only if we're still online, to prevent
                 # re-enabling teleprinter power later
                 if self._state > S_OFFLINE:
@@ -203,7 +203,7 @@ class TelexMCP(txBase.TelexBase):
                 return True
 
             if a.startswith('READ'):
-                self.read_file(a[6:])
+                self.read_file(a[5:])
 
             if a == 'EXIT':   # leave program
                 l.info("ESC-EXIT")
@@ -340,7 +340,7 @@ class TelexMCP(txBase.TelexBase):
             if broadcast_state:
                 self._send_control_sequence('A')
 
-        elif new_state == S_ACTIVE_READY:
+        elif new_state == S_ACTIVE_READY or new_state == S_ACTIVE_NO_P:
             self._wd.restart('ACTIVE')
             self._wd.disable('DIAL')
             self._wd.disable('PRINTER')
@@ -371,7 +371,7 @@ class TelexMCP(txBase.TelexBase):
     def send_abort(self, last_words:str=None):
         if last_words:
             self._set_state(S_ACTIVE_INIT, True)
-            self._set_state(S_ACTIVE_READY, True)
+            #self._set_state(S_ACTIVE_READY, True)
             self._rx_buffer.extend(list(last_words))
         self._set_state(S_OFFLINE, True)
 
@@ -389,7 +389,7 @@ class TelexMCP(txBase.TelexBase):
             text = ''
 
             if name:
-                with open(name, 'r') as fp:
+                with open(name, mode="r", encoding="utf-8") as fp:
                     text = fp.read()
                     text = text.replace('\n', '\r\n')
                     text = txCode.BaudotMurrayCode.translate(text)
