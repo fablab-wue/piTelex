@@ -447,6 +447,9 @@ class TelexITelexCommon(txBase.TelexBase):
                         # if self._connected >= ST.CON_FULL and unprinted == 0:
                         #     self.send_ack(s, self._acknowledge_counter)
 
+                        # Send remote printer buffer feedback
+                        self._rx_buffer.append('\x1b°' + str(unprinted))
+
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
                         l.debug('Received i-Telex packet: Version ({})'.format(display_hex(data)))
