@@ -247,7 +247,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._last_waiting = waiting
 
             self._keep_alive_counter += 1
-            if self._mode == 'V10' and self._keep_alive_counter > 20:   # 10sec
+            if self._mode == 'V10' and self._keep_alive_counter > 60:   # 30sec
                 self._keep_alive_counter = 0
                 self._tx_buffer.insert(0, '~')
 
