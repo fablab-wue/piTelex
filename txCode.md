@@ -54,7 +54,7 @@ Baudot-Murray-Code = CCITT-2 = ITA2
 | ⍾ |    BELL &lt;BEL&gt; | `%`
 | 1...|   FIGS | `>`
 | A...|   LTRS | `<`
-| ⊝ |    &lt;NUL&gt; | `~`
+| ⊝ |    &lt;NUL&gt; | `°`
 | ⒑ |     Zuse ? | `§`
 | ╳ |     Zuse ? | `^`
 

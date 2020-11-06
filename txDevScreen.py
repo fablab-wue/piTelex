@@ -46,7 +46,7 @@ class TelexScreen(txBase.TelexBase):
         # pass through chars:
         '#': '#',
         '@': '@',
-        '~': '~',
+        '°': '°',
         '%': '%',
         '<': '<',
         '>': '>',
@@ -82,7 +82,7 @@ class TelexScreen(txBase.TelexBase):
             '<': 'ᴬ', # Bu LTRS   ª
             '>': '¹', # Zi FIGS   º
             '%': '⍾', # Kl Bell
-            '~': '⊝', # Null
+            '°': '⊝', # Null
             '@': '✠', # WerDa? WRU
             ' ': '⎵', # Space
             '\t': '→', # TAB
@@ -93,7 +93,7 @@ class TelexScreen(txBase.TelexBase):
             '<': 'ª', # Bu LTRS   ª
             '>': 'º', # Zi FIGS   º
             '%': '%', # Kl Bell
-            '~': 'ø', # Null
+            '°': 'ø', # Null
             '@': '@', # WerDa? WRU
             ' ': '·', # Space
             '\t': '→', # TAB

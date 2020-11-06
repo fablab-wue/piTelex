@@ -249,7 +249,7 @@ class TelexRPiTTY(txBase.TelexBase):
             self._keep_alive_counter += 1
             if self._mode == 'V10' and self._keep_alive_counter > 60:   # 30sec
                 self._keep_alive_counter = 0
-                self._tx_buffer.insert(0, '~')
+                self._tx_buffer.insert(0, '°')
 
         elif self._state == S_ACTIVE_INIT:
             if self._line_observer:

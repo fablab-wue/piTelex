@@ -21,17 +21,17 @@ l = logging.getLogger("piTelex." + __name__)
 class BaudotMurrayCode:
     # Baudot-Murray-Code to ASCII table
     _LUT_BM2A_ITA2 = (
-        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
-        "~3\n- '87\r@4%,~:(5+)2~6019?~>./=<"
+        "°E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
+        "°3\n- '87\r@4%,°:(5+)2°6019?°>./=<"
     )
     _LUT_BM2A_US = (
-        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
-        "~3\n- %87\r$4',!:(5\")2@6019?&>./;<"
+        "°E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
+        "°3\n- %87\r$4',!:(5\")2@6019?&>./;<"
     )
     _LUT_BM2A_MKT2 = (
-        "~E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
-        "~3\n- '87\r@4Ю,Э:(5+)2Щ6019?Ш>./=<",
-        "~Е\nА СИУ\rДРЙНФЦКТЗЛВХЫПЯОБГ>МЬЖ<"
+        "°E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
+        "°3\n- '87\r@4Ю,Э:(5+)2Щ6019?Ш>./=<",
+        "°Е\nА СИУ\rДРЙНФЦКТЗЛВХЫПЯОБГ>МЬЖ<"
     )
     _LUT_BM2A_ZUSE = (
         "#E\nA SIU\rDRJNFCKTZLWHYPQOBG>MXV<",
@@ -44,8 +44,8 @@ class BaudotMurrayCode:
     _LUT_BMsw_ZUSE = (0x1F, 0x1B)
 
     # Baudot-Murray-Code valid ASCII table
-    #_valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ~3\n- '87\r@4%,~:(5+)2~6019?~]./=[#"
-    _valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r@~"
+    #_valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ°3\n- '87\r@4%,:(5+)26019?]./=[#"
+    _valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r@°"
     _LUT_convert_chars = {
         'Ä': 'AE',
         'Ö': 'OE',

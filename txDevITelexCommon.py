@@ -692,7 +692,7 @@ class TelexITelexCommon(txBase.TelexBase):
         a = ''
         while self._tx_buffer and len(a) < 250:
             b = self._tx_buffer.pop(0)
-            if b not in '<>~%':
+            if b not in '<>°%':
                 a += b
         data = a.encode('ASCII')
         l.debug('Sending non-i-Telex data: {} ({})'.format(repr(data), display_hex(data)))

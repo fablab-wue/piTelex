@@ -43,8 +43,8 @@ S_ACTIVE_FONT = 22
 #######
 
 class TelexMCP(txBase.TelexBase):
-    _fontstr = {'A': 'VSSV', 'B': '<YYR', 'C': 'CZZZ', 'D': '<ZZC', 'E': '<YYZ', 'F': '<SSE', 'G': 'CZYX', 'H': '<  <', 'I': 'Z<Z', 'J': '\rTZK', 'K': '< RZ', 'L': '<TTT', 'M': '<\n \n<', 'N': '<\n <', 'O': 'CZZZC', 'P': '<SS\n', 'Q': 'CZBV', 'R': '<SFL', 'S': 'LYYD', 'T': 'EE<EE', 'U': 'KTTK', 'V': 'U\rT\rU', 'W': '<\rI\r<', 'X': 'ZR RZ', 'Y': 'E\nM\nE', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L<T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  <  ', '-': '    ', '*': 'YC CY', '/': 'T\r \nE', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY\n', "'": 'AA', ' ': '~~', '': '~', '\r': ' RZZ', '<': ' RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
-    _fontsep = '~'
+    _fontstr = {'A': 'VSSV', 'B': '<YYR', 'C': 'CZZZ', 'D': '<ZZC', 'E': '<YYZ', 'F': '<SSE', 'G': 'CZYX', 'H': '<  <', 'I': 'Z<Z', 'J': '\rTZK', 'K': '< RZ', 'L': '<TTT', 'M': '<\n \n<', 'N': '<\n <', 'O': 'CZZZC', 'P': '<SS\n', 'Q': 'CZBV', 'R': '<SFL', 'S': 'LYYD', 'T': 'EE<EE', 'U': 'KTTK', 'V': 'U\rT\rU', 'W': '<\rI\r<', 'X': 'ZR RZ', 'Y': 'E\nM\nE', 'Z': 'ZBYWZ', '0': 'CZZC', '1': 'L<T', '2': 'BYYL', '3': 'ZYYR', '4': 'U V ', '5': 'UYYD', '6': 'NPYD', '7': 'EBSA', '8': 'RYYR', '9': 'LYFI', '.': 'OO', ',': 'ON', ';': 'GR', '+': '  <  ', '-': '    ', '*': 'YC CY', '/': 'T\r \nE', '=': 'RRRR', '(': 'CZ', ')': 'ZC', '?': 'EYY\n', "'": 'AA', ' ': '°°', '': '°', '\r': ' RZZ', '<': ' RZZ', '\n': 'YYYYY', '|': 'YYYYY'}
+    _fontsep = '°'
 
 
     def __init__(self, **params):
@@ -246,7 +246,7 @@ class TelexMCP(txBase.TelexBase):
                 return None
 
             if self._wd.is_active('WRU'):
-                if a in '<~':   # found Bu or Null
+                if a in '<°':   # found Bu or Null
                     self._wd.restart('WRU')   #  -> hardware WRU-unit has no drum -> wait for end of trans. and send soft-WRU
                 else:
                     self._wd.disable('WRU')   #  -> hardware WRU-unit has answered
