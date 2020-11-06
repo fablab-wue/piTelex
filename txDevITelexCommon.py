@@ -448,7 +448,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         #     self.send_ack(s, self._acknowledge_counter)
 
                         # Send remote printer buffer feedback
-                        self._rx_buffer.append('\x1b°' + str(unprinted))
+                        self._rx_buffer.append('\x1b^' + str(unprinted))
 
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:

@@ -146,7 +146,7 @@ class TelexMCP(txBase.TelexBase):
             if a == 'AA':   # printer ready
                 self._set_state(S_ACTIVE_READY)
 
-            if a.startswith('~') or a.startswith('°'):   # printer buffer feedback
+            if a.startswith('~') or a.startswith('^'):   # printer buffer feedback
                 # Reset ACTIVE watchdog only if we're still online, to prevent
                 # re-enabling teleprinter power later
                 if self._state > S_OFFLINE:
@@ -163,7 +163,7 @@ class TelexMCP(txBase.TelexBase):
                     self._wd.restart('WRU')
                 return
 
-            if a == '^':   # printer busy
+            if a == '...':   # printer busy
                 pass
 
             if a == 'FONT':   # set to font mode

@@ -50,6 +50,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._state = None
         self._time_squelch = 0
         self._use_squelch = True
+        self._keep_alive_counter = 0
 
         self._tx_buffer = []
         self._rx_buffer = []
@@ -186,6 +187,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         if text:
             self._write_wave(text)
+            self._keep_alive_counter = 0
 
         elif self._tx_buffer and len(self._tx_buffer[0]) > 1:   # control sequence
             a = self._tx_buffer.pop(0)
@@ -228,6 +230,8 @@ class TelexRPiTTY(txBase.TelexBase):
             if self._line_observer:
                 self._line_observer.reset()
 
+            self._keep_alive_counter = 0
+
     # -----
 
     def idle2Hz(self):
@@ -242,11 +246,16 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._send_control_sequence('~' + str(waiting))
                 self._last_waiting = waiting
 
+            self._keep_alive_counter += 1
+            if self._mode == 'V10' and self._keep_alive_counter > 20:   # 10sec
+                self._keep_alive_counter = 0
+                self._tx_buffer.insert(0, '~')
+
         elif self._state == S_ACTIVE_INIT:
             if self._line_observer:
                 line = self._line_observer.get_state()
                 if not line:
-                    self._send_control_sequence('^')
+                    self._send_control_sequence('...')
 
     # =====
 
