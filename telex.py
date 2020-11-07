@@ -125,6 +125,8 @@ def init_error_log(log_path):
     rev = "(ERR)"
     try:
         rev = find_rev()
+    except:
+        pass
     finally:
         logger.info("===== piTelex rev " + rev)
 
