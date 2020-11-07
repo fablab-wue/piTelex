@@ -82,6 +82,14 @@ class MonthlyRotatingFileHandler(logging.handlers.RotatingFileHandler):
         if os.path.exists(source):
             os.rename(source, dest)
 
+def find_rev() -> str:
+    """
+    Try finding out the git commit id and return it.
+    """
+    import subprocess
+    result = subprocess.run(["git", "log", "--oneline", "-1"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
+    return result.stdout.decode("utf-8", errors="replace").strip()
+
 def init_error_log(log_path):
     """
     Initialise error logging, i.e. create the root logger. It saves all logged
@@ -121,13 +129,11 @@ def init_error_log(log_path):
     threading.excepthook = threading_excepthook
 
     # Log application start
-    from txDevLog import find_rev
-    rev = "(ERR)"
     try:
         rev = find_rev()
     except:
-        pass
-    finally:
+        logger.info("===== piTelex (no git revision ID found)")
+    else:
         logger.info("===== piTelex rev " + rev)
 
 def excepthook(etype, value, tb):
