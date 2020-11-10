@@ -28,16 +28,19 @@ class TelexLog(txBase.TelexBase):
 
         self._last_time = self._last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self._last_source = '   '
-        self._line = '===== piTelex rev '
+        self._line = '===== piTelex '
         try:
             from telex import find_rev
-            self._line += find_rev()
+            rev = find_rev()
+        except:
+            pass
+        else:
+            self._line += 'rev '
+            self._line += rev
             # cut line to head, commit hash and max. 50 characters description
             # (as widely recommended)
             self._line = self._line[:77]
             self._line += ' '
-        except:
-            pass
 
         self._line += (80 - len(self._line)) * '='
 
