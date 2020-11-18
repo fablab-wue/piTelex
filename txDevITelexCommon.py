@@ -419,8 +419,11 @@ class TelexITelexCommon(txBase.TelexBase):
                     # Reject
                     elif data[0] == 4 and packet_len <= 20:
                         l.debug('Received i-Telex packet: Reject ({})'.format(display_hex(data)))
-                        aa = bmc.translate(data[2:])
+                        aa = data[2:].decode('ASCII', errors='ignore')
+                        # i-Telex may pad with \x00 (e.g. "nc\x00"); remove padding
+                        aa = aa.rstrip('\x00')
                         l.info('i-Telex connection rejected, reason {!r}'.format(aa))
+                        aa = bmc.translate(aa)
                         for a in aa:
                             self._rx_buffer.append(a)
                         break

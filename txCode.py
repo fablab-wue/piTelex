@@ -95,6 +95,12 @@ class BaudotMurrayCode:
 
     @staticmethod
     def ascii_to_tty_text(text:str) -> str:
+        """
+        Normalise text for teleprinter output.
+
+        Ensure that text is an iterable containing already-decoded Python
+        strings, not bytes.
+        """
         ret = ''
 
         text = text.upper()
