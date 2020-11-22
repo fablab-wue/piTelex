@@ -14,8 +14,8 @@ CH340TTY|stopbits|1.5|1, 1.5, 2|# of stopbits
 CH340TTY|coding|0|0,1,2,3|0:ITA2=CCITT2, 1:US, 2:MKT2, 3:ZUSE (see txCode.md)
 CH340TTY|loopback|None||?
 CH340TTY|loc\_echo|False|false / true|if true, echo back all characters received from teleprinter
-CH340TTY|inverse\_dtr|inverse\_dtr|false / true|If true, use inverted signal
-CH340TTY|inverse\_rts|inverse\_rts|false / true|If true, use inverted signal
+CH340TTY|inverse\_dtr||false / true|If true, use inverted signal
+CH340TTY|inverse\_rts||false / true|If true, use inverted signal
 ||||
 ED1000SC|recv\_squelch|100|positive integer|Defines the power threshold below which the filter output for A/Z level is ignored; if needed, can be determined experimentally using helper script ED1000/squelch\_check.py (see docstring inside).
 ED1000SC|recv\_debug|False|false / true|If true, output recv\_debug.log file inside which the repective filter power output levels for every sample are recorded. Use only for debugging (file will grow quickly).
