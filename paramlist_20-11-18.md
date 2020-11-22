@@ -10,10 +10,10 @@ CLI|devices|None||List of devices (see telex.json; devices can be defined for ea
 CH340TTY|portname|/dev/ttyUSB0|string|serial port used
 CH340TTY|baudrate|50|50 … ?|Baud rate
 CH340TTY|bytesize|5|5 … 8|# of Databits
-CH340TTY|stopbits|serial.STOPBITS\_ONE\_POINT\_FIVE||# of stopbits
-CH340TTY|coding|0||?
+CH340TTY|stopbits|1.5|1, 1.5, 2|# of stopbits
+CH340TTY|coding|0|0,1,2,3|0:ITA2=CCITT2, 1:US, 2:MKT2, 3:ZUSE (see txCode.md)
 CH340TTY|loopback|None||?
-CH340TTY|loc\_echo|False|false / true|?
+CH340TTY|loc\_echo|False|false / true|if true, echo back all characters received from teleprinter
 CH340TTY|inverse\_dtr|inverse\_dtr|false / true|If true, use inverted signal
 CH340TTY|inverse\_rts|inverse\_rts|false / true|If true, use inverted signal
 ||||
@@ -93,10 +93,10 @@ RPiTTY|inv\_power|False|false / true|If true, use inverted signal on pin
 RPiTTY|pin\_number\_switch|pin\_fsg\_ns|number|alias for pin\_fsg\_ns, deprecated
 RPiTTY|pin\_fsg\_ns|6|number|GPIO# of pin connected to the number switch; typically wired to pin\_rxd
 RPiTTY|inv\_number\_switch|False|false / true|If true, use inverted signal on pin
-RPiTTY|use\_observe\_line|True|false / true|?
-RPiTTY|pin\_observe\_line|pin\_rxd|number|?
+RPiTTY|use\_observe\_line|True|false / true|If true, monitor *pin\_observe\_line* for state changes of >0,5s
+RPiTTY|pin\_observe\_line|pin\_rxd|number|GPIO# of pin to observe
 RPiTTY|inv\_observe\_line|inv\_rxd|number|If true, use inverted signal on pin
-RPiTTY|coding|0||?
+RPiTTY|coding|0|0,1,2,3|0:ITA2=CCITT2, 1:US, 2:MKT2, 3:ZUSE (see txCode.md) 
 RPiTTY|loopback|True|false / true|?
 RPiTTY|timing\_rxd|False|false / true|?
 RPiTTY|WB\_pulse\_length|40|number|set length of WB pulse in milliseconds
@@ -113,9 +113,9 @@ ShellCmd|LUT|{}|string|List of user defined commands to be executed in response 
 Terminal|portname|/dev/ttyUSB0|string|serial port used
 Terminal|baudrate|300|number|Baud rate
 Terminal|bytesize|8|number|# of Databits
-Terminal|stopbits|serial.STOPBITS\_ONE|number|# of stopbits
+Terminal|stopbits|1|1, 1.5, 2|# of stopbits
 Terminal|parity|serial.PARITY\_NONE|NONE / ODD / EVEN|parity bit
-Terminal|loc\_echo|True|false / true|?
+Terminal|loc\_echo|true|false / true|if true, echo back all characters
 ||||
 Twitter|consumer\_key|||?
 Twitter|consumer\_secret|||?
