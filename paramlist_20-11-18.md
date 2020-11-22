@@ -106,7 +106,7 @@ Screen|show\_BuZi|True|false / true|If true, show special characters for Bu / Zi
 Screen|show\_capital|False|false / true|if true, use capital letters on screen
 Screen|show\_ctrl|True|false / true|if true, show control sequences on screen
 Screen|show\_info|False|false / true|if true, show additional info on screen
-Screen|show\_line|True|false / true|if true, show vertical border line „|“ on screen
+Screen|show\_line|True|false / true|if true, show vertical border line „\|“ on screen
 ||||
 ShellCmd|LUT|{}|string|List of user defined commands to be executed in response to piTelex ESC commands; form: {„key1“: „cmd1“, „key2“: „cmd2“,..,..}. „cmd1“ will be executed after typing <ESC>key1<ENTER> a.s.o.. example: {„quick“: „echo the quick brown fox jumps“}; <ESC>quick<ENTER> gives the output „the quick brown fox jumps“; can be used for predefined commands like TP0/TP1 (turn off/on power for teleprinter)
 ||||
