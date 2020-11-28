@@ -20,9 +20,28 @@ def split_newline_after(string, numchars):
     lines = []
     if numchars < 1:
         return string
-    for i in range(0, len(string), numchars):
-        lines.append(string[i:i+numchars])
+    #for i in range(0, len(string), numchars):
+    #    lines.append(string[i:i+numchars])
+    #return '\n'.join(lines)
+
+    line = ''
+    while len(string) > numchars:
+        lastblank = nextblank = 0
+        # Das Blank kurz vor Zeilenende finden
+        while (nextblank < numchars) and (len(string) > numchars):
+            lastblank = nextblank
+            nextblank = string.find(" ",lastblank +1)
+        # Zeile bis zum gefundenen Blank
+        line = string[:lastblank].lstrip()
+        string = string[lastblank:].lstrip()
+        # Zeile ausgeben
+        if len(line) > 0:
+            lines.append(line)
+    # restlichen String ausgeben
+    if len(string) > 0:
+        lines.append(string)
     return '\n'.join(lines)
+
 
 def formatted_write(output_path, rss_entry, visible_name, split_lines):
     #outfilenames = glob(output_path + "*.rsstx")
@@ -31,12 +50,14 @@ def formatted_write(output_path, rss_entry, visible_name, split_lines):
     with open(outfilename, "a+") as outfile:
         summary = h.handle(rss_entry.summary)
         summary = summary.replace('\n', ' ')
-        heading = visible_name + rss_entry.title
-        heading = split_newline_after(heading, split_lines)
-        summary = "    " + summary
+        heading = visible_name + "  " + time.strftime("%d.%m.%Y %H:%M:%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) 
+        outfile.write(heading + "\n\n")
+        heading = rss_entry.title
+        heading = split_newline_after("==== " + heading, split_lines)
+        #summary = "     " + summary
         summary = split_newline_after(summary, split_lines)
         outfile.write(heading + "\n")
-        outfile.write(summary + "\n")
+        outfile.write(summary + "\n++++\n")
         print(heading)
         print(summary)
 
@@ -48,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--forget-past", dest="forget_past", action='store_true', help="Don't look back")
     parser.add_argument("-p", "--ouput-path", dest="output_path", default="./", help="Output files path")
     parser.add_argument("-n", "--visible-name", dest="visible_name", default="", help="Prepend this string to each heading")
-    parser.add_argument("-s", "--split-lines", type=int, dest="split_lines", default=60, help="Insert a linebreak after n characters")
+    parser.add_argument("-s", "--split-lines", type=int, dest="split_lines", default=65, help="Insert a linebreak after n characters")
 
     argv = sys.argv[1:]
     argp = parser.parse_args(argv)
