@@ -18,7 +18,7 @@ import txCode
 import txBase
 import txCLI
 from txDevMCP_escape_texts import escape_texts
-from watchdog import Watchdog
+from txWatchdog import Watchdog
 
 # Timeout in ready-to-dial state in sec
 DIAL_TIMEOUT = 55  # 45sec
