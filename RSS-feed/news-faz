@@ -1,6 +1,13 @@
 #!/bin/sh
-cd ~/piTelex
-rm -rf /data/piTelex/news/faz
-mkdir -p /data/piTelex/news/faz  
-./rssFileWriter.py -f -n FAZ:\  -p /data/piTelex/news/faz/faz -u https://www.faz.net/rss/aktuell/ > /data/piTelex/log/news-faz.log 2> /data/piTelex/log/news-faz.error.log &
+NEWS=~/news
+SVC=FAZ
+URL="https://www.faz.net/rss/aktuell/"
+# no user servicable parts below
+
+LOG=$NEWS/log
+rm -rf $NEWS/$SVC
+mkdir -p $LOG
+mkdir -p $NEWS/$SVC
+cd ~/piTelex/RSS-feed
+./rssFileWriter.py -f -n $SVC:  -p "$NEWS/$SVC/" -u "$URL" > $LOG/news-$SVC.log 2> $LOG/news-$SVC.error.log &
 
