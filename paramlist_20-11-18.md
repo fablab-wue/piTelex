@@ -92,7 +92,7 @@ RPiTTY|pin\_fsg\_ns|6|number|GPIO# of pin connected to the number switch; typica
 RPiTTY|inv\_number\_switch|false|false / true|If true, use inverted signal on pin
 RPiTTY|use\_observe\_line|true|false / true|If true, monitor *pin\_observe\_line* for state changes of >0,5s
 RPiTTY|pin\_observe\_line|[pin\_rxd]|number|GPIO# of pin to observe
-RPiTTY|inv\_observe\_line|[inv\_rxd]|number|If true, use inverted signal on pin
+RPiTTY|inv\_observe\_line|[inv\_rxd]|false / true|If true, use inverted signal on pin
 RPiTTY|coding|0|0,1,2,3|0:ITA2=CCITT2, 1:US, 2:MKT2, 3:ZUSE (see txCode.md) 
 RPiTTY|loopback|true|false / true|if true, sent characters are removed from receive buffer
 RPiTTY|timing\_rxd|false|false / true|?
