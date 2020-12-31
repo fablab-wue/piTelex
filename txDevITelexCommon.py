@@ -101,22 +101,22 @@ class ST(enum.IntEnum):
     Represent i-Telex connection state.
     """
     # Disconnected
-    DISCON = enum.auto()
+    DISCON = 1
 
     # Connected, but printer not yet started
-    CON_INIT = enum.auto()
+    CON_INIT = 2
 
     # Connected, printer start requested
-    CON_TP_REQ = enum.auto()
+    CON_TP_REQ = 3
 
     # Connected, printer has been started:
     # - client: good to go (state will be advanced w/o condition)
     # - server: waiting for welcome banner, we'll withhold other data in read
     #   method
-    CON_TP_RUN = enum.auto()
+    CON_TP_RUN = 4
 
     # Connected, good to go
-    CON_FULL = enum.auto()
+    CON_FULL = 5
 
 class TelexITelexCommon(txBase.TelexBase):
     def __init__(self):

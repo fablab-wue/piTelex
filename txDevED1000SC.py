@@ -46,28 +46,22 @@ class ST(enum.IntEnum):
     Represent ED1000 teleprinter state.
     """
     # offline / startup
-    OFFLINE = enum.auto()
-    # 0
+    OFFLINE = 1
 
     # online requested by ESC-WB/-A
-    ONLINE_REQ = enum.auto()
-    # 10
+    ONLINE_REQ = 2
 
     # online
-    ONLINE = enum.auto()
-    # 20
+    ONLINE = 3
 
     # offline requested by ESC-Z
-    OFFLINE_REQ = enum.auto()
-    # 30
+    OFFLINE_REQ = 4
 
     # offline delay after buffer is empty
-    OFFLINE_DELAY = enum.auto()
-    # 40
+    OFFLINE_DELAY = 5
 
     # offline, wait for A level
-    OFFLINE_WAIT = enum.auto()
-    # 50
+    OFFLINE_WAIT = 6
 
 
 class TelexED1000SC(txBase.TelexBase):
