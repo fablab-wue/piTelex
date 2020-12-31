@@ -221,7 +221,18 @@ class TelexED1000SC(txBase.TelexBase):
                         elif a == '§A':   # signal A (online)
                             bb = (0xFFC0,)   # 140ms pulse
                             nbit = 16
+                        elif a == '§L':   # transmit lock, to wait for WRU printing
+                            # Send idle frequency for 20 characters, plus 1 for
+                            # good measure: 7.5 bits * 21 = 157.5
+                            # So wait for 158 bits.
+                            nbit = 158
+                            bb = ((2**nbit)-1,)
                         else:   # normal ANSI character
+                            if a == '@':
+                                # Teleprinter's WRU unit will trigger after
+                                # this character -- lock further sending to
+                                # prevent collisions
+                                self._tx_buffer.insert(0, '§L')
                             bb = self._mc.encodeA2BM(a)
                             if not bb:
                                 continue
