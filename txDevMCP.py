@@ -10,6 +10,7 @@ __version__     = "0.1.0"
 
 import time
 import os
+import sys
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -65,7 +66,7 @@ class TelexMCP(txBase.TelexBase):
         # dialling
         dial_timeout = params.get('dial_timeout', 2.0)
         if dial_timeout == '+':
-            dial_timeout = 99999
+            dial_timeout = sys.maxsize
         else:
             try:
                 dial_timeout = float(dial_timeout)
@@ -263,7 +264,7 @@ class TelexMCP(txBase.TelexBase):
                     self._wd.restart('DIAL')
                     if self._dial_timeout <= 0:
                         self._dial_watchdog_callback('DIAL_TRY')
-                elif a == '+':
+                elif a == '+' and self._dial_timeout == sys.maxsize:
                     self._wd.disable('DIAL')
                     self._dial_watchdog_callback('DIAL_PLUS')
                 else:
