@@ -51,6 +51,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._cts_stable = True   # rxd=Low
         self._cts_counter = 0
         self._time_squelch = 0
+        self._time_tx_lock = 0
         self._is_enabled = False
         self._is_online = False
         self._last_out_waiting = 0
@@ -184,10 +185,20 @@ class TelexCH340TTY(txBase.TelexBase):
     # =====
 
     def idle(self):
-        if not self._use_squelch or time.monotonic() >= self._time_squelch:
+        if (not self._use_squelch) or time.monotonic() >= max(self._time_squelch, self._time_tx_lock):
             if self._tx_buffer:
-                #a = self._tx_buffer.pop(0)
-                aa = ''.join(self._tx_buffer)
+                aa = []
+                a = None
+                while a != '@' and self._tx_buffer:
+                    a = self._tx_buffer.pop(0)
+                    aa.append(a)
+                    if a == '@':
+                        # WRU received: lock sending until after 21 character's
+                        # time has passed. This may need to be raised due to
+                        # the CH340's substantial write buffer.
+                        self._time_tx_lock = time.monotonic() + 7.5*21/self._baudrate
+
+                aa = ''.join(aa)
                 self._tx_buffer = []
                 bb = self._mc.encodeA2BM(aa)
                 if bb:
