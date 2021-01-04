@@ -1,0 +1,94 @@
+#! /bin/bash
+
+pitelexroot=/home/pi/piTelex
+NEWS=/home/pi/news
+LOG=$NEWS/log
+LINELENGTH=65
+CFG=$pitelexroot/RSS-feed/newsfeeds.cfg
+
+
+case "$1" in
+  start)
+	pushd $pitelexroot/RSS-feed > /dev/null
+	if [ -r "$CFG" ] ; then
+	  	while  read SVC URL ; do
+			if [[ "$SVC" != *"#"* ]] ; then
+				if [ "x$SVC" != "x" ] ; then
+					if [ $# = 2 -a "$2" = "$SVC" -o  $# = 1 ] ; then
+						echo "  starting newsfeed $SVC   ($URL)"
+						rm -rf $NEWS/$SVC
+						mkdir -p $LOG
+						mkdir -p $NEWS/$SVC
+						python3 ./rssFileWriter.py -f -s "$LINELENGTH" -n "$SVC"  -p "$NEWS/$SVC/" -u "$URL" &> "$LOG/$SVC.log" &
+					else
+						echo "  $2 newsfeed not found."
+					fi
+				fi
+			fi
+		done < "$CFG"
+
+	else	
+		echo "  $CFG not found."
+	fi
+	popd > /dev/null
+	;;
+
+  stop)
+	if [ $# = 2 ] ; then  
+		RUNNING=`ps  -o pid,command | grep rssFileWriter | grep "$2" | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1 `
+	else
+		RUNNING=`ps  -o pid,command | grep rssFileWriter | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1 `
+	fi
+
+	if [ "x$RUNNING" != "x" ] ; then
+		kill $RUNNING
+		echo "  stopped."
+	else
+		echo "  Nothing to do."
+
+	fi	
+	;;
+
+  status)
+	RUNNING=`ps -o cmd | grep rssFileWriter | grep -v grep |sed -e 's/^[ \t]*//' | cut -d' ' -f7`
+	if [ x"$RUNNING" != "x" ] ; then
+		echo "  Active newsfeeds:"
+		for x in $RUNNING ; do
+			echo "     $x"
+		done
+	else
+		echo "  No active feeds."
+	fi
+	;;
+
+  list)
+	if [ -r $CFG ] ; then
+		echo "Available newsfeeds:"
+		grep -v "#" $CFG |  sed -e 's/^/  /'
+	else
+		echo "  $CFG not found."
+	fi
+	;;
+	
+  help)
+	cat <<EOT
+  For every newsfeed you want to install, create an entry in file $CFG.
+  Each entry consists of a single line which holds the short identifier (name) of
+  the feed, followed by the corresponding url, separated by whitespace.
+  The identifier must not contain whitespace.
+  '#' as first non-whitespace-char in a line marks it as comment.
+  Empty lines are permitted.
+
+  "$0 start"  fire up all configured newsfeeds or "$0 start {feedname}" to start a single feed listed in the config file.
+  "$0 status" list all running newsfeeds.
+  "$0 stop"   stop all running newsfeeds or "$0 stop {feedname}" to stop a single feed.
+  "$0 list"   list all available (configured) newsfeeds.
+  "$0 help"   display this help.
+EOT
+	;;
+
+  *)
+	echo "Usage: $0 {start|stop|status|list|help}" 
+	exit 1
+esac
+exit 0
