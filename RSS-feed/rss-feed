@@ -6,73 +6,113 @@ LOG=$NEWS/log
 LINELENGTH=65
 CFG=$RSSROOT/newsfeeds.cfg
 
+### no user serviceable parts below ###
+
+
+
+# look which feeds are active and remember them
+ACTIVELIST=$NEWS/.activefeeds.$$
+ps  -o pid,cmd | grep rssFileWriter | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1,8 > $ACTIVELIST
+
+# delete memo file on exit
+trap "rm -f $ACTIVELIST" EXIT
 
 case "$1" in
   start)
-	pushd $RSSROOT	> /dev/null
 	if [ -r "$CFG" ] ; then
+		STARTED=0
 	  	while  read SVC URL ; do
-			if [[ "$SVC" != *"#"* ]] ; then
-				if [ "x$SVC" != "x" ] ; then
+			if [ ! -z "$SVC" ] ; then
+				if [[ "$SVC" != *"#"* ]] ; then
 					if [ $# = 2 -a "$2" = "$SVC" -o  $# = 1 ] ; then
-						echo "  starting newsfeed $SVC   ($URL)"
-						rm -rf $NEWS/$SVC
-						mkdir -p $NEWS/$SVC $LOG
-						python3 ./rssFileWriter.py -f -s "$LINELENGTH" -n "$SVC"  -p "$NEWS/$SVC/" -u "$URL" &> "$LOG/$SVC.log" &
+						RUNNING=`grep "$SVC" "$ACTIVELIST"`
+						STARTED=1 
+						if [ -z "$RUNNING" ] ; then
+							echo -n "  starting  $SVC ... "
+							rm -rf $NEWS/$SVC
+							mkdir -p $NEWS/$SVC $LOG
+							python3 $RSSROOT/rssFileWriter.py -f -s "$LINELENGTH" -n "$SVC"  -p "$NEWS/$SVC/" -u "$URL" &> "$LOG/$SVC.log" & 
+							echo "done."
+						else
+							echo "  $SVC already running."
+						fi	
 					fi
 				fi
 			fi
 		done < "$CFG"
-		$0 status
 	else	
 		echo "  $CFG not found."
 	fi
-	popd > /dev/null
+	if [ "$STARTED" = "0" ] ; then
+		if [ "$#" = "2" ] ; then
+			echo "  $2 has no config entry in $CFG."
+		else
+			echo "  No newsfeed(s) configured in $CFG."
+			$0 help
+		fi	
+	fi	
 	;;
 
   stop)
-	if [ $# = 2 ] ; then  
-		RUNNING=`ps  -o pid,command | grep rssFileWriter | grep "$2" | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1 `
-	else
-		RUNNING=`ps  -o pid,command | grep rssFileWriter | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1 `
-	fi
-
-	if [ "x$RUNNING" != "x" ] ; then
-		echo "  stopping newsfeed"
-		kill $RUNNING
-	else
-		echo "  Nothing to do."
-
+	KILLED=0
+  	while  read ID SVC ; do
+		if [ $# = 2 -a "$2" = "$SVC" -o  $# = 1 ] ; then
+			echo -n "  stopping  $SVC ... "
+			rm -rf $NEWS/$SVC
+			kill $ID && KILLED=1 && echo "done."
+		fi	
+	done < "$ACTIVELIST"
+	if [ "$KILLED" = "0" ] ; then
+		if [ "$#" = "2" ] ; then
+			echo "  $2 not running."
+		else
+			echo "  Nothing to do."
+		fi	
 	fi	
-	$0 status
 	;;
 
   status)
-	RUNNING=`ps -o cmd | grep rssFileWriter | grep -v grep |sed -e 's/^[ \t]*//' | cut -d' ' -f7`
-	if [ x"$RUNNING" != "x" ] ; then
-		echo "  Active newsfeeds:"
-		for x in $RUNNING ; do
-			echo "     $x"
-		done
-	else
-		echo "  No active feeds."
+	if [ -r "$CFG" ] ; then
+	  	while  read SVC URL ; do
+			if [ ! -z "$SVC" ] ; then
+				if [[ "$SVC" != *"#"* ]] ; then
+					if [ $# = 2 -a "$2" = "$SVC" -o  $# = 1 ] ; then
+						echo -ne "  $SVC:  \t "
+						RUNNING=`grep "$SVC" "$ACTIVELIST"`
+						if [ -z "$RUNNING" ] ; then
+							echo -n "not "
+						fi	
+						echo "running."
+					fi	
+				fi	
+			fi
+		done < "$CFG"
+	else	
+		echo "  $CFG not found."
 	fi
 	;;
 
   list)
-	if [ -r $CFG ] ; then
-		echo "Available newsfeeds:"
-		grep -v "#" $CFG |  grep -v ^$ | sed -e 's/^/  /'
-	else
+	if [ -r "$CFG" ] ; then
+		echo "  Configured newsfeeds:"
+	  	while read SVC URL ; do
+			if [[ "$SVC" != *"#"* ]] ; then
+				if [ ! -z "$SVC" ] ; then
+					echo -e "  $SVC \t ($URL)"
+				fi
+			fi
+		done < "$CFG"
+	else	
 		echo "  $CFG not found."
 	fi
 	;;
 	
   help)
 	cat <<EOT
+
   For every newsfeed you want to install, create an entry in file $CFG.
-  Each entry consists of a single line which holds the short identifier (name) of
-  the feed, followed by the corresponding url, separated by whitespace.
+  Each entry consists of a single line which holds the short identifier (name) of the feed, 
+  followed by the corresponding url, separated by whitespace.
   The identifier must not contain whitespace.
   '#' as first non-whitespace-char in a line marks it as comment.
   Empty lines are permitted.
