@@ -53,7 +53,7 @@ def formatted_write(output_path, rss_entry, visible_name, split_lines):
         heading = visible_name + "  " + time.strftime("%d.%m.%Y %H:%M:%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) 
         outfile.write(heading + "\n\n")
         heading = rss_entry.title
-        heading = split_newline_after("==== " + heading, split_lines)
+        heading = split_newline_after("== " + heading + " ==", split_lines)
         #summary = "     " + summary
         summary = split_newline_after(summary, split_lines)
         outfile.write(heading + "\n")
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--forget-past", dest="forget_past", action='store_true', help="Don't look back")
     parser.add_argument("-p", "--ouput-path", dest="output_path", default="./", help="Output files path")
     parser.add_argument("-n", "--visible-name", dest="visible_name", default="", help="Prepend this string to each heading")
-    parser.add_argument("-s", "--split-lines", type=int, dest="split_lines", default=65, help="Insert a linebreak after n characters")
+    parser.add_argument("-s", "--split-lines", type=int, dest="split_lines", default=69, help="Insert a linebreak after n characters")
 
     argv = sys.argv[1:]
     argp = parser.parse_args(argv)
