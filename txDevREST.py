@@ -15,6 +15,9 @@ import socket
 import time
 import json
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 import log
@@ -22,14 +25,14 @@ import log
 #######
 
 def LOG(text:str, level:int=3):
-    log.LOG('\033[5;30;46m<'+text+'>\033[0m', level)
+    log.LOG('\033[30;46m<'+text+'>\033[0m', level)
 
 
 class TelexREST(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '/'
+        self.id = 'Rst'
         self.params = params
 
 
@@ -92,7 +95,7 @@ class TelexREST(txBase.TelexBase):
 
         except Exception as e:
             LOG(str(e))
-        
+
         #s.close()
 
     # =====

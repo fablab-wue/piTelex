@@ -1,0 +1,93 @@
+{
+  "devices": {
+    "screen": {
+      "type": "screen",
+      "enable": true,
+      "show_BuZi": true,
+      "show_capital": false
+    },
+    "CH340TTY": {
+      "type": "CH340TTY",
+      "enable": false,
+      "portname": "COM3",
+      "baudrate": 50,
+      "mode": "TW39",
+      "coding": 0,
+      "loopback": false
+    },
+    "ED1000": {
+      "type": "ED1000",
+      "enable": false,
+      "devindex": null,
+      "zcarrier": false,
+      "baudrate": 50,
+      "send_f0": 500,
+      "send_f1": 700,
+      "recv_f0": 2250,
+      "recv_f1": 3150,
+      "recv_squelch": 100,
+      "recv_debug": false
+    },
+    "RPiTTY": {
+      "type": "RPiTTY",
+      "enable": true,
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "inv_rxd": false,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 6,
+      "baudrate": 50,
+      "coding": 0,
+      "loopback": true,
+      "observe_rxd": true
+    },
+    "RPiCtrl": {
+      "type": "RPiCtrl",
+      "enable": false,
+      "pin_number_switch": 0,
+      "pin_button_1T": 8,
+      "pin_button_AT": 0,
+      "pin_button_ST": 0,
+      "pin_button_LT": 0,
+      "pin_button_U1": 12,
+      "pin_button_U2": 16,
+      "pin_button_U3": 20,
+      "pin_button_U4": 21,
+      "pin_LED_A": 0,
+      "pin_LED_WB": 0,
+      "pin_LED_WB_A": 9,
+      "pin_LED_status_R": 23,
+      "pin_LED_status_G": 24
+    },
+    "i-Telex": {
+      "type": "i-Telex",
+      "enable": true,
+      "port": 2342,
+      "number": 0,
+      "tns-pin": 12345
+    },
+    "log": {
+      "type": "log",
+      "enable": true,
+      "filename": "test.log"
+    },
+    "news": {
+      "type": "news",
+      "enable": false,
+      "newspath": "/data/piTelex/news/"
+    },
+    "archive": {
+      "type": "archive",
+      "enable": false,
+      "path": "/data/piTelex/"
+    }
+  },
+  "verbose": true,
+  "wru_id": "",
+  "wru_fallback": false,
+  "dial_timeout": 0,
+  "debug": 3
+}

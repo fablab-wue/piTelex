@@ -4,10 +4,9 @@
 			"path": "."
 		},
 		{
-			"path": "C:\\GITHUB\\piTelex.wiki"
+			"path": "D:\\GITHUB\\piTelex.wiki"
 		}
 	],
 	"settings": {
-		"python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe"
 	}
 }

@@ -14,14 +14,14 @@ import txCode
 
 class TelexBase:
     def __init__(self):
-        self.id = '?'
+        self.id = '???'
         self.loopback = True
 
 
     def __del__(self):
         #print('__del__ in TelexSerial')
         pass
-    
+
 
     def read(self) -> str:
         return ''
@@ -34,6 +34,9 @@ class TelexBase:
         pass
 
     def idle20Hz(self):
+        pass
+
+    def idle2Hz(self):
         pass
 
     def exit(self):

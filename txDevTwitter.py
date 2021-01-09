@@ -13,7 +13,7 @@ __author__ = "DirkNiggemann"
 __email__ = "dirk.niggemann@gmail.com"
 __copyright__ = "CC 2019 DirkNiggemann"
 __license__ = "CC0"
-__version__ = "0.0.0"
+__version__ = "0.0.1"
 
 
 import threading
@@ -41,6 +41,7 @@ def LOG(text:str, level:int=3):
 class TelexTwitter(txDevITelexCommon.TelexITelexCommon):
     def __init__(self, **params):
         super().__init__()
+        self.id = 'Twt'
         self.running = True
         self.chars_buffer = ''
         self._is_online = False
@@ -76,7 +77,7 @@ class TelexTwitter(txDevITelexCommon.TelexITelexCommon):
                 self._rx_buffer.append('\x1bA')
             return
 
-        if a not in "[]":
+        if a not in "<>":
             self._tx_buffer.append(a)
 
     # =====
@@ -152,7 +153,7 @@ class Twitter_Client():
       CALLBACK_URL: str = "https://telex.mupptastic.org.uk:4330/listener"
 
       def __init__(self, client, url):
-        super().__init__() 
+        super().__init__()
         self.client = client
         self.CALLBACK_URL = url
 
@@ -210,13 +211,12 @@ class Twitter_Client():
            try:
              if self.follow:
                self.idl = [ str(self.api.get_user(screen_name=u).id) for u in self.follow ]
-               self.listener = Twitter_Client.UserStreamListener(self) 
+               self.listener = Twitter_Client.UserStreamListener(self)
                self.stream = tweepy.Stream(auth=self.api.auth, listener=self.listener)
                self.stream.filter(follow=self.idl, track=self.track)
                time.sleep(10000000)
              else:
                stream_events = Twitter_Client.ActivityStreamEvent(self, self.url)
                stream_events._server.run(debug=False, ssl_context='adhoc', host=self.host, port = self.port)
-               time.sleep(1)
            except tweepy.error.TweepError as e:
               LOG(str(e), 1)

@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 """
 Telex Device - Serial Communication over CH340-Chip (not FTDI, not Prolific, not CP213x)
+
+Protocol:
+https://wiki.telexforum.de/index.php?title=TW39_Verfahren_(Teil_2)
+
 """
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
@@ -11,13 +15,15 @@ __version__     = "0.0.1"
 import serial
 import time
 
+import logging
+l = logging.getLogger("piTelex." + __name__)
+
 import txCode
 import txBase
 import log
 
-def LOG(text:str, level:int=3):
-    #log.LOG('\033[5;30;43m<'+text+'>\033[0m', level)
-    pass
+#def LOG(text:str, level:int=3):
+#    #log.LOG('\033[30;43m<'+text+'>\033[0m', level)
 
 #######
 
@@ -25,14 +31,14 @@ class TelexCH340TTY(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
 
-        self.id = '~'
+        self.id = 'chT'
         self.params = params
 
         portname = params.get('portname', '/dev/ttyUSB0')
         baudrate = params.get('baudrate', 50)
         bytesize = params.get('bytesize', 5)
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
-        coding = params.get('coding', False)
+        coding = params.get('coding', 0)
         loopback = params.get('loopback', None)
         inverse_dtr = params.get('inverse_dtr', False)
         self._local_echo = params.get('loc_echo', False)
@@ -48,10 +54,14 @@ class TelexCH340TTY(txBase.TelexBase):
         self._time_squelch = 0
         self._is_enabled = False
         self._is_online = False
+        self._last_out_waiting = 0
 
         self._set_mode(params['mode'])
         if loopback is not None:
             self._loopback = loopback
+
+        self._inverse_dtr = params.get('inverse_dtr', self._inverse_dtr)
+        self._inverse_rts = params.get('inverse_rts', self._inverse_rts)
 
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
@@ -113,8 +123,12 @@ class TelexCH340TTY(txBase.TelexBase):
 
     # -----
 
-    def __del__(self):
+    def exit(self):
         self._tty.close()
+
+    # -----
+
+    def __del__(self):
         super().__del__()
 
     # =====
@@ -124,11 +138,12 @@ class TelexCH340TTY(txBase.TelexBase):
             a = ''
 
             bb = self._tty.read(1)
-            #if self._local_echo:
-            #    self._tty.write(bb)
 
             if bb and (not self._use_squelch or time.time() >= self._time_squelch):
                 if self._is_enabled or self._use_dedicated_line:
+                    if self._local_echo:
+                        self._tty.write(bb)
+                    
                     a = self._mc.decodeBM2A(bb)
 
                     if a:
@@ -147,8 +162,8 @@ class TelexCH340TTY(txBase.TelexBase):
 
                 if a:
                     self._rx_buffer.append(a)
-                    if self._local_echo:
-                        self._tx_buffer.append(a)
+                    #if self._local_echo:
+                    #    self._tx_buffer.append(a)
 
         if self._rx_buffer:
             ret = self._rx_buffer.pop(0)
@@ -158,7 +173,8 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) != 1:
-            return self._check_commands(a)
+            self._check_commands(a)
+            return 
 
         if a == '#':
             a = '@'   # ask teletype for hardware ID
@@ -168,6 +184,18 @@ class TelexCH340TTY(txBase.TelexBase):
                 self._tx_buffer.append(a)
 
     # =====
+
+    def idle(self):
+        if not self._use_squelch or time.time() >= self._time_squelch:
+            if self._tx_buffer:
+                #a = self._tx_buffer.pop(0)
+                aa = ''.join(self._tx_buffer)
+                self._tx_buffer = []
+                bb = self._mc.encodeA2BM(aa)
+                if bb:
+                    self._tty.write(bb)
+
+    # -----
 
     def idle20Hz(self):
         time_act = time.time()
@@ -186,7 +214,6 @@ class TelexCH340TTY(txBase.TelexBase):
                 self._cts_counter += 1
                 if self._cts_counter == 10:   # 0.5sec
                     self._cts_stable = cts
-                    LOG(cts, 4)   # debug
                     if not cts:   # rxd=Low
                         self._rx_buffer.append('\x1bST')
                         pass
@@ -199,13 +226,12 @@ class TelexCH340TTY(txBase.TelexBase):
 
     # -----
 
-    def idle(self):
-        if not self._use_squelch or time.time() >= self._time_squelch:
-            if self._tx_buffer:
-                a = self._tx_buffer.pop(0)
-                bb = self._mc.encodeA2BM(a)
-                if bb:
-                    self._tty.write(bb)
+    def idle2Hz(self):
+        # send printer FIFO info
+        out_waiting = self._tty.out_waiting
+        if out_waiting != self._last_out_waiting and self._is_enabled:
+            self._rx_buffer.append('\x1b~' + str(out_waiting))
+            self._last_out_waiting = out_waiting
 
     # -----
 
@@ -216,6 +242,9 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def _set_enable(self, enable:bool):
+        if enable and not self._is_enabled:
+            # Confirm enable status for MCP
+            self._rx_buffer.append('\x1b~0')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
         self._mc.reset()
@@ -245,14 +274,14 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def _check_special_sequences(self, a:str):
         if not self._use_cts:
-            if a == '[':
+            if a == '<':
                 self._counter_LTRS += 1
                 if self._counter_LTRS == 5:
                     self._rx_buffer.append('\x1bST')
             else:
                 self._counter_LTRS = 0
 
-            if a == ']':
+            if a == '>':
                 self._counter_FIGS += 1
                 if self._counter_FIGS == 5:
                     self._rx_buffer.append('\x1bAT')
@@ -288,7 +317,5 @@ class TelexCH340TTY(txBase.TelexBase):
 
         if enable is not None:
             self._set_enable(enable)
-            if enable:
-                return 1.0
 
 #######

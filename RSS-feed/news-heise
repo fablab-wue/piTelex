@@ -1,0 +1,6 @@
+#!/bin/sh
+cd ~/piTelex
+rm -rf /data/piTelex/news/heise
+mkdir -p /data/piTelex/news/heise
+./rssFileWriter.py -f -n heise:\  -p /data/piTelex/news/heise/heise -u https://www.heise.de/rss/heise-atom.xml > /data/piTelex/log/news-heise.log 2> /data/piTelex/log/news-heise.error.log &
+

@@ -40,8 +40,18 @@ The software supports also a connection to another telex device in the **[i-Tele
 
 For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.
 
+**[For more informations see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
+
 <hr>
 
-> The software and hardware are still in BETA state. First test releases are out in the field...
+##### Project Status
 
-[**For more informations see the WIKI pages**](https://github.com/fablab-wue/piTelex/wiki)
+The software and hardware are in use by about 10 teletype stations and working fine.
+
+##### Last changes
+
+- 2020-09: Moved non-source-code folders to new project [piTelex.supplement](https://github.com/fablab-wue/piTelex.supplement)
+- 2020-09: Merged Björns rework of i-Telex protocol handling and ED1000 workflow
+- 2020-08: Merged Björns fork (https://github.com/b-schliessmann/piTelex) with TNS, ED1000 and i-Telex-connection rework
+- 2020-08: Added device module CLI for commands over teletype
+- 2020-07: Merged Dirks device module for Twitter (https://github.com/dirkenstein/piTelex)
