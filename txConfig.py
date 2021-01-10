@@ -87,7 +87,7 @@ def load():
         dest="itelex", default=-1, const=0, nargs='?', metavar='PORT', type=int,
         help="i-Telex client and server (if PORT>0)")
 
-    gg.add_argument("-N", "--news", 
+    gg.add_argument("-N", "--news",
         dest="news", default='', metavar="PATH",
         help="News from file")
 
@@ -152,7 +152,6 @@ def load():
     parser.add_argument("-f", "--follow", nargs='*',
         dest="follow", metavar="USER", help="User list")
 
-    
     parser.add_argument("-u", "--url", nargs='?',
         dest="url", metavar="URL", help="URL for twitivity")
 
