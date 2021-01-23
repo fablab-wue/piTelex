@@ -442,8 +442,11 @@ class TelexMCP(txBase.TelexBase):
             #self.write('\x1bST', 'wdg')
             self.send_abort('<<<ABORT')
         elif self._dial_number:
-            if self._dial_number == '000':
-                self.enable_cli(True)
+            if self._dial_number.startswith('00'):
+                if self._dial_number == '000':   # 000 - local mode
+                    self._set_state(S_ACTIVE_READY, True)
+                elif self._dial_number == '009':   # 009 - command line interface
+                    self.enable_cli(True)
                 self._dial_number = ''
             else:
                 if self._dial_timeout > 0 or name.endswith('DIREKT'):
@@ -458,7 +461,6 @@ class TelexMCP(txBase.TelexBase):
             # On teleprinter timeout, send fake ESC-AA
             l.warning("Printer start attempt timed out, feedback simulation enabled")
             self._set_state(S_ACTIVE_NO_P, True)
-            self._send_control_sequence("AA")
         else:
             l.warning("Printer start attempt timed out")
             self.send_abort()

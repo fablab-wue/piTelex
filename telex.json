@@ -4,6 +4,8 @@
       "type": "screen",
       "enable": true,
       "show_BuZi": true,
+      "show_ctrl": true,
+      "show_info": false,
       "show_capital": false
     },
     "CH340TTY": {
@@ -32,6 +34,7 @@
     "RPiTTY": {
       "type": "RPiTTY",
       "enable": true,
+      "mode": "TW39",
       "pin_txd": 17,
       "pin_rxd": 27,
       "inv_rxd": false,
@@ -42,8 +45,58 @@
       "pin_number_switch": 6,
       "baudrate": 50,
       "coding": 0,
+      "loopback": true
+    },
+    "RPiTTY_noFSG": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "inv_rxd": false,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 0,
+      "baudrate": 50,
+      "coding": 0,
       "loopback": true,
-      "observe_rxd": true
+      "use_observe_line": false
+    },
+    "RPiTTY_T68d": {
+      "type": "RPiTTY",
+      "enable": false,
+      "__mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "___inv_rxd": false,
+      "pin_relay": 22,
+      "___inv_relay": false,
+      "___pin_dir": 0,
+      "xx_pin_number_switch": 6,
+      "___inv_number_switch": false,
+      "baudrate": 50,
+      "___coding": 0,
+      "___loopback": true,
+      "___use_observe_line": true,
+      "WB_pulse_length": 50
+    },
+    "RPiTTY_FS200_V10": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "V10",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "inv_rxd": false,
+      "pin_relay": 0,
+      "inv_relay": true,
+      "use_observe_line": true,
+      "pin_observe_line": 10,
+      "inv_observe_line": true,
+      "baudrate": 200,
+      "coding": 0,
+      "loopback": false
     },
     "RPiCtrl": {
       "type": "RPiCtrl",
@@ -73,7 +126,7 @@
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "test.log"
+      "filename": "/data/piTelex/data.log"
     },
     "news": {
       "type": "news",
@@ -84,11 +137,22 @@
       "type": "archive",
       "enable": false,
       "path": "/data/piTelex/"
+    },
+    "shellcmd": {
+      "type": "shellcmd",
+      "enable": false,
+      "LUT": {
+        "TP1": "curl -s -o null http://fs200.fritz.box/cm?cmnd=Power%20On",
+        "TP0": "curl -s -o null http://fs200.fritz.box/cm?cmnd=Power%20Off",
+        "x": "explorer"
+      }
     }
   },
   "verbose": true,
-  "wru_id": "",
+  "wru_id": "12345 dummy d",
   "wru_fallback": false,
   "dial_timeout": 0,
-  "debug": 3
+  "continue_with_no_printer": true,
+  "debug": 3,
+  "errorlog_path": "/data/piTelex/"
 }

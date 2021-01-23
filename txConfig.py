@@ -145,8 +145,8 @@ def load():
         dest="wru_fallback", default=False, action="store_true",
         help="Enable software ID fallback mode: If printer isn't starting up on command, enable software ID")
 
-    parser.add_argument("--errlog-path",
-        dest="errlog_path", default=False, action="store_true",
+    parser.add_argument("--errorlog-path",
+        dest="errorlog_path", default=False, action="store_true",
         help="Path of error log; relative paths are referred to where this program is being executed")
 
     #parser.add_argument("-m", "--mode",
@@ -311,9 +311,9 @@ def load():
     if wru_fallback:
         CFG['wru_fallback'] = ARGS.wru_fallback
 
-    errlog_path = ARGS.errlog_path
-    if errlog_path:
-        CFG['errlog_path'] = ARGS.errlog_path
+    errorlog_path = ARGS.errorlog_path
+    if errorlog_path:
+        CFG['errorlog_path'] = ARGS.errorlog_path
 
     #mode = ARGS.mode.strip()
     #if mode:

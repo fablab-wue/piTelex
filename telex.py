@@ -315,8 +315,8 @@ def process_idle2Hz():
 def main():
     txConfig.load()
 
-    errlog_path = txConfig.CFG.get('errlog_path', 'error_log')
-    init_error_log(errlog_path)
+    errorlog_path = txConfig.CFG.get('errorlog_path', 'error_log')
+    init_error_log(errorlog_path)
 
     #test()   # for debug only
     init()
