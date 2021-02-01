@@ -191,7 +191,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 client.close()
                 continue
             l.info("%s:%s has connected" % client_address)
-            if self.clients or self.block_inbound:
+            if self.clients or self.block_inbound or self._connected != ST.DISCON:
                 # Our line is occupied (occ), reject client. Little issue here:
                 # ASCII clients get an i-Telex package. But the content should
                 # be readable enough to infer our message.

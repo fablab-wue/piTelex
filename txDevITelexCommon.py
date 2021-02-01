@@ -99,23 +99,26 @@ class ST(enum.IntEnum):
     """
     Represent i-Telex connection state.
     """
+    # Disconnected, wait for teleprinter to finish printing
+    DISCON_TP_WAIT = 1
+
     # Disconnected
-    DISCON = 1
+    DISCON = 2
 
     # Connected, but printer not yet started
-    CON_INIT = 2
+    CON_INIT = 3
 
     # Connected, printer start requested
-    CON_TP_REQ = 3
+    CON_TP_REQ = 4
 
     # Connected, printer has been started:
     # - client: good to go (state will be advanced w/o condition)
     # - server: waiting for welcome banner, we'll withhold other data in read
     #   method
-    CON_TP_RUN = 4
+    CON_TP_RUN = 5
 
     # Connected, good to go
-    CON_FULL = 5
+    CON_FULL = 6
 
 class TelexITelexCommon(txBase.TelexBase):
     def __init__(self):
@@ -170,18 +173,34 @@ class TelexITelexCommon(txBase.TelexBase):
                 self._connected = ST.CON_TP_RUN
 
         elif a.startswith("\x1b~"): # Printer buffer feedback
-            if self._connected >= ST.CON_FULL:
-                # Evaluate only if welcome banner has been sent, if applicable, to
-                # minimise chances to prematurely increment the Acknowledge counter
+            if self._connected >= ST.CON_FULL or self._connected <= ST.DISCON_TP_WAIT:
+                # Evaluate only:
+                # - if welcome banner has been sent, if applicable, to minimise
+                #   chances to prematurely increment the Acknowledge counter or
+                # - if we've disconnected and are waiting for the printer to
+                #   finish printing.
                 try:
-                    self.update_acknowledge_counter(int(a[2:]))
+                    print_buf_len = int(a[2:])
                 except ValueError:
                     l.warning("Invalid printer buffer length feedback received: {!r}".format(a))
+                else:
+                    self._print_buf_len = print_buf_len
+                    if self._connected >= ST.CON_FULL:
+                        self.update_acknowledge_counter(print_buf_len)
+                    else: # ST.DISCON_TP_WAIT
+                        if not print_buf_len:
+                            _connected_before = self._connected
+                            self._connected = ST.DISCON
+                            l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
 
 
     def disconnect_client(self):
+        if self._tx_buffer:
+            l.warning("While disconnecting, transmit buffer not empty, discarded; contents were: {!r}".format(self._tx_buffer))
         self._tx_buffer = []
-        self._connected = ST.DISCON
+        # Set to fully disconnected only if printer buffer is empty. Otherwise,
+        # ST.DISCON will be set in write method upon receipt of ESC-~0.
+        self._connected = ST.DISCON_TP_WAIT if self._print_buf_len else ST.DISCON
 
 
     def idle2Hz(self):
@@ -201,21 +220,23 @@ class TelexITelexCommon(txBase.TelexBase):
 
         - self._received_counter: number of received characters from peer
         - print_buf_len: number of characters currently in teleprinter buffer
-        - unread_len: number of printable characters still waiting our rx queue
+        - rx_buffer_unread: number of printable characters still waiting our rx queue
 
         The number of printed characters equals the received characters minus
         all characters "on the way", i.e. residing in any buffer.
         """
-        unread_len = len([i for i in self._rx_buffer if not i.startswith("\x1b")])
-        self._acknowledge_counter = self._received_counter - print_buf_len - unread_len
-        l.debug("{}(rcv) - {}(tpbuf) - {}(unread) = {}(ackctr)".format(self._received_counter, print_buf_len, unread_len, self._acknowledge_counter))
-        self._print_buf_len = print_buf_len
+        rx_buffer_unread = len([i for i in self._rx_buffer if not i.startswith("\x1b")])
+        self._acknowledge_counter = self._received_counter - print_buf_len - rx_buffer_unread
         if self._acknowledge_counter < self._last_acknowledge_counter:
             # New count is smaller than before: reset it to the old value to
             # keep counter monotonically increasing
             l.info("Acknowledge counter calculated as {}, reset to {}".format(self._acknowledge_counter, self._last_acknowledge_counter))
+            l.info("{}(received_counter) - {}(print_buf_len) - {}(rx_buffer_unread) = {}(acknowledge_counter)".format(self._received_counter, print_buf_len, rx_buffer_unread, self._acknowledge_counter))
+            l.info("rx_buffer contents: {!r}".format(self._rx_buffer))
             self._acknowledge_counter = self._last_acknowledge_counter
-        self._last_acknowledge_counter = self._acknowledge_counter
+        else:
+            l.debug("{}(received_counter) - {}(print_buf_len) - {}(rx_buffer_unread) = {}(acknowledge_counter)".format(self._received_counter, print_buf_len, rx_buffer_unread, self._acknowledge_counter))
+            self._last_acknowledge_counter = self._acknowledge_counter
 
 
     def process_connection(self, s:socket.socket, is_server:bool, is_ascii:bool):  # Takes client socket as argument.
@@ -630,7 +651,7 @@ class TelexITelexCommon(txBase.TelexBase):
             if not error:
                 self.send_end(s)
         l.info('end connection')
-        self._connected = ST.DISCON
+        self.disconnect_client()
         if _connected_before != self._connected:
             l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
 
