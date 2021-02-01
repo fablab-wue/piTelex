@@ -8,7 +8,6 @@ __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
 __version__     = "0.0.1"
 
-from threading import Thread
 import socket
 import time
 import datetime
@@ -224,7 +223,6 @@ class TelexITelexCommon(txBase.TelexBase):
         bmc = txCode.BaudotMurrayCode(False, False, True)
         sent_counter = 0
         self._received_counter = 0
-        printed_counter = 0
         timeout_counter = -1
         time_next_send = None
         error = False
