@@ -46,6 +46,7 @@ class TelexTerminal(txBase.TelexBase):
         self._show_ctrl = self.params.get('show_ctrl', True)
         self._show_info = self.params.get('show_info', False)
         self._send_only = self.params.get('send_only', False)
+        self._auto_CRLF = self.params.get('auto_CRLF', 0)
         self._replace_hex = self.params.get('replace_hex', {})
         self._replace_text = self.params.get('replace_text', {})
 
@@ -85,6 +86,8 @@ class TelexTerminal(txBase.TelexBase):
         if text:
             b = bytes(text, 'ascii')
             self._tty.write(b)
+        
+        self.char_count = 0
 
     # -----
 
@@ -135,6 +138,7 @@ class TelexTerminal(txBase.TelexBase):
                 if text:
                     b = bytes.fromhex(text)
                     self._tty.write(b)
+                    self._check_auto_CRLF(b)
                     return
             if a in self._replace_text:
                 a = self._replace_text.get(a, '?')
@@ -145,8 +149,20 @@ class TelexTerminal(txBase.TelexBase):
                 a = a.lower()
             b = a.encode('ASCII')
             self._tty.write(b)
+            self._check_auto_CRLF(b)
 
     # =====
+
+    def _check_auto_CRLF(self, b:bytes):
+        if self._auto_CRLF:
+            self.char_count += len(b)
+            if b'\r' in b:
+                self.char_count = 0
+            if self.char_count >= self._auto_CRLF:
+                self._tty.write(b'\r\n')
+                self.char_count = 0
+
+    # -----
 
     def idle20Hz(self):
         pass

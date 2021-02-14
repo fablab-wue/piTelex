@@ -8,6 +8,50 @@
       "show_info": false,
       "show_capital": false
     },
+    "Terminal VFD TEC/LIUST": {
+      "type": "terminal",
+      "enable": false,
+      "portname": "COM3",
+      "baudrate": 9600,
+      "dsrdtr": false,
+      "rtscts": false,
+      "xonxoff": false,
+      "show_BuZi": true,
+      "show_ctrl": true,
+      "show_info": false,
+      "show_capital": true,
+      "send_only": true,
+      "auto_CRLF": 20,
+      "init_hex": "1B 5B 32 4A   1B 5C 3F 4C 44 35   1F 5C 3F 4C 43 31",   # clear display   brightness   cursor mode
+      "init_text": "\r -= piTelex VFD =-\r\n",
+      "replace_hex": {
+        # "0": "D0",
+        # "1": "D1",
+        # "2": "D2",
+        # "3": "D3",
+        # "4": "D4",
+        # "5": "D5",
+        # "6": "D6",
+        # "7": "D7",
+        # "8": "D8",
+        # "9": "D9",
+        # "A": "DA",
+        # "B": "DB",
+        # "C": "DC",
+        # "D": "DD",
+        # "E": "DE",
+        # "F": "DF",
+        "\r": "AE",     # WR
+        "\n": "F2",     # ZL
+        "<": "DC",      # Bu
+        ">": "DF",      # Zi
+        "~": "F8",      # null
+        "%": "DB"       # bell
+      },
+      "replace_text": { 
+        " ": "_"        # space
+      }
+    },
     "Terminal VFD ESC/POS": {
       "type": "terminal",
       "enable": false,
@@ -20,7 +64,7 @@
       "show_ctrl": true,
       "show_info": false,
       "show_capital": true,
-      "send_only": false,
+      "send_only": true,
       "init_hex": "0C   1F 58 04   1F 43 01   1F 02",   # clear display   brightness   cursor on   vert. scroll
       "init_text": " -= piTelex VFD =-\r\n",
       "replace_hex": { 
