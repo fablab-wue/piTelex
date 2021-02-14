@@ -107,15 +107,16 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     # =====
 
     def read(self) -> str:
-        if self._rx_buffer:
-            if ST.DISCON < self._connected <= ST.CON_TP_RUN:
-                # Welcome banner hasn't been sent yet. Pop only non-printable
-                # items.
-                for nr, item in enumerate(self._rx_buffer):
-                    if item.startswith('\x1b'):
-                        return self._rx_buffer.pop(nr)
-            else:
-                return self._rx_buffer.pop(0)
+        with self._rx_lock:
+            if self._rx_buffer:
+                if ST.DISCON < self._connected <= ST.CON_TP_RUN:
+                    # Welcome banner hasn't been sent yet. Pop only non-printable
+                    # items.
+                    for nr, item in enumerate(self._rx_buffer):
+                        if item.startswith('\x1b'):
+                            return self._rx_buffer.pop(nr)
+                else:
+                    return self._rx_buffer.pop(0)
 
 
     def write(self, a:str, source:str):
@@ -214,7 +215,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self.disconnect_client()
 
         s.close()
-        self._rx_buffer.append('\x1bZ')
+        with self._rx_lock: self._rx_buffer.append('\x1bZ')
         self._printer_running = False
         del self.clients[s]
 
