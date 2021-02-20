@@ -289,9 +289,26 @@ class TelexITelexCommon(txBase.TelexBase):
             if _connected_before != self._connected:
                 l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
                 _connected_before = self._connected
+                # For outgoing ASCII connections, connect immediately to be
+                # able trigger "lazy" services from the teleprinter
+                if self._connected == ST.CON_INIT and is_ascii and not is_server:
+                    if not self._printer_running:
+                        # Request printer start; confirmation will
+                        # arrive as ESC-~ (write method will
+                        # advance to ST.CON_TP_RUN and do what's in
+                        # the following else block)
+                        self._connected = ST.CON_TP_REQ
+                        self._rx_buffer.append('\x1bA')
+                    else:
+                        # Printer already running; welcome banner
+                        # will be sent above in next iteration if
+                        # we're server
+                        self._connected = ST.CON_TP_RUN
+                        self._rx_buffer.append('\x1bA')
+                    continue
                 # We just entered ST.CON_TP_RUN (printer running, waiting for
                 # welcome banner)
-                if self._connected == ST.CON_TP_RUN:
+                elif self._connected == ST.CON_TP_RUN:
                     if is_server:
                         # Send welcome banner
                         self._tx_buffer = []
@@ -522,6 +539,9 @@ class TelexITelexCommon(txBase.TelexBase):
                     elif not is_ascii:
                         l.warning('Detected ASCII connection, but i-Telex was expected')
                         is_ascii = True
+                    # NB: This only applies for incoming ASCII connections as
+                    # outgoing ones will immediately be connected (even before
+                    # the first character is received).
                     if self._connected == ST.CON_INIT:
                         if not self._printer_running:
                             # Request printer start; confirmation will
