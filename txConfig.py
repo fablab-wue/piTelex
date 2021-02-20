@@ -12,12 +12,19 @@ import time
 from argparse import ArgumentParser
 try:
     import commentjson as json
+    _commentjson_error = False
 except:
     import json
+    _commentjson_error = True
 
 import log
 import logging
 l = logging.getLogger("piTelex." + __name__)
+
+if _commentjson_error:
+    # Presently, this will only log to console and not to the error log since
+    # the latter is set up after configuration has been read successfully.
+    l.warning("commentjson could not be imported; loading configuration from telex.json may fail if there are comments inside.")
 
 #######
 # definitions and configuration
