@@ -67,10 +67,13 @@ RPiCtrl|text\_button\_U3|"#" |string|Cmd associated with button user3
 RPiCtrl|pin\_button\_U4|0|number|GPIO# of button user4 (optional) Button connects to GND
 RPiCtrl|text\_button\_U4|"@"|string|Cmd associated with button user4
 RPiCtrl|pin\_LED\_A|0|number|GPIO# of LED indicating state „A“ ; LED connects to GND (1kOhm in series!)
-RPiCtrl|pin\_LED\_WB|0|number|GPIO# of LED indicating state „WB“ ; LED connects to GND  
+RPiCtrl|pin\_LED\_WB|0|number|GPIO# of LED indicating state „WB“ ; LED connects to GND (1kOhm in series!) 
 RPiCtrl|pin\_LED\_WB\_A|0|number|GPIO# of LED indicating state „WB\_A“  ; LED connects to GND (1kOhm in series!)
+RPiCtrl|pin\_LED\_LT|0|number|GPIO# of LED indicating local mode  ; LED connects to GND (1kOhm in series!)
 RPiCtrl|pin\_LED\_status\_R|0|number|GPIO# of RED status LED ; LED connects to GND  (330Ohm in series!)
 RPiCtrl|pin\_LED\_status\_G|0|number|GPIO# of GREEN status LED ; LED connects to GND  (330Ohm in series!)
+RPiCtrl|delay_AT|0|number| delay in seconds from pressing AT to switching to "WB"
+RPiCtrl|delay_ST|0|number| delay in seconds from pressing ST to leaving "A"
 RPiCtrl|pin\_power|0|number|GPIO# of pin used to switch off teletype power for power saving
 RPiCtrl|inv\_power|false|false / true|If true, use inverted signal on pin
 ||||

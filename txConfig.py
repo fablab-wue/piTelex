@@ -257,6 +257,7 @@ def load():
             'pin_LED_A': 0,
             'pin_LED_WB': 0,
             'pin_LED_WB_A': 9,
+            'pin_LED_LT': 0,
             'pin_LED_status_R': 23,
             'pin_LED_status_G': 24,
             }
