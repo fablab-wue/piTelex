@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# Network recording for piTelex
+# Continuous network recording for piTelex
 #
-# This script is intended to be executed once for debugging purposes. It
-# captures all network traffic over the configured piTelex port and writes it
-# into a single file, which can be viewed conveniently with wireshark.
+# This script is intended to be executed continuously for debugging purposes.
+# It captures all network traffic over the configured piTelex port and writes
+# it into a series of files, one per day (UTC). Those files can be viewed
+# conveniently with wireshark.
 #
 # Hint: To filter out self-test packages in wireshark, use the display filter
 #
@@ -22,5 +23,5 @@ else
 		exit 1
 	fi
 fi
-echo "Starting capture on TCP port \"$PITELEX_PORT\" ..."
-tshark -i wlan0 -f "tcp port $PITELEX_PORT" -w "pitelex-$(date --iso-8601=s).pcapng" -P
+echo "Starting continuous capture on TCP port \"$PITELEX_PORT\" ..."
+tshark -i wlan0 -f "tcp port $PITELEX_PORT" -b interval:86400 -w "pitelex-cont-$(date --iso-8601).pcapng"
