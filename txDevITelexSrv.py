@@ -161,14 +161,6 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         while self._run:
             try:
                 client, client_address = self.SERVER.accept()
-            except (socket.timeout, OSError):
-                # Socket timed out: Just check if we're still running
-                # (self._run) and recall accept. This serves to not prevent
-                # shutting down piTelex.
-                #
-                # An OSError can occur on quitting piTelex, if the server
-                # socket is closed before accept returns. Ignore.
-                continue
             except ConnectionAbortedError:
                 # This exception results from ECONNABORT from "under the hood".
                 # It happens if the client resets the connection after it is
@@ -182,6 +174,14 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 #
                 # The only reasonable thing to do is to ignore it.
                 l.info("Exception caught:", exc_info = sys.exc_info())
+                continue
+            except (socket.timeout, OSError):
+                # Socket timed out: Just check if we're still running
+                # (self._run) and recall accept. This serves to not prevent
+                # shutting down piTelex.
+                #
+                # An OSError can occur on quitting piTelex, if the server
+                # socket is closed before accept returns. Ignore.
                 continue
             # Recognise self-tests early and mute them
             if client_address[0] == self.ip_address:
