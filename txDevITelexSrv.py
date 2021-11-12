@@ -260,7 +260,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         while self._run:
             # Update TNS record on startup to obtain own IP address. After
             # that, update on hourly schedule (roughly).
-            if self.update_tns_record():
+            result = self.update_tns_record()
+            if result is True:
                 self.update_tns_fail = 0
                 # If update succeeded, restart self-test
                 if self.test_connection_fail == 666:
@@ -270,7 +271,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                     l.debug("self-test: TNS update successful")
             else:
                 self.update_tns_fail += 1
-                l.warning("self-test: TNS update failed {}x".format(self.update_tns_fail))
+                l.warning("self-test: TNS update failed {}x ({})".format(self.update_tns_fail, result))
 
             # Startup: As long as own IP address not known, self-test not
             # possible. Retry.
@@ -302,12 +303,13 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # continue self-testing no matter if the TNS update succeeded.
 
                 # Do connection self-test. Count failures, reset on success.
-                if self.test_connection():
+                test_result = self.test_connection()
+                if test_result is True:
                     self.test_connection_fail = 0
                     l.debug("self-test: connection test successful")
                 else:
                     self.test_connection_fail += 1
-                    l.warning("self-test: connection test failed {}x".format(self.test_connection_fail))
+                    l.warning("self-test: connection test failed {}x ({})".format(self.test_connection_fail, test_result))
 
                 if self.test_connection_fail == 6:
                     # After six failed tries, update TNS immediately.
@@ -319,7 +321,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         check our external reachability. Nonstandard LAN routing setups may
         cause this to fail though, even if we're reachable externally.
 
-        return True on success, False otherwise.
+        return True on success, an error string otherwise.
 
         For details, see implementation and i-Telex Communication Specification
         (r874).
@@ -336,12 +338,13 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 s.close()
                 # Wait for confirmation from server thread
                 ret = self.selftest_event.wait(timeout = 1.0)
+                if not ret:
+                    ret = "self-test timeout"
                 self.selftest_event.clear()
                 return ret
 
-        except Exception:
-            l.warning("Exception caught:", exc_info = sys.exc_info())
-            return False
+        except Exception as e:
+            return str(e)
 
     def update_tns_record(self):
         """
@@ -349,7 +352,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         address changes (e.g. because of a forced internet disconnection),
         publish the new address with the TNS.
 
-        return True on success, False otherwise.
+        return True on success, an error string otherwise.
 
         For details, see implementation and i-Telex Communication Specification
         (r874).
@@ -387,9 +390,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 content = data[2:]
                 raise Exception("Unexpected answer to Address_confirm: type 0x{0:x}, content: ".format(msg_type), repr(content))
 
-        except Exception:
-            l.error("Exception caught:", exc_info = sys.exc_info())
-            return False
+        except Exception as e:
+            return str(e)
 
 #######
 
