@@ -80,7 +80,9 @@ class TelexArchive(txBase.TelexBase):
             # this is a command
             if data == "\x1bWB":
                 # Dialling triggered
-                self._state = 1
+                if self._state <= 1:
+                    # Prevent rogue WB commands from resetting us
+                    self._state = 1
             elif data.startswith("\x1b#") and self._state == 1:
                 # Dial command: record. The number dialled last will remain
                 # (and should be the one that was successful)
