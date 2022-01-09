@@ -57,6 +57,12 @@ class TelexMCP(txBase.TelexBase):
         self._WRU_ID = params.get('wru_id', '')
         self._WRU_replace_always = params.get('wru_replace_always', False)
         self._continue_with_no_printer = params.get('continue_with_no_printer', True)
+        # Power off delay: Wait this many seconds after ESC-Z to turn
+        # teleprinter power off
+        self._power_off_delay = params.get('power_off_delay', 20)
+        # Power button timeout: After ESC-PT, wait this many seconds to turn
+        # teleprinter power off again
+        self._power_button_timeout = params.get('power_button_timeout', 5*60)
 
         self._rx_buffer = []
 
@@ -81,7 +87,7 @@ class TelexMCP(txBase.TelexBase):
         self._wd.init('ACTIVE', self._stop_watchdog_callback, ACTIVE_TIMEOUT)
         self._wd.init('DIAL', self._dial_watchdog_callback, self._dial_timeout, DIAL_TIMEOUT)
         self._wd.init('PRINTER', self._printer_start_watchdog_callback, 5)
-        self._wd.init('POWER', self._power_watchdog_callback, 20)
+        self._wd.init('POWER', self._power_watchdog_callback, self._power_off_delay)
         self._wd.init('WRU', self._WRU_watchdog_callback, 2)
         #self._wd.init('WELCOME', self._welcome_watchdog_callback, 1)
 
@@ -129,7 +135,7 @@ class TelexMCP(txBase.TelexBase):
             if a == 'PT':   # PT
                 if self._state == S_SLEEPING:
                     self._set_state(S_OFFLINE)
-                    self._wd.restart('POWER', 5*60)
+                    self._wd.restart('POWER', self._power_button_timeout)
                 else:
                     self._set_state(S_OFFLINE)
                     self._wd.restart('POWER', 1)
