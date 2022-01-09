@@ -47,7 +47,7 @@
     # requirements: pyserial
     "VFD POS7300": {
       "type": "terminal",
-      "enable": true,
+      "enable": false,
       "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/zzyS0
       "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
       "show_BuZi": true,
