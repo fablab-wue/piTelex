@@ -40,9 +40,9 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self._number = int(params.get('number', 0))
             if self._number:
                 l.warning("Configuration option \"number\" is deprecated and will be removed in a future version. Use \"tns-dynip-number\" instead.")
-        if self._number <= 0 or self._number > 0xffffffff:
-            # Own number no valid integer inside 32 bit; client_update requires
-            # this though, so ignore
+        if self._number < 10000 or self._number > 0xffffffff:
+            # Own number must be a valid 32-bit integer with at least 5 digits.
+            # client_update requires this, so ignore faulty number
             l.warning("Invalid own number, ignored: " + repr(self._number))
             self._number = None
 
