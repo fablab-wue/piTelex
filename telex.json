@@ -245,6 +245,15 @@
       "type": "i-Telex",
       "enable": true,
       "port": 2342,
+      # WARNING
+      # Setting tns-dynip-number to anything except 0 will enable dynamic IP
+      # updates with i-Telex TNS (Teilnehmerserver, Subscriber Server).
+      #
+      # Leave at 0 if you've chosen a static TNS entry!
+      # Change to something nonzero if and only if
+      # - you've got your number approved by i-Telex administrators, and
+      # - you've chosen dynamic IP update and told i-Telex administrators so, and
+      # - you've set your TNS pin properly.
       "tns-dynip-number": 0,
       "tns-pin": 12345
     },
