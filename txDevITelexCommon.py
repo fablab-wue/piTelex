@@ -477,6 +477,20 @@ class TelexITelexCommon(txBase.TelexBase):
                     # Acknowledge
                     elif data[0] == 6 and packet_len == 1:
                         l.debug('Received i-Telex packet: Acknowledge ({})'.format(display_hex(data)))
+                        if self._connected == ST.CON_INIT:
+                            if not self._printer_running:
+                                # Request printer start; confirmation will
+                                # arrive as ESC-~ (write method will
+                                # advance to ST.CON_TP_RUN and do what's in
+                                # the following else block)
+                                self._connected = ST.CON_TP_REQ
+                                with self._rx_lock: self._rx_buffer.append('\x1bA')
+                            else:
+                                # Printer already running; welcome banner
+                                # will be sent above in next iteration if
+                                # we're server
+                                self._connected = ST.CON_TP_RUN
+                                with self._rx_lock: self._rx_buffer.append('\x1bA')
                         # TODO: Fix calculation and prevent overflows, e.g. if
                         # the first ACK is sent with a low positive value. This
                         # might be done by saving the first ACK's absolute
