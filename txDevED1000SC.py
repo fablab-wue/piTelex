@@ -82,7 +82,7 @@ class TelexED1000SC(txBase.TelexBase):
         self._rx_state = ST.OFFLINE
 
         # Helper variables for printer feedback
-        self._last_tx_buf_len = 0
+        self._last_printed_chars = 0
         self._send_feedback = False
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
@@ -698,15 +698,15 @@ class TelexED1000SC(txBase.TelexBase):
                 self._send_feedback = True
                 # Confirm that we just came online
                 self._rx_buffer.append('\x1bAA')
-            elif self._last_tx_buf_len != tx_buf_len:
-                # Normal feedback (when buffer changed)
+            elif self._last_printed_chars != self.printed_chars:
+                # Normal feedback (when number of printed characters changed)
                 self._rx_buffer.append('\x1b~' + str(tx_buf_len))
 
             if not printer_online:
                 # We went offline: turn off feedback
                 self._send_feedback = False
 
-            self._last_tx_buf_len = tx_buf_len
+            self._last_printed_chars = self.printed_chars
 
 #######
 
