@@ -58,6 +58,7 @@ RPiCtrl|pin\_button\_1T|0|number|GPIO# of Single button (optional), press button
 RPiCtrl|pin\_button\_AT|0|number|GPIO# of button AT (optional) Button connects to GND
 RPiCtrl|pin\_button\_ST|0|number|GPIO# of button ST (optional) Button connects to GND
 RPiCtrl|pin\_button\_LT|0|number|GPIO# of button LT (optional) Button connects to GND
+RPiCtrl|pin\_button\_PT|0|number|GPIO# of button PT (optional) Button connects to GND
 RPiCtrl|pin\_button\_U1|0|number|GPIO# of button user1 (optional) Button connects to GND
 RPiCtrl|text\_button\_U1|"RY"|string|cmd associated with button user1
 RPiCtrl|pin\_button\_U2|0|number|GPIO# of button user2 (optional) Button connects to GND

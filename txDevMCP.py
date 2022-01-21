@@ -58,6 +58,10 @@ class TelexMCP(txBase.TelexBase):
         self._WRU_replace_always = params.get('wru_replace_always', False)
         self._continue_with_no_printer = params.get('continue_with_no_printer', True)
 
+        # added 2021-11-20 by Rolf Obrecht
+        # use this info for changing the behaviour of the POWER watchdog for FS200.
+        self._mode = params.get('mode','TW39')
+
         self._rx_buffer = []
 
         self._state = S_SLEEPING
@@ -129,7 +133,11 @@ class TelexMCP(txBase.TelexBase):
             if a == 'PT':   # PT
                 if self._state == S_SLEEPING:
                     self._set_state(S_OFFLINE)
-                    self._wd.restart('POWER', 5*60)
+                    if self._mode == 'V10':
+                        # hopefully stay on power until PT pressed again or local mode selected by fs220 or connection ended by remote
+                        self._wd.disable('POWER')
+                    else:
+                        self._wd.restart('POWER', 5*60)
                 else:
                     self._set_state(S_OFFLINE)
                     self._wd.restart('POWER', 1)

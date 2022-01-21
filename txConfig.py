@@ -250,6 +250,7 @@ def load():
             'pin_button_AT': 0,
             'pin_button_ST': 0,
             'pin_button_LT': 0,
+            'pin_button_PT': 0,
             'pin_button_U1': 0,
             'pin_button_U2': 0,
             'pin_button_U3': 0,
@@ -260,6 +261,8 @@ def load():
             'pin_LED_LT': 0,
             'pin_LED_status_R': 23,
             'pin_LED_status_G': 24,
+            'delay_AT':0,
+            'delay_ST':0,
             }
 
     if ARGS.ED1000:
