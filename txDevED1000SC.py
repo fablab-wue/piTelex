@@ -459,6 +459,8 @@ class TelexED1000SC(txBase.TelexBase):
                 # Write out tx buffer
                 if not self._tx_buffer:
                     l.info("[rx] tx buffer empty, printed characters: {}".format(self.printed_chars))
+                    # Ensure that everyone knows our buffer is empty
+                    self._rx_buffer.append('\x1b~0')
                     self._rx_state = ST.OFFLINE_DELAY
                 # ... but break on ST (if the operator wishes to go offline
                 # immediately).
