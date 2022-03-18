@@ -205,6 +205,7 @@ class TelexRPiTTY(txBase.TelexBase):
                 if self._state in (S_SLEEPING, S_OFFLINE):
                     self._send_control_sequence('AT')
                 if self._state == S_ACTIVE_INIT:
+                    self._send_control_sequence('AA')
                     self._set_state(S_ACTIVE_READY)
             elif line is False:   # rxd=Low
                 self._send_control_sequence('¯¯¯\\___')
