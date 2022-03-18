@@ -237,15 +237,15 @@ class TelexRPiTTY(txBase.TelexBase):
     def idle2Hz(self):
         ''' called by system every 500ms to do background staff '''
         # send printer FIFO info
-        if self._state == S_ACTIVE_READY:
-            waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
-            waiting += len(self._tx_buffer)   # estimation of left chars in buffer
-            if waiting < 0:
-                waiting = 0
-            if waiting != self._last_waiting:
-                self._send_control_sequence('~' + str(waiting))
-                self._last_waiting = waiting
+        waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
+        waiting += len(self._tx_buffer)   # estimation of left chars in buffer
+        if waiting < 0:
+            waiting = 0
+        if waiting != self._last_waiting:
+            self._send_control_sequence('~' + str(waiting))
+            self._last_waiting = waiting
 
+        if self._state == S_ACTIVE_READY:
             self._keep_alive_counter += 1
             if self._mode == 'V10' and self._keep_alive_counter > 60:   # 30sec
                 self._keep_alive_counter = 0
