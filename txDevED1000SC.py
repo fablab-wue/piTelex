@@ -197,7 +197,13 @@ class TelexED1000SC(txBase.TelexBase):
             waves.append(struct.pack('%sh' % Fpb, *samples))   # 16 bit
 
         audio = pyaudio.PyAudio()
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex, input_device_index=devindex)
+        try:
+            devindex_out = devindex[1]
+        except (TypeError, IndexError):
+            # No separate in/out devices, assume them being the same
+            devindex_out = devindex
+
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex_out)
 
         #a = stream.get_write_available()
         try:
@@ -306,7 +312,14 @@ class TelexED1000SC(txBase.TelexBase):
         time.sleep(1.5)
 
         audio = pyaudio.PyAudio()
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
+
+        try:
+            devindex_in = devindex[0]
+        except (TypeError, IndexError):
+            # No separate in/out devices, assume them being the same
+            devindex_in = devindex
+
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex_in)
 
         bit_last = None
 
