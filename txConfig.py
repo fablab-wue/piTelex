@@ -146,11 +146,17 @@ def load():
 
     parser.add_argument("-k", "--id", "--KG",
         dest="wru_id", default='', metavar="ID",
-        help="Set the ID of the telex device. Leave empty to use the hardware ID")
+        help="Enable software answerback unit and set the telex device ID. If "
+                        "enabled and a WRU is received, the software answerback "
+                        "will be triggered after 2 s if no hardware answerback "
+                        "unit replies (fallback mode). Leave empty to use "
+                        "hardware answerback unit only")
 
-    parser.add_argument("--id-fallback",
-        dest="wru_fallback", default=False, action="store_true",
-        help="Enable software ID fallback mode: If printer isn't starting up on command, enable software ID")
+    parser.add_argument("--id-replace-always",
+        dest="wru_replace_always", default=False, action="store_true",
+        help="Enable if your teleprinter has no answerback unit: On receipt of "
+                        "WRU, the configured software ID will be sent "
+                        "immediately")
 
     parser.add_argument("--errorlog-path",
         dest="errorlog_path", default=False, action="store_true",
@@ -314,9 +320,9 @@ def load():
     if wru_id:
         CFG['wru_id'] = wru_id
 
-    wru_fallback = ARGS.wru_fallback
-    if wru_fallback:
-        CFG['wru_fallback'] = ARGS.wru_fallback
+    wru_replace_always = ARGS.wru_replace_always
+    if wru_replace_always:
+        CFG['wru_replace_always'] = ARGS.wru_replace_always
 
     errorlog_path = ARGS.errorlog_path
     if errorlog_path:
