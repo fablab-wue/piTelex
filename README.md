@@ -40,7 +40,7 @@ The software supports also a connection to another telex device in the **[i-Tele
 
 For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.
 
-**[For more informations see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
+**[For more information see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
 
 <hr>
 
