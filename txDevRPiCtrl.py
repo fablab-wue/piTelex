@@ -41,6 +41,7 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_button_AT = params.get('pin_button_AT', 0)   # button AT optional
         self._pin_button_ST = params.get('pin_button_ST', 0)   # button ST optional
         self._pin_button_LT = params.get('pin_button_LT', 0)   # button LT optional
+        self._pin_button_PT = params.get('pin_button_PT', 0)   # button PT optional
         self._pin_button_U1 = params.get('pin_button_U1', 0)   # button user 1 optional
         self._pin_button_U2 = params.get('pin_button_U2', 0)   # button user 2 optional
         self._pin_button_U3 = params.get('pin_button_U3', 0)   # button user 3 optional
@@ -88,6 +89,8 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._button_ST = Button(self._pin_button_ST, self._callback_button_ST)
         if self._pin_button_LT:
             self._button_LT = Button(self._pin_button_LT, self._callback_button_LT)
+        if self._pin_button_PT:
+            self._button_PT = Button(self._pin_button_PT, self._callback_button_PT)
 
         if self._pin_button_U1:
             self._button_U1 = Button(self._pin_button_U1, self._callback_button_U1)
@@ -229,6 +232,11 @@ class TelexRPiCtrl(txBase.TelexBase):
         if level == 1:
             return
         self._rx_buffer.append('\x1bLT')
+
+    def _callback_button_PT(self, gpio, level, tick):
+        if level == 1:
+            return
+        self._rx_buffer.append('\x1bPT')
 
     def _callback_button_U1(self, gpio, level, tick):
         if level == 1:

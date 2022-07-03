@@ -256,6 +256,7 @@ def load():
             'pin_button_AT': 0,
             'pin_button_ST': 0,
             'pin_button_LT': 0,
+            'pin_button_PT': 0,
             'pin_button_U1': 0,
             'pin_button_U2': 0,
             'pin_button_U3': 0,
