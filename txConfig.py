@@ -267,6 +267,8 @@ def load():
             'pin_LED_status_R': 23,
             'pin_LED_status_G': 24,
             'pin_LED_LT': 0,
+            'delay_AT': 0,
+            'delay_ST': 0,
             }
 
     if ARGS.ED1000:

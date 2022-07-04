@@ -11,13 +11,13 @@ __version__     = "0.0.1"
 #https://www.programcreek.com/python/example/93338/pigpio.pi
 
 import os
-import time
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html   pip install pigpio
 
 import txCode
 import txBase
 import log
 from RPiIO import Button, LED, LED_PWM, NumberSwitch, pi, pi_exit
+from txWatchdog import Watchdog
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -57,6 +57,14 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
 
+        self._delay_AT = params.get('delay_AT', 0)  # delay between pressing AT and entering WB
+        self._delay_ST = params.get('delay_ST', 0)  # delay between pressing ST and leaving A
+
+        self._wd = Watchdog()
+        if self._delay_AT:
+            self._wd.init(name="DELAY_AT", callback=self._delay_AT_watchdog_callback, time_out_period=self._delay_AT)
+        if self._delay_ST:
+            self._wd.init(name="DELAY_ST", callback=self._delay_ST_watchdog_callback, time_out_period=self._delay_ST)
 
         self._rx_buffer = []
         self._mode = None
@@ -163,6 +171,8 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._LED_status_R.process_fade()
             self._LED_status_G.process_fade()
 
+        self._wd.process()
+
     # -----
 
     def idle(self):
@@ -236,11 +246,23 @@ class TelexRPiCtrl(txBase.TelexBase):
     def _callback_button_AT(self, gpio, level, tick):
         if level == 1:
             return
+        if self._delay_AT:
+            self._wd.restart(name="DELAY_AT")
+        else:
+            self._delay_AT_watchdog_callback("")
+
+    def _delay_AT_watchdog_callback(self, name:str):
         self._rx_buffer.append('\x1bAT')
 
     def _callback_button_ST(self, gpio, level, tick):
         if level == 1:
             return
+        if self._delay_AT:
+            self._wd.restart(name="DELAY_ST")
+        else:
+            self._delay_ST_watchdog_callback("")
+
+    def _delay_ST_watchdog_callback(self, name:str):
         self._rx_buffer.append('\x1bST')
 
     def _callback_button_LT(self, gpio, level, tick):
