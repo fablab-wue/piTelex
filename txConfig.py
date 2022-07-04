@@ -251,7 +251,8 @@ def load():
         devices['RPiCtrl'] = {
             'type': 'RPiCtrl',
             'enable': True,
-            'pin_switch_num': 0,
+            'pin_number_switch': 0,
+            'inv_number_switch': 0,
             'pin_button_1T': 0,
             'pin_button_AT': 0,
             'pin_button_ST': 0,
@@ -267,6 +268,8 @@ def load():
             'pin_LED_status_R': 23,
             'pin_LED_status_G': 24,
             'pin_LED_LT': 0,
+            'pin_power': 0,
+            'inv_power': 0,
             'delay_AT': 0,
             'delay_ST': 0,
             }
