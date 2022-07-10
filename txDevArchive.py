@@ -137,7 +137,14 @@ class TelexArchive(txBase.TelexBase):
 
         fn["title"] = "msg {} {}".format(direction, wru)
 
-        return os.path.join(self.arclog_path, "{timestamp} {title}.txt".format(**fn))
+        fname = fname_orig = "{timestamp} {title}.txt".format(**fn)
+        # Replace illegal characters by U+FFFD. GNU/Linux tolerates most of
+        # these, but Windows doesn't. Use lowest common denominator.
+        for c in '\0\\/:*?"<>|':
+            fname = fname.replace(c, "\ufffd")
+        if fname != fname_orig:
+            l.warning("Filename contains unsafe characters, replaced (\"{}\" => \"{}\")".format(fname_orig, fname))
+        return os.path.join(self.arclog_path, fname)
 
     @classmethod
     def find_WRU_answer(cls, data, inbound=False) -> str:
@@ -261,8 +268,12 @@ class TelexArchive(txBase.TelexBase):
         self._timestamp = None
 
         l.info("saving {}, length {}".format(filename, len(msg)))
-        with open(filename, mode="w", encoding="utf-8", newline="") as f:
-            f.write(msg)
+        try:
+            with open(filename, mode="w", encoding="utf-8", newline="") as f:
+                f.write(msg)
+        except OSError as e:
+            l.error("OS error while trying to write file: {!s}".format(e))
+
         return filename
 
 prettify_cr_test = """
