@@ -120,7 +120,7 @@ class TelexTwitterV2(txDevITelexCommon.TelexITelexCommon):
             Twitter client handler
         """
         while self.running:
-            #try:
+            try:
                 data = self.twitter_client.get_msg()
                 if data is not None:
                     tweet_text_in = str(data['tweet'])
@@ -150,8 +150,8 @@ class TelexTwitterV2(txDevITelexCommon.TelexITelexCommon):
                     a = self._tx_buffer.pop(0)
                     data = str(a.encode('ASCII'), 'utf8').lower()
                     self.add_chars(data)
-            #except Exception as e:
-            #   LOG("txDevTwitterV2.thread_function: {}".format(str(e)),1)
+            except Exception as e:
+               LOG("txDevTwitterV2.thread_function: {}".format(str(e)),1)
 
         LOG('end connection', 2)
         self._connected = False
