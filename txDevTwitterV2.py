@@ -123,25 +123,26 @@ class TelexTwitterV2(txDevITelexCommon.TelexITelexCommon):
             try:
                 data = self.twitter_client.get_msg()
                 if data is not None:
-                    tweet_text_in = str(data['tweet'])
-                    # TODO: insert linebreak after 65 characters
-                    if len(tweet_text_in) > 65 :
-                        tweet_text_out = tweet_text_in[0:64]
-                        tweet_text_in = tweet_text_in[65:]
-                        while len(tweet_text_in) > 65 :
-                            tweet_text_out = "{}\r\n{}".format(tweet_text_out,tweet_text_in[0:64])
-                            tweet_text_in = tweet_text_in[65:]
-                        tweet_txt_out = "{}\r\n{}".format(tweet_text_out,tweet_text_in)
-                    else:
-                        tweet_txt_out = tweet_text_in
-                        
-                    msg = "---\r\n{}\r\n{} (@{})\n\r{}\r\n---\r\n\n".format(
+                    lines = str(data['tweet']).split("\n")
+                    out_lines = []
+                    for line in lines:
+                        if len(line) > 65:
+                            out_lines.append(line[0:64])
+                            line = line[65:]
+                            while len(line) > 65 :
+                                out_lines.append(line[0:64])
+                                line = line[65:]
+                        out_lines.append(line)
+                    tweet_txt_out = "\r\n\r".join(out_lines)
+
+                    msg = "\r---\r\n\r{}\r\n\r{} (@{})\r\n\r{}\r\r\n---\r\n\r\n\r".format(
                           tweet_txt_out,
                           data['user']['name'],
                           data['user']['username'],
                           data['tweet']["created_at"]
                     )
                     msg = msg.replace("@", "(A)")
+
                     text = txCode.BaudotMurrayCode.ascii_to_tty_text(msg)
                     for a in text:
                         self._rx_buffer.append(a)
