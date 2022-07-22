@@ -141,6 +141,7 @@ class TelexTwitterV2(txDevITelexCommon.TelexITelexCommon):
                           data['user']['username'],
                           data['tweet']["created_at"]
                     )
+                    msg = msg.replace("@", "(A)")
                     text = txCode.BaudotMurrayCode.ascii_to_tty_text(msg)
                     for a in text:
                         self._rx_buffer.append(a)
@@ -181,6 +182,7 @@ class Twitter_Client_V2():
 
    def send_msg(self, msg):
         try:
+            msg = msg.replace("(a)", "@")
             status = self.client.create_tweet( text=msg, user_auth=True )
         except UnicodeDecodeError:
            LOG("Your message could not be encoded.  Perhaps it contains non-ASCII characters? ",1)
