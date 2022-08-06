@@ -278,14 +278,24 @@ def process_data():
     new_data = False
 
     for in_device in DEVICES:
-        c = in_device.read()
+        try:
+            c = in_device.read()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.read(): {!r}".format(in_device.id, e))
         if c:
             new_data = True
             l.debug("read {!r} from {!r}".format(c, in_device))
             for out_device in DEVICES:
                 if out_device != in_device:
                     l.debug("writing {!r} to {!r}".format(c, out_device))
-                    ret = out_device.write(c, in_device.id)
+                    try:
+                        ret = out_device.write(c, in_device.id)
+                    except (KeyboardInterrupt, SystemExit):
+                        raise
+                    except Exception as e:
+                        l.warning("Uncaught Exception in {}.write({!r}), {!r}: {!r}".format(out_device.id, c, in_device.id, e))
                     if ret:
                         l.debug("writing returned {!r}".format(ret))
                         break   # stop writing to other devices (discard data)
@@ -296,19 +306,34 @@ def process_data():
 
 def process_idle():
     for device in DEVICES:
-        device.idle()
+        try:
+            device.idle()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.idle(): {!r}".format(device.id, e))
 
 # -----
 
 def process_idle20Hz():
     for device in DEVICES:
-        device.idle20Hz()
+        try:
+            device.idle20Hz()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.idle20Hz(): {!r}".format(device.id, e))
 
 # -----
 
 def process_idle2Hz():
     for device in DEVICES:
-        device.idle2Hz()
+        try:
+            device.idle2Hz()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.idle2Hz(): {!r}".format(device.id, e))
 
 # =====
 
@@ -354,9 +379,6 @@ def main():
 
     except (KeyboardInterrupt, SystemExit):
         l.info('Exit by Keyboard')
-
-    except:
-        raise
 
     finally:
         exit()
