@@ -218,7 +218,7 @@ class TelexTwitterV2(txBase.TelexBase):
         """
         while self._running:
             if not self._twitter_client.q.empty() :
-                #try:
+                try:
                     linewidth = 68
                     data = self._twitter_client.q.get()
                     lines = str(data['escaped']).split("\n")
@@ -245,7 +245,7 @@ class TelexTwitterV2(txBase.TelexBase):
                     for c in text:
                         self._rx_buffer.append(c)
 
-                #except Exception as e:
-                #   LOG("txDevTwitterV2.thread_function: {}".format(str(e)),1)
+                except Exception as e:
+                   LOG("txDevTwitterV2.thread_function: {}".format(str(e)),1)
 
         LOG('end twitter handler', 2)
