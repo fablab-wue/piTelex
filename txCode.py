@@ -45,7 +45,7 @@ class BaudotMurrayCode:
 
     # Baudot-Murray-Code valid ASCII table
     #_valid_char = " ABCDEFGHIJKLMNOPQRSTUVWXYZ°3\n- '87\r@4%,:(5+)26019?]./=[#"
-    _valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r@°"
+    _valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r°"
     _LUT_convert_chars = {
         'Ä': 'AE',
         'Ö': 'OE',
@@ -67,7 +67,7 @@ class BaudotMurrayCode:
         '|': '(PIPE)',
         '*': '(STAR)',
         '#': '(HASH)',
-        '@': '(AT)',
+        '@': '(A)',
         '"': "'",
         ';': ',.',
         '!': '(./)',
