@@ -241,7 +241,6 @@ class TelexTwitterV2(txBase.TelexBase):
                     msg = msg.replace("@", "(A)")
 
                     text = txCode.BaudotMurrayCode.ascii_to_tty_text(msg)
-                    print(text)
                     for c in text:
                         self._rx_buffer.append(c)
 
