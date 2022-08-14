@@ -95,6 +95,8 @@ class TelexMCP(txBase.TelexBase):
         self.cli_text = ''
         self.cli_enable = False
 
+        self._on_by_PT = False
+
 
     def __del__(self):
         super().__del__()
@@ -136,6 +138,7 @@ class TelexMCP(txBase.TelexBase):
                 if self._state == S_SLEEPING:
                     self._set_state(S_OFFLINE)
                     self._wd.restart('POWER', self._power_button_timeout)
+                    self._on_by_PT = True
                 else:
                     self._set_state(S_OFFLINE)
                     self._wd.restart('POWER', 1)
@@ -163,7 +166,10 @@ class TelexMCP(txBase.TelexBase):
                 # by resetting the timer on each ESC-~. On empty printer
                 # buffer, ESC-~'s will stop.
                 if self._wd.is_active('POWER'):
-                    self._wd.restart('POWER')
+                    if self._on_by_PT:
+                        self._wd.restart('POWER', self._power_button_timeout)
+                    else:
+                        self._wd.restart('POWER')
                 # Also reset WRU timer to avoid the fallback WRU responder from
                 # triggering before the teleprinter's has had a chance
                 if self._wd.is_active('WRU'):
@@ -319,7 +325,10 @@ class TelexMCP(txBase.TelexBase):
             self._wd.disable('ACTIVE')
             self._wd.disable('DIAL')
             self._wd.disable('PRINTER')
-            self._wd.restart('POWER')
+            if self._on_by_PT:
+                self._wd.restart('POWER', self._power_button_timeout)
+            else:
+                self._wd.restart('POWER')
             self.enable_cli(False)
 
             if broadcast_state:
@@ -477,6 +486,7 @@ class TelexMCP(txBase.TelexBase):
         if self._state != S_OFFLINE:
             self.send_abort()
         self._set_state(S_SLEEPING, True)
+        self._on_by_PT = False
 
     # -----
 
