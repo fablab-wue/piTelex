@@ -5,7 +5,7 @@ Before committing this branch to master, the official wiki documentation should 
 ### Configuration Parameters
 
 |commit No|Action  | Device | Parameter                          | type / range | default| comment|
-|*--------|*-------|*-------|*-----------------------------------|*-------------|*-------|*--------|
+|---------|--------|--------|------------------------------------|--------------|--------|---------|
 |c061859  |Added   |Global  |power_off_delay                     | non-neg. int |20      | time in seconds from end-of-conection until switching off TTY power|
 |c061859  |Added   |Global  |power_button_timeout                | non-neg. int | 300    | time in seconds from switching on TTY power by means of button PT until switch off PWR|
 |67bf7ee  |fixed   |Global  |configure_with_no_printer           | false/true   |false   | bug for TW39-devices fixed|
