@@ -261,19 +261,19 @@
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "/data/piTelex/data.log"
+      "filename": "/home/pi/piTelex/data.log"
     },
 
     "news": {
       "type": "news",
       "enable": false,
-      "newspath": "/data/piTelex/news/"
+      "newspath": "/home/pi/piTelex/news/"
     },
 
     "archive": {
       "type": "archive",
       "enable": false,
-      "path": "/data/piTelex/"
+      "path": "/home/pi/piTelex/"
     },
 
     "shellcmd": {
@@ -287,11 +287,10 @@
     }
   },
 
-  "verbose": true,
   "wru_id": "12345 dummy d",
-  "wru_fallback": false,
+  "wru_replace_always": false,
   "dial_timeout": 0,
-  "continue_with_no_printer": true,
+  "continue_with_no_printer": false,
   "debug": 3,
   "errorlog_path": "/data/piTelex/"
 }
