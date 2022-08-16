@@ -166,9 +166,9 @@ def load():
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
 
-    parser.add_argument("-q", "--quiet",
-        dest="verbose", default=True, action="store_false",
-        help="don't print status messages to stdout")
+    #parser.add_argument("-q", "--quiet",
+    #    dest="verbose", default=True, action="store_false",
+    #    help="don't print status messages to stdout")
 
     parser.add_argument("-s", "--save",
         dest="save", default=False, action="store_true",
@@ -244,7 +244,6 @@ def load():
             'baudrate': 50,
             'coding': 0,
             'loopback': True,
-            'observe_rxd': True,
             }
 
     if ARGS.RPiCtrl:
