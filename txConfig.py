@@ -320,7 +320,7 @@ def load():
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
 
 
-    CFG['verbose'] = ARGS.verbose
+#    CFG['verbose'] = ARGS.verbose
 
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
