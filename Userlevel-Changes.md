@@ -8,7 +8,7 @@ Before committing this branch to master, the official wiki documentation should 
 |---------|--------|--------|------------------------------------|--------------|--------|---------|
 |c061859  |Added   |Global  |power_off_delay                     | non-neg. int |20      | time in seconds from end-of-conection until switching off TTY power|
 |c061859  |Added   |Global  |power_button_timeout                | non-neg. int | 300    | time in seconds from switching on TTY power by means of button PT until switch off PWR|
-|67bf7ee  |fixed   |Global  |configure_with_no_printer           | false/true   |false   | bug for TW39-devices fixed|
+|67bf7ee  |fixed   |Global  |continue_with_no_printer           | false/true   |false   | bug for TW39-devices fixed|
 |a5fc112  |Added   |RPiCtrl |pin_button_PT                       | non-neg. int | 0      | GPIO # of power button PT |
 |24fd178  |Added   |RPiCtrl |pin_LED_LT                          | non-neg. int | 0      | GPIO # of LED indicating local mode |
 |b25d15a  |Added   |RPiCtrl |delay_AT                            | non-neg. int | 0      | optional delay to make reactions to pressing `AT` more realistic|
