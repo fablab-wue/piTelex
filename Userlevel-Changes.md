@@ -13,11 +13,11 @@ Before committing this branch to master, the official wiki documentation should 
 |24fd178  |Added   |RPiCtrl |pin_LED_LT                          | non-neg. int | 0      | GPIO # of LED indicating local mode |
 |b25d15a  |Added   |RPiCtrl |delay_AT                            | non-neg. int | 0      | optional delay to make reactions to pressing `AT` more realistic|
 |b25d15a  |Added   |RPiCtrl |delay_ST                            | non-neg. int | 0      | optional delay to make reactions to pressing `ST` more realistic|
-|         |Deleted |Global  |verbose                             |              |        | unused
+|ed3ee79  |Deleted |Global  |verbose                             |              |        | unused
 |         |Deleted |Global  |wru_fallback                        |              |        | replaced by `wru_replace_always`|
-|         |Deleted |ITelexSrv| number                            |              |        | replaced by `tns-dynip-number`
-|         |Deleted |RPiTTY  | observe_rxd                        |              |        | replaced by `use_observe_line` `pin_observe_line`, `inv_observe_line`|
-|         |Deleted |RPiTTY  |pin_fsg_ns                          |              |        | replaced by `pin_number_switch`|
+| 8059f3d |Deleted |ITelexSrv| number                            |              |        | replaced by `tns-dynip-number`
+|ed3ee79  |Deleted |RPiTTY  | observe_rxd                        |              |        | replaced by `use_observe_line` `pin_observe_line`, `inv_observe_line`|
+|9e4c76c  |Deleted |RPiTTY  |pin_fsg_ns                          |              |        | replaced by `pin_number_switch`|
 
 ###  Miscellaneous
 tbd...
