@@ -292,5 +292,5 @@
   "dial_timeout": 0,
   "continue_with_no_printer": false,
   "debug": 3,
-  "errorlog_path": "/data/piTelex/"
+  "errorlog_path": "/home/pi/piTelex/"
 }
