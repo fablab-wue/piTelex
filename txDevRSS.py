@@ -82,7 +82,7 @@ class RSS_Client():
             feeds[url] = None
         print(feeds)
         while self.running:
-            #try:
+            try:
                 for url in self._urls:
                     rss = feedparser.parse(url)
                     if len(rss['items']) > 0 :
@@ -99,8 +99,8 @@ class RSS_Client():
                             self.q.put(item)
                         feeds[url] = rss['items'][0]['guid']
                 time.sleep(60)
-            #except Exception as e:
-            #    LOG("Error in rss client: {}".format(str(e)), 1)
+            except Exception as e:
+                LOG("Error in rss client: {}".format(str(e)), 1)
             
 
 #######
