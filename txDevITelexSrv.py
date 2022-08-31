@@ -35,15 +35,23 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         self._port = params.get('port', 2342)
 
-        self._number = int(params.get('tns-dynip-number', 0))
-       
+        self._number = int(params.get('tns_dynip_number', 0))
+        if not self._number:
+            self._number = int(params.get('tns-dynip-number', 0))
+            if self._number:
+                l.warning("Configuration option \"tns-dynip-number\" is deprecated and will be removed in a future version. Use \"tns_dynip_number\" instead.")
         if self._number < 10000 or self._number > 0xffffffff:
             # Own number must be a valid 32-bit integer with at least 5 digits.
             # client_update requires this, so ignore faulty number
             l.warning("Invalid own number, ignored: " + repr(self._number))
             self._number = None
 
-        self._tns_pin = params.get('tns-pin', None)
+        self._tns_pin = params.get('tns_pin', None)
+        if not self._tns_pin:
+            self._tns_pin = params.get('tns-pin', None)
+            if self._tns_pin:
+                l.warning("Configuration option \"tns-pin\" is deprecated and will be removed in a future version. Use \"tns_pin\" instead.")
+
         if self._tns_pin < 0 or self._tns_pin > 0xffff:
             # TNS pin no valid integer inside 16 bit; client_update requires
             # this though, so ignore

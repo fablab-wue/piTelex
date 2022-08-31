@@ -254,14 +254,14 @@
       # - you've got your number approved by i-Telex administrators, and
       # - you've chosen dynamic IP update and told i-Telex administrators so, and
       # - you've set your TNS pin properly.
-      "tns-dynip-number": 0,
-      "tns-pin": 12345
+      "tns_dynip_number": 12345,
+      "tns_pin": 12345
     },
 
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "/home/pi/piTelex/data.log"
+      "filename": "data.log"
     },
 
     "news": {
@@ -290,7 +290,7 @@
   "wru_id": "12345 dummy d",
   "wru_replace_always": false,
   "dial_timeout": 0,
-  "continue_with_no_printer": false,
+  "continue_with_no_printer": true,
   "debug": 3,
-  "errorlog_path": "/home/pi/piTelex/"
+  "errorlog_path": "./errorlog/"
 }
