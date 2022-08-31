@@ -18,6 +18,10 @@ Before committing this branch to master, the official wiki documentation should 
 | 8059f3d |Deleted |ITelexSrv| number                            |              |        | replaced by `tns-dynip-number`
 |ed3ee79  |Deleted |RPiTTY  | observe_rxd                        |              |        | replaced by `use_observe_line` `pin_observe_line`, `inv_observe_line`|
 |9e4c76c  |Deleted |RPiTTY  |pin_fsg_ns                          |              |        | replaced by `pin_number_switch`|
+|a8f40a9| Added|  |ITelexSrv| tns_dynip_number |              |        | replace tns-dynip-number|
+|a8f40a9| Added|  |ITelexSrv| tns_pin       |              |        | replace tns-pin|
+|a8f40a9| Deprecated|  |ITelexSrv| tns-dynip-number |              |        | replaced by tns_dynip_number|
+|a8f40a9| Deprecated|  |ITelexSrv| tns-pin       |              |        | replaced by tns_pin|
 
 ###  Miscellaneous
 tbd...
