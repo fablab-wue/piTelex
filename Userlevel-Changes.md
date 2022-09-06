@@ -22,6 +22,7 @@ Before committing this branch to master, the official wiki documentation should 
 |a8f40a9| Added|  ITelexSrv| tns_pin       |              |        | replace tns-pin|
 |a8f40a9| Deprecated|  ITelexSrv| tns-dynip-number |              |        | replaced by tns_dynip_number|
 |a8f40a9| Deprecated|  ITelexSrv| tns-pin       |              |        | replaced by tns_pin|
+|d856a4f| Added |Global| errorlog_level | NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL | INFO | verbosity of error log
 
 ###  Miscellaneous
 tbd...
