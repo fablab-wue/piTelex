@@ -25,4 +25,11 @@ Before committing this branch to master, the official wiki documentation should 
 |d856a4f| Added |Global| errorlog_level | NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL | INFO | verbosity of error log
 
 ###  Miscellaneous
-tbd...
+
+#### 0796dd8: Add optional parameter DELAY for rss-feed
+
+Timeout between two checks of a newsfeed can be specified by -t parameter of rssFileWrite,py; but the helper script rss-feed did not cope with this.
+Now the delay can be specified in the newsfeed config file as third parameter separately for each feed. If no delay is given, it defaults to 10 seconds.
+Must update page for rssFileWriter.py to reflect this.
+
+tbc...
