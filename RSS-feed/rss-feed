@@ -1,5 +1,8 @@
 #! /bin/bash
 
+### Change these settings to your needs.
+### Keep in mind that LINELENGTH does not consider Umlaut or "ß" expansion, so calculate some extra space in case of Umlauts...
+
 RSSROOT=/home/pi/piTelex/RSS-feed
 NEWS=$RSSROOT/news
 LOG=$NEWS/log
@@ -8,11 +11,11 @@ CFG=$RSSROOT/newsfeeds.cfg
 
 ### no user serviceable parts below ###
 
-
+mkdir -p "$NEWS"
 
 # look which feeds are active and remember them
 ACTIVELIST=$NEWS/.activefeeds.$$
-ps  -o pid,cmd | grep rssFileWriter | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1,8 > $ACTIVELIST
+ps  -o pid,cmd | grep rssFileWriter | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1,10 > $ACTIVELIST
 
 # delete memo file on exit
 trap "rm -f $ACTIVELIST" EXIT
@@ -21,17 +24,18 @@ case "$1" in
   start)
 	if [ -r "$CFG" ] ; then
 		STARTED=0
-	  	while  read SVC URL ; do
+	  	while  read SVC URL DELAY; do
 			if [ ! -z "$SVC" ] ; then
 				if [[ "$SVC" != *"#"* ]] ; then
 					if [ $# = 2 -a "$2" = "$SVC" -o  $# = 1 ] ; then
 						RUNNING=`grep "$SVC" "$ACTIVELIST"`
 						STARTED=1 
 						if [ -z "$RUNNING" ] ; then
-							echo -n "  starting  $SVC ... "
+							[ -z "$DELAY" ] && DELAY=10 
+							echo -n "  starting  $SVC ($DELAY s) ... "
 							rm -rf $NEWS/$SVC
 							mkdir -p $NEWS/$SVC $LOG
-							python3 $RSSROOT/rssFileWriter.py -f -s "$LINELENGTH" -n "$SVC"  -p "$NEWS/$SVC/" -u "$URL" &> "$LOG/$SVC.log" & 
+							python3 $RSSROOT/rssFileWriter.py -f -t "$DELAY" -s "$LINELENGTH" -n "$SVC"  -p "$NEWS/$SVC/" -u "$URL" &> "$LOG/$SVC.log" & 
 							echo "done."
 						else
 							echo "  $SVC already running."
@@ -110,12 +114,19 @@ case "$1" in
   help)
 	cat <<EOT
 
-  For every newsfeed you want to install, create an entry in file $CFG.
-  Each entry consists of a single line which holds the short identifier (name) of the feed, 
-  followed by the corresponding url, separated by whitespace.
+  For each newsfeed you want to monitor you have to create an entry in file $CFG.
+
+  An entry consists of a single line which holds 
+  - the short identifier (name) of the feed, 
+  - the corresponding url, 
+  - as option, the number of seconds between to checks of the feed (default 10s), 
+  each separated by whitespace.
+
   The identifier must not contain whitespace.
   '#' as first non-whitespace-char in a line marks it as comment.
   Empty lines are permitted.
+
+usage:
 
   "$0 start"  fire up all enabled newsfeeds or "$0 start {feedname}" to start a single feed listed in the config file.
   "$0 status" list all running newsfeeds.
