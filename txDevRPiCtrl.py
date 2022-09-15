@@ -257,7 +257,7 @@ class TelexRPiCtrl(txBase.TelexBase):
     def _callback_button_ST(self, gpio, level, tick):
         if level == 1:
             return
-        if self._delay_AT:
+        if self._delay_ST:
             self._wd.restart(name="DELAY_ST")
         else:
             self._delay_ST_watchdog_callback("")

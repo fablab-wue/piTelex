@@ -116,10 +116,10 @@ class TelexNews(txBase.TelexBase):
             if self._state_counter > 25:
                 text = self._news_buffer.pop(0)
                 aa = txCode.BaudotMurrayCode.translate(text)
-                aa = '\r\n' + aa + '\r\n\r\n\r\n'
+                aa = '\r\r\r\r\n' + aa + '\r\n\r\n\r\n'
                 for a in aa:
                     self._rx_buffer.append(a)
-
+                self._rx_buffer.append('\x1bST')
 
 #######
 
