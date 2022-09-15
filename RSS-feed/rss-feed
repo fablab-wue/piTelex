@@ -11,11 +11,13 @@ CFG=$RSSROOT/newsfeeds.cfg
 
 ### no user serviceable parts below ###
 
-mkdir -p "$NEWS"
+
 
 # look which feeds are active and remember them
 ACTIVELIST=$NEWS/.activefeeds.$$
 ps  -x -o pid,cmd | grep rssFileWriter | grep -v grep | sed -e 's/^[ \t]*//' | cut -d' ' -f1,10 > $ACTIVELIST
+
+mkdir -p "$NEWS"
 
 # delete memo file on exit
 trap "rm -f $ACTIVELIST" EXIT
@@ -114,12 +116,18 @@ case "$1" in
   help)
 	cat <<EOT
 
+  $0 helps coordinate the monitoring of multiple newsfeeds.
+
+  It is configured by 
+  - a few path settings in $0 itself (defaults should match)
+  - file "$CFG" which holds the info about the newsfeeds.
+
   For each newsfeed you want to monitor you have to create an entry in file $CFG.
 
   An entry consists of a single line which holds 
   - the short identifier (name) of the feed, 
   - the corresponding url, 
-  - as option, the number of seconds between to checks of the feed (default 10s), 
+  - as option, the number of seconds between two checks of the feed (default 10s), 
   each separated by whitespace.
 
   The identifier must not contain whitespace.
