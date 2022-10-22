@@ -46,7 +46,6 @@ class TelexRPiTTY(txBase.TelexBase):
         self.params = params
         self._timing_tick = 0
         self._time_EOT = 0
-        self._last_waiting = 0
         self._state = None
         self._time_squelch = 0
         self._use_squelch = True
@@ -240,11 +239,14 @@ class TelexRPiTTY(txBase.TelexBase):
         # send printer FIFO info
         waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
         waiting += len(self._tx_buffer)   # estimation of left chars in buffer
+
+        # Cap negative waiting times (sending finished in the past)
         if waiting < 0:
             waiting = 0
-        if waiting != self._last_waiting:
+
+        # Send buffer updates to i-Telex when teleprinter is active.
+        if self._state >= S_ACTIVE_INIT:
             self._send_control_sequence('~' + str(waiting))
-            self._last_waiting = waiting
 
         if self._state == S_ACTIVE_READY:
             self._keep_alive_counter += 1
@@ -332,7 +334,6 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._send_control_sequence('AA')
 
         if new_state == S_ACTIVE_READY:
-            self._last_waiting = -1
             self._enable_power(True)
             if self._mode == 'V10':
                 self._write_wave('%\\_')
