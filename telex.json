@@ -267,13 +267,13 @@
     "news": {
       "type": "news",
       "enable": false,
-      "newspath": "/home/pi/piTelex/news/"
+      "newspath": "/home/pi/piTelex/RSS-feed/news/"
     },
 
     "archive": {
       "type": "archive",
       "enable": false,
-      "path": "/home/pi/piTelex/"
+      "path": "/home/pi/piTelex/archive/"
     },
 
     "shellcmd": {
