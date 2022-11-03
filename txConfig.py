@@ -159,8 +159,12 @@ def load():
                         "immediately")
 
     parser.add_argument("--errorlog-path",
-        dest="errorlog_path", default=False, action="store_true",
+        dest="errorlog_path", default="./", metavar="ERRLOGPATH",
         help="Path of error log; relative paths are referred to where this program is being executed")
+
+    parser.add_argument("--errorlog-level",
+        dest="errorlog_level", default="INFO", metavar="ERRLOGLEVEL",
+        help="Verbosity of error log; see python log levels")
 
     #parser.add_argument("-m", "--mode",
     #    dest="mode", default='', metavar="MODE",
@@ -328,11 +332,15 @@ def load():
 
     wru_replace_always = ARGS.wru_replace_always
     if wru_replace_always:
-        CFG['wru_replace_always'] = ARGS.wru_replace_always
+        CFG['wru_replace_always'] = wru_replace_always
 
-    errorlog_path = ARGS.errorlog_path
+    errorlog_path = ARGS.errorlog_path.strip()
     if errorlog_path:
-        CFG['errorlog_path'] = ARGS.errorlog_path
+        CFG['errorlog_path'] = errorlog_path
+
+    errorlog_level = ARGS.errorlog_level.strip().upper()
+    if errorlog_path:
+        CFG['errorlog_level'] = errorlog_level
 
     #mode = ARGS.mode.strip()
     #if mode:
