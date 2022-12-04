@@ -66,7 +66,7 @@ class TelexCH340TTY(txBase.TelexBase):
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
 
-        if baudrate not in self._tty.BAUDRATES:
+        if baudrate not in self._tty.BAUDRATES and baudrate != 100:
             raise Exception('Baudrate not supported')
         if bytesize not in self._tty.BYTESIZES:
             raise Exception('Databits not supported')
@@ -119,6 +119,14 @@ class TelexCH340TTY(txBase.TelexBase):
             self._inverse_cts = True
             #self._inverse_dtr = True
             self._use_dedicated_line = False
+
+        if mode.find('EDS') >= 0:
+            self._loopback = False
+            self._use_cts = True
+            self._inverse_dtr = True
+            self._use_squelch = True
+            self._use_dedicated_line = False
+
 
     # -----
 
@@ -259,6 +267,8 @@ class TelexCH340TTY(txBase.TelexBase):
             self._rx_buffer.append('\x1bAA')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
+        if 1:
+            self._tty.break_condition = not enable
         self._mc.reset()
         if self._use_squelch:
             self._set_time_squelch(0.5)

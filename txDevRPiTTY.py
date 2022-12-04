@@ -272,7 +272,7 @@ class TelexRPiTTY(txBase.TelexBase):
             self._tx_buffer = []    # empty write buffer...
 
         elif a == 'WB':
-            if self._mode == 'TW39':
+            if self._mode == 'TW39' or self._mode == 'AGT':
                 self._set_state(S_DIALING_PULSE)
             else:
                 self._set_state(S_DIALING_KEYBOARD)
@@ -400,9 +400,15 @@ class TelexRPiTTY(txBase.TelexBase):
             if self._WB_pulse_length <= 0:
                 return
             #bb = [0x11110]   # experimental: 40ms pulse  @50Bd
+            if self._mode == 'AGT':
+                pins0 = 0
+                pins1 = 1<<self._pin_relay
+            else:
+                pins0 = 0
+                pins1 = 1<<self._pin_txd
             pi.wave_add_generic([   # add WB-pulse with XXXms to waveform
-                pigpio.pulse(0, 1<<self._pin_txd, self._WB_pulse_length * 1000),
-                pigpio.pulse(1<<self._pin_txd, 0, 1)
+                pigpio.pulse(pins0, pins1, self._WB_pulse_length * 1000),
+                pigpio.pulse(pins1, pins0, 1)
                 ])
 
         else:
