@@ -17,7 +17,7 @@
     "Terminal FULL EXAMPLE": {
       "type": "terminal",
       "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/zzyS0
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
       "baudrate": 300,
       "bytesize": 8,
       "stopbits": 1,
@@ -48,7 +48,7 @@
     "VFD POS7300": {
       "type": "terminal",
       "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/zzyS0
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
       "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
       "show_BuZi": true,
       "show_ctrl": true,
@@ -73,7 +73,7 @@
     "VFD TEC/LIUST": {
       "type": "terminal",
       "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/zzyS0
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
       "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
       "dsrdtr": false,
       "rtscts": false,
@@ -101,7 +101,7 @@
     "Terminal VFD ESC/POS": {
       "type": "terminal",
       "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/zzyS0
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
       "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
       "show_BuZi": true,
       "show_ctrl": true,
@@ -117,6 +117,32 @@
         " ":  "[FA]",     # space
         "~":  "[B1]",     # null
         "%":  "[EA]"      # bell
+      }
+    },
+
+    # POS-Printer EPSON TM-T88 Series
+    # requirements: pyserial
+    "Printer TM-T88": {
+      "type": "terminal",
+      "enable": true,
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
+      "baudrate": 38400,   # adapt to printer settings
+      "show_BuZi": false,
+      "show_ctrl": false,
+      "show_info": false,
+      "show_capital": false,
+      "send_only": true,
+      "auto_CRLF": 0,   # number of chars in a line before CR LF
+      "init": "[1B]M1\r\n -= BON-Telex =-\r\n",   # small font: [1B]M1   normal font [1B]M0
+      "replace_char": { 
+        "<":  "[DC]",     # Bu
+        ">":  "[DF]",     # Zi
+        " ":  "[FA]",     # space
+        "~":  "[B1]",     # null
+        "%":  "[EA]"      # bell
+      },
+      "replace_esc": {
+        "Z": "\r\n\r\n\r\n\r\n[1B6D]"    # cut paper
       }
     },
 
@@ -162,7 +188,7 @@
       "inv_relay": false,
       "pin_online": 0,
       "pin_dir": 0,
-      "pin_number_switch": 6,
+      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
       "baudrate": 50,
       "coding": 0,   # 0=ITA2
       "loopback": true
@@ -323,6 +349,7 @@
   "verbose": true,
   "wru_id": "12345 dummy d",
   "wru_fallback": false,
+  "wru_replace_always": false,
   "dial_timeout": 0,
   "continue_with_no_printer": true,
   "debug": 3,
