@@ -12,8 +12,10 @@
       "show_capital": false
     },
 
+    ###########################################################################
+
     # Terminal FULL EXAMPLE
-    # requirements: pyserial
+    # requirements: pyserial (atp install python3-serial)
     "Terminal FULL EXAMPLE": {
       "type": "terminal",
       "enable": false,
@@ -44,7 +46,7 @@
     },
 
     # Vacuum Flourescent Display (VFD) on serial port with TEC/LIUST protocol
-    # requirements: pyserial
+    # requirements: pyserial (atp install python3-serial)
     "VFD POS7300": {
       "type": "terminal",
       "enable": false,
@@ -69,7 +71,7 @@
     },
 
     # Vacuum Flourescent Display (VFD) on serial port with TEC/LIUST protocol
-    # requirements: pyserial
+    # requirements: pyserial (atp install python3-serial)
     "VFD TEC/LIUST": {
       "type": "terminal",
       "enable": false,
@@ -97,7 +99,7 @@
     },
 
     # Vacuum Flourescent Display (VFD) on serial port with EPSON ESC/POS protocol
-    # requirements: pyserial
+    # requirements: pyserial (atp install python3-serial)
     "Terminal VFD ESC/POS": {
       "type": "terminal",
       "enable": false,
@@ -121,7 +123,7 @@
     },
 
     # POS-Printer EPSON TM-T88 Series
-    # requirements: pyserial
+    # requirements: pyserial (atp install python3-serial)
     "Printer TM-T88": {
       "type": "terminal",
       "enable": true,
@@ -146,6 +148,8 @@
       }
     },
 
+    ###########################################################################
+
     # TW39 or V10 teletype over USB-serial-adapter CH340
     # requirements: pyserial
     "CH340TTY": {
@@ -157,6 +161,8 @@
       "coding": 0,   # 0=ITA2
       "loopback": false
     },
+
+    ###########################################################################
 
     # ED1000 teletype over USB-sound-card
     # requirements: numpy scipy
@@ -175,6 +181,8 @@
       "unres_threshold": 100
     },
 
+    ###########################################################################
+
     # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi - FULL EXAMPLE
     # requirements: pigpio (deamon and lib)
     "RPiTTY": {
@@ -186,6 +194,8 @@
       "inv_rxd": false,
       "pin_relay": 22,
       "inv_relay": false,
+      "pin_power": 0,
+      "inv_power": false,
       "pin_online": 0,
       "pin_dir": 0,
       "pin_number_switch": 6,   # classic layput: 6   new layout: 10
@@ -231,6 +241,7 @@
       "WB_pulse_length": 50
     },
 
+    # TeKaDe FS200 or FS220 over V.10 interface
     "RPiTTY_FS200_V10": {
       "type": "RPiTTY",
       "enable": false,
@@ -240,14 +251,17 @@
       "inv_rxd": false,
       "pin_relay": 0,
       "inv_relay": true,
+      "pin_power": 0,
+      "inv_power": false,
       "use_observe_line": true,
       "pin_observe_line": 10,
       "inv_observe_line": true,
-      "baudrate": 200,
+      "baudrate": 200,   # 50, 75, 100, 200
       "coding": 0,   # 0=ITA2
       "loopback": false
     },
 
+    # TW39-teletype using an Austrian AGT (OeAGT) with SEU-M-card as controller
     "RPiTTY_SEU-M_Oe-AGT": {
       "type": "RPiTTY",
       "enable": true,
@@ -267,6 +281,8 @@
       "WB_pulse_length": 60
     },
 
+    # Lorenz LO2000 or LO2001 (or LO3000) with a SEU-M-card INSIDE as controller
+    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
     "RPiTTY_SEU-M_LO2000": {
       "type": "RPiTTY",
       "enable": false,
@@ -276,16 +292,21 @@
       "inv_rxd": false,
       "pin_relay": 22,
       "inv_relay": false,
-      "baudrate": 100,   # 50, 75, 100
+      "pin_power": 0,
+      "inv_power": false,
+      "pin_number_switch": 0,
+      "baudrate": 50,   # 50, 75, 100
       "coding": 0,   # 0=ITA2
       "loopback": false
     },
+
+    ###########################################################################
 
     "RPiCtrl": {
       "type": "RPiCtrl",
       "enable": true,
       "pin_number_switch": 0,
-      "pin_button_1T": 8,
+      "pin_button_1T": 0,
       "pin_button_AT": 0,
       "pin_button_ST": 0,
       "pin_button_LT": 0,
@@ -295,10 +316,12 @@
       "pin_button_U4": 0,
       "pin_LED_A": 0,
       "pin_LED_WB": 0,
-      "pin_LED_WB_A": 11,
+      "pin_LED_WB_A": 0,
       "pin_LED_status_R": 23,
       "pin_LED_status_G": 24
     },
+
+    ###########################################################################
 
     "i-Telex": {
       "type": "i-Telex",
@@ -316,6 +339,8 @@
       "tns-dynip-number": 0,
       "tns-pin": 12345
     },
+
+    ###########################################################################
 
     "log": {
       "type": "log",
