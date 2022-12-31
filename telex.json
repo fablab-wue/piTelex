@@ -1,4 +1,5 @@
 # Configuration examples for piTelex
+# 2022-12-31
 # requirements: commentjson, argparse (other see sections)
 {
   "devices": {
@@ -10,6 +11,202 @@
       "show_ctrl": true,
       "show_info": false,
       "show_capital": false
+    },
+
+    ###########################################################################
+
+    # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi - FULL EXAMPLE
+    # requirements: pigpio (deamon and lib)
+    "RPiTTY_full_example": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TW39",   # "TW39", "TW39H", "TWM", "V10", "AGT"
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_power": 0,
+      "inv_power": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
+      "inv_number_switch": false,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true
+    },
+
+    "RPiTTY_typical": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TW39",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
+      "baudrate": 50,
+      "loopback": true
+    },
+
+    "RPiTTY_H-bridge": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TW39H",   # "TW39", "TW39H", "TWM", "V10", "AGT"
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": true,
+      "pin_power": 0,
+      "inv_power": false,
+      "pin_number_switch": 10,   # classic layput: 6   new layout: 10
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true
+    },
+
+    "RPiTTY_noFSG": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 0,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true,
+      "use_observe_line": false
+    },
+
+    "RPiTTY_T68d": {
+      "type": "RPiTTY",
+      "enable": false,
+      "__mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "___inv_relay": false,
+      "___pin_dir": 0,
+      "xx_pin_number_switch": 6,
+      "___inv_number_switch": false,
+      "baudrate": 50,
+      "___coding": 0,   # 0=ITA2
+      "___loopback": true,
+      "___use_observe_line": true,
+      "WB_pulse_length": 50
+    },
+
+    # TeKaDe FS200 or FS220 over V.10 interface
+    "RPiTTY_FS200_V10": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "V10",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 0,
+      "inv_relay": true,
+      "pin_power": 0,
+      "inv_power": false,
+      "use_observe_line": true,
+      "pin_observe_line": 10,
+      "inv_observe_line": true,
+      "baudrate": 200,   # 50, 75, 100, 200
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    # TW39-teletype using an Austrian AGT (OeAGT) with SEU-M-card as controller
+    "RPiTTY_SEU-M_Oe-AGT": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "AGT",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": true,
+      "pin_power": 9,
+      "inv_power": false,
+      "pin_number_switch": 10,
+      "inv_number_switch": true,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": false,
+      "WB_pulse_length": 60
+    },
+
+    # Lorenz LO2000 or LO2001 (or LO3000) with a SEU-M-card INSIDE as controller
+    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
+    "RPiTTY_SEU-M_LO2000": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_power": 0,
+      "inv_power": false,
+      "pin_number_switch": 0,
+      "baudrate": 50,   # 50, 75, 100
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    ###
+
+    "RPiCtrl": {
+      "type": "RPiCtrl",
+      "enable": true,
+      "pin_number_switch": 0,
+      "pin_button_1T": 0,
+      "pin_button_AT": 0,
+      "pin_button_ST": 0,
+      "pin_button_LT": 0,
+      "pin_button_U1": 0,
+      "pin_button_U2": 0,
+      "pin_button_U3": 0,
+      "pin_button_U4": 0,
+      "pin_LED_A": 0,
+      "pin_LED_WB": 0,
+      "pin_LED_WB_A": 0,
+      "pin_LED_status_R": 23,
+      "pin_LED_status_G": 24
+    },
+
+    ###########################################################################
+
+    # TW39 or V10 teletype over USB-serial-adapter CH340
+    # requirements: pyserial
+    "CH340TTY": {
+      "type": "CH340TTY",
+      "enable": false,
+      "portname": "COM5",
+      "baudrate": 100,
+      "mode": "EDS",   # modes: "TW39", "TWM", "V10", "EDS"
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    ###########################################################################
+
+    # ED1000 teletype over USB-sound-card
+    # requirements: numpy scipy
+    "ED1000": {
+      "type": "ED1000",
+      "enable": false,
+      "devindex": null,
+      "zcarrier": false,
+      "baudrate": 50,
+      "send_f0": 500,
+      "send_f1": 700,
+      "recv_f0": 2250,
+      "recv_f1": 3150,
+      "recv_squelch": 100,
+      "recv_debug": false,
+      "unres_threshold": 100
     },
 
     ###########################################################################
@@ -126,7 +323,7 @@
     # requirements: pyserial (atp install python3-serial)
     "Printer TM-T88": {
       "type": "terminal",
-      "enable": true,
+      "enable": false,
       "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
       "baudrate": 38400,   # adapt to printer settings
       "show_BuZi": false,
@@ -146,179 +343,6 @@
       "replace_esc": {
         "Z": "\r\n\r\n\r\n\r\n[1B6D]"    # cut paper
       }
-    },
-
-    ###########################################################################
-
-    # TW39 or V10 teletype over USB-serial-adapter CH340
-    # requirements: pyserial
-    "CH340TTY": {
-      "type": "CH340TTY",
-      "enable": false,
-      "portname": "COM5",
-      "baudrate": 100,
-      "mode": "EDS",   # modes: "TW39", "TWM", "V10", "EDS"
-      "coding": 0,   # 0=ITA2
-      "loopback": false
-    },
-
-    ###########################################################################
-
-    # ED1000 teletype over USB-sound-card
-    # requirements: numpy scipy
-    "ED1000": {
-      "type": "ED1000",
-      "enable": false,
-      "devindex": null,
-      "zcarrier": false,
-      "baudrate": 50,
-      "send_f0": 500,
-      "send_f1": 700,
-      "recv_f0": 2250,
-      "recv_f1": 3150,
-      "recv_squelch": 100,
-      "recv_debug": false,
-      "unres_threshold": 100
-    },
-
-    ###########################################################################
-
-    # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi - FULL EXAMPLE
-    # requirements: pigpio (deamon and lib)
-    "RPiTTY": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TW39",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_power": 0,
-      "inv_power": false,
-      "pin_online": 0,
-      "pin_dir": 0,
-      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "loopback": true
-    },
-
-    "RPiTTY_noFSG": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_online": 0,
-      "pin_dir": 0,
-      "pin_number_switch": 0,
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "loopback": true,
-      "use_observe_line": false
-    },
-
-    "RPiTTY_T68d": {
-      "type": "RPiTTY",
-      "enable": false,
-      "__mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "___inv_rxd": false,
-      "pin_relay": 22,
-      "___inv_relay": false,
-      "___pin_dir": 0,
-      "xx_pin_number_switch": 6,
-      "___inv_number_switch": false,
-      "baudrate": 50,
-      "___coding": 0,   # 0=ITA2
-      "___loopback": true,
-      "___use_observe_line": true,
-      "WB_pulse_length": 50
-    },
-
-    # TeKaDe FS200 or FS220 over V.10 interface
-    "RPiTTY_FS200_V10": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "V10",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 0,
-      "inv_relay": true,
-      "pin_power": 0,
-      "inv_power": false,
-      "use_observe_line": true,
-      "pin_observe_line": 10,
-      "inv_observe_line": true,
-      "baudrate": 200,   # 50, 75, 100, 200
-      "coding": 0,   # 0=ITA2
-      "loopback": false
-    },
-
-    # TW39-teletype using an Austrian AGT (OeAGT) with SEU-M-card as controller
-    "RPiTTY_SEU-M_Oe-AGT": {
-      "type": "RPiTTY",
-      "enable": true,
-      "mode": "AGT",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 22,
-      "inv_relay": true,
-      "pin_power": 9,
-      "inv_power": false,
-      "pin_number_switch": 10,
-      "inv_number_switch": true,
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "loopback": false,
-      "WB_pulse_length": 60
-    },
-
-    # Lorenz LO2000 or LO2001 (or LO3000) with a SEU-M-card INSIDE as controller
-    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
-    "RPiTTY_SEU-M_LO2000": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_power": 0,
-      "inv_power": false,
-      "pin_number_switch": 0,
-      "baudrate": 50,   # 50, 75, 100
-      "coding": 0,   # 0=ITA2
-      "loopback": false
-    },
-
-    ###########################################################################
-
-    "RPiCtrl": {
-      "type": "RPiCtrl",
-      "enable": true,
-      "pin_number_switch": 0,
-      "pin_button_1T": 0,
-      "pin_button_AT": 0,
-      "pin_button_ST": 0,
-      "pin_button_LT": 0,
-      "pin_button_U1": 0,
-      "pin_button_U2": 0,
-      "pin_button_U3": 0,
-      "pin_button_U4": 0,
-      "pin_LED_A": 0,
-      "pin_LED_WB": 0,
-      "pin_LED_WB_A": 0,
-      "pin_LED_status_R": 23,
-      "pin_LED_status_G": 24
     },
 
     ###########################################################################

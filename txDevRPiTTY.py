@@ -75,6 +75,9 @@ class TelexRPiTTY(txBase.TelexBase):
         self._pin_number_switch = params.get('pin_number_switch', params.get('pin_fsg_ns', 6))   # pin typical wired to rxd pin
         self._inv_number_switch = params.get('inv_number_switch', False)
 
+        if self._inv_rxd:
+            raise Exception('PIGPIO-lib does not support inverted RXD correctly on serial communication')
+
         self._line_observer = None
         if params.get('use_observe_line', True):
             self._pin_observe_line = params.get('pin_observe_line', self._pin_rxd)
@@ -272,7 +275,7 @@ class TelexRPiTTY(txBase.TelexBase):
             self._tx_buffer = []    # empty write buffer...
 
         elif a == 'WB':
-            if self._mode == 'TW39' or self._mode == 'AGT':
+            if self._mode == 'TW39' or self._mode == 'TW39H' or self._mode == 'AGT':
                 self._set_state(S_DIALING_PULSE)
             else:
                 self._set_state(S_DIALING_KEYBOARD)
@@ -312,23 +315,23 @@ class TelexRPiTTY(txBase.TelexBase):
             self._enable_power(True)
 
         elif new_state == S_DIALING_PULSE:
+            self._enable_power(True)
             self._set_time_squelch(0.5)
             self._enable_relay(False)
             self._enable_number_switch(True)
             self._write_wave('§')   # special control character to send WB-pulse to FSG
-            self._enable_power(True)
 
         elif new_state == S_DIALING_KEYBOARD:
+            self._enable_power(True)
             self._set_time_squelch(0.25)
             self._enable_relay(True)
             self._enable_number_switch(False)
-            self._enable_power(True)
 
         elif new_state == S_ACTIVE_INIT:
+            self._enable_power(True)
             self._set_time_squelch(0.25)
             self._enable_relay(True)
             self._enable_number_switch(False)
-            self._enable_power(True)
             if self._mode == 'V10' or not self._line_observer:
                 new_state = S_ACTIVE_READY
                 self._send_control_sequence('AA')
@@ -350,10 +353,20 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def _enable_relay(self, enable:bool):
         ''' set GPIO for the relay '''
+        if not enable and self._mode == 'TW39H':
+            pi.write(self._pin_txd, False)
+            time.sleep(0.005)
+            self._send_control_sequence('OFF')
+            
         if self._pin_relay:
             l.debug('enable_relay {}'.format(enable))
             pi.write(self._pin_relay, enable != self._inv_relay)   # pos polarity
 
+        if enable and self._mode == 'TW39H':
+            time.sleep(0.005)
+            pi.write(self._pin_txd, True)
+            self._send_control_sequence('ON')
+            
     # -----
 
     def _enable_number_switch(self, enable:bool):
@@ -400,18 +413,25 @@ class TelexRPiTTY(txBase.TelexBase):
             if self._WB_pulse_length <= 0:
                 return
             #bb = [0x11110]   # experimental: 40ms pulse  @50Bd
-            if self._mode == 'AGT':
-                pins0 = 0
-                pins1 = 1<<self._pin_relay
+            if self._mode == 'TW39H' or self._mode == 'AGT':
+                pins0 = 1<<self._pin_relay
+                pins1 = 0
+                if self._inv_relay:
+                    pins0, pins1 = pins1, pins0
             else:
-                pins0 = 0
-                pins1 = 1<<self._pin_txd
+                pins0 = 1<<self._pin_txd
+                pins1 = 0
             pi.wave_add_generic([   # add WB-pulse with XXXms to waveform
                 pigpio.pulse(pins0, pins1, self._WB_pulse_length * 1000),
                 pigpio.pulse(pins1, pins0, 1)
                 ])
+            self._send_control_sequence('PULSE')
 
         else:
+            #if self._mode == 'TW39H' and self._state <= S_OFFLINE:
+            if self._state < S_ACTIVE_INIT:
+                return
+
             bb = self._mc.encodeA2BM(text)
             if not bb:
                 return
@@ -447,13 +467,14 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def _callback_timing(self, gpio, level, tick):
         diff = tick - self._timing_tick
+        diff = (diff + 500) // 1000   # us to ms
         self._timing_tick = tick
         if level == 0:
-            text = str(diff) + '¯¯¯\\___'
+            text = str(diff) + '¯\\_'
         elif level == 1:
-            text = str(diff) + '___/¯¯¯'
+            text = str(diff) + '_/¯'
         else:
-            text = '?'
+            text = '-?-'
 
         print(text, end='')
 
