@@ -164,16 +164,20 @@ def load():
                         "immediately")
 
     parser.add_argument("--errorlog-path",
-        dest="errorlog_path", default=False, action="store_true",
+        dest="errorlog_path", default="./", metavar="ERRLOGPATH",
         help="Path of error log; relative paths are referred to where this program is being executed")
+
+    parser.add_argument("--errorlog-level",
+        dest="errorlog_level", default="INFO", metavar="ERRLOGLEVEL",
+        help="Verbosity of error log; see python log levels")
 
     #parser.add_argument("-m", "--mode",
     #    dest="mode", default='', metavar="MODE",
     #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
 
-    parser.add_argument("-q", "--quiet",
-        dest="verbose", default=True, action="store_false",
-        help="don't print status messages to stdout")
+    #parser.add_argument("-q", "--quiet",
+    #    dest="verbose", default=True, action="store_false",
+    #    help="don't print status messages to stdout")
 
     parser.add_argument("-s", "--save",
         dest="save", default=False, action="store_true",
@@ -249,18 +253,19 @@ def load():
             'baudrate': 50,
             'coding': 0,
             'loopback': True,
-            'observe_rxd': True,
             }
 
     if ARGS.RPiCtrl:
         devices['RPiCtrl'] = {
             'type': 'RPiCtrl',
             'enable': True,
-            'pin_switch_num': 0,
+            'pin_number_switch': 0,
+            'inv_number_switch': 0,
             'pin_button_1T': 0,
             'pin_button_AT': 0,
             'pin_button_ST': 0,
             'pin_button_LT': 0,
+            'pin_button_PT': 0,
             'pin_button_U1': 0,
             'pin_button_U2': 0,
             'pin_button_U3': 0,
@@ -270,6 +275,11 @@ def load():
             'pin_LED_WB_A': 9,
             'pin_LED_status_R': 23,
             'pin_LED_status_G': 24,
+            'pin_LED_LT': 0,
+            'pin_power': 0,
+            'inv_power': 0,
+            'delay_AT': 0,
+            'delay_ST': 0,
             }
 
     if ARGS.ED1000:
@@ -288,7 +298,7 @@ def load():
             }
 
     if ARGS.itelex >= 0:
-        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'tns-dynip-number': 0, 'tns-pin': 12345}
+        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'tns_dynip_number': 0, 'tns_pin': 12345}
 
     if ARGS.news:
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
@@ -323,7 +333,7 @@ def load():
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
 
 
-    CFG['verbose'] = ARGS.verbose
+#    CFG['verbose'] = ARGS.verbose
 
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
@@ -331,11 +341,15 @@ def load():
 
     wru_replace_always = ARGS.wru_replace_always
     if wru_replace_always:
-        CFG['wru_replace_always'] = ARGS.wru_replace_always
+        CFG['wru_replace_always'] = wru_replace_always
 
-    errorlog_path = ARGS.errorlog_path
+    errorlog_path = ARGS.errorlog_path.strip()
     if errorlog_path:
-        CFG['errorlog_path'] = ARGS.errorlog_path
+        CFG['errorlog_path'] = errorlog_path
+
+    errorlog_level = ARGS.errorlog_level.strip().upper()
+    if errorlog_path:
+        CFG['errorlog_level'] = errorlog_level
 
     #mode = ARGS.mode.strip()
     #if mode:

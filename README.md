@@ -42,6 +42,7 @@ For building the hardware and implementing the software it was important to unde
 
 **[For more information see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
 
+<!--
 <hr>
 
 ##### Project Status
@@ -55,3 +56,4 @@ The software and hardware are in use by about 10 teletype stations and working f
 - 2020-08: Merged Björns fork (https://github.com/b-schliessmann/piTelex) with TNS, ED1000 and i-Telex-connection rework
 - 2020-08: Added device module CLI for commands over teletype
 - 2020-07: Merged Dirks device module for Twitter (https://github.com/dirkenstein/piTelex)
+-->

@@ -1,0 +1,146 @@
+# Configuration example for piTelex
+# requirements: commentjson, argparse (additional requirements per section are listed there)
+#
+# This file can be used as a starting point for piTelex installations using the default hardware configuration.
+# Screen and log module should be enabled always for testing and debugging purposes.
+# Archive module, if enabled, saves a prettyprint transcript of each connection.
+#
+# enable the TTY module(s) that correspond to yout TTY type.
+# Disable (or optionally delete) unused modules or entries.
+#
+# For detailed configuration infos see the wiki pages.
+#
+#
+{
+  "devices": {
+    # screen output and keyboard input (for debugging)
+    "screen": {
+      "type": "screen",
+      "enable": true,
+      "show_BuZi": true,
+      "show_ctrl": true,
+      "show_info": false,
+      "show_capital": false
+    },
+
+
+    # TW39 teletype with FSG over GPIO pins of Raspberry Pi - FULL EXAMPLE
+    # requirements: pigpio (deamon and lib)
+    "RPiTTY": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TW39",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "inv_rxd": false,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 6,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true
+    },
+
+    # TW39 teletype without FSG and with keyboard dialling (TWM mode) over GPIO pins of Raspberry Pi
+    # requirements: pigpio (deamon and lib)
+    "RPiTTY_noFSG": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "inv_rxd": false,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 0,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true,
+      "use_observe_line": false
+    },
+
+
+    # FS200 / FS220 teletype with V.10 interface without FSG FAG200
+    # requirements: pigpio (deamon and lib)
+    "RPiTTY_FS200_V10": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "V10",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "inv_rxd": false,
+      "pin_relay": 0,
+      "inv_relay": true,
+      "use_observe_line": true,
+      "pin_observe_line": 10,
+      "inv_observe_line": true,
+      "baudrate": 200,
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    # Enable this if running piTelex on Raspberry Pi over GPIO pins in order to make use of extended Control, especially for installations w/o FSG
+    "RPiCtrl": {
+      "type": "RPiCtrl",
+      "enable": false,
+      "pin_number_switch": 0,
+      "pin_button_1T": 8,
+      "pin_button_AT": 0,
+      "pin_button_ST": 0,
+      "pin_button_LT": 0,
+      "pin_button_U1": 12,
+      "pin_button_U2": 16,
+      "pin_button_U3": 20,
+      "pin_button_U4": 21,
+      "pin_LED_A": 0,
+      "pin_LED_WB": 0,
+      "pin_LED_WB_A": 9,
+      "pin_LED_status_R": 23,
+      "pin_LED_status_G": 24
+    },
+
+    # i-Telex Client and Server. Server (for incoming connections) will be enabled if "port > 0".
+    "i-Telex": {
+      "type": "i-Telex",
+      "enable": true,
+      "port": 2342, # adapt tcp port to your needs; remember to open the port in routers/firewalls :-)
+      #
+      # WARNING!
+      # Setting tns-dynip-number to anything except 0 will enable dynamic IP
+      # updates with i-Telex TNS (Teilnehmerserver, Subscriber Server).
+      #
+      # Leave at 0 if you've chosen a static TNS entry!
+      # Change to something nonzero if and only if
+      # - you've got your number approved by i-Telex administrators, and
+      # - you've chosen dynamic IP update and told i-Telex administrators so, and
+      # - you've set your TNS pin properly.
+      "tns_dynip_number": 0,
+      "tns_pin": 12345
+    },
+
+    "log": {
+      "type": "log",
+      "enable": true,
+      "filename": "/home/pi/piTelex/data.log"
+    },
+
+    "archive": {
+      "type": "archive",
+      "enable": false,
+      "path": "/home/pi/piTelex/"
+    },
+
+
+  "wru_id": "12345 dummy d",
+  "wru_replace_always": false,
+  "dial_timeout": 0,
+  "power_off_delay": 20,
+  "power_button_timeout": 300,
+  "continue_with_no_printer": false,
+  "debug": 3,
+  "errorlog_path": "/home/pi/piTelex/"
+}
