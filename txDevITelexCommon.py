@@ -675,6 +675,10 @@ class TelexITelexCommon(txBase.TelexBase):
             # - Network error: There's no connection to send over anymore.
             if not error:
                 self.send_end(s)
+                
+        if is_ascii and not is_server:  # This prevents disconnect_client to hang in TP_WAIT after incomming ASCII connection closes
+            self._print_buf_len=0
+
         l.info('end connection')
         self.disconnect_client()
         if _connected_before != self._connected:
