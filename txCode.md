@@ -3,6 +3,7 @@
 ## Telex Code Conversion
 
 Baudot-Code = CCITT-1
+
 Baudot-Murray-Code = CCITT-2 = ITA2
 
 ### CCITT-2
