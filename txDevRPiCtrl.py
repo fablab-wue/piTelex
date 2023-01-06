@@ -45,6 +45,8 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_button_U2 = params.get('pin_button_U2', 0)   # button user 2 optional
         self._pin_button_U3 = params.get('pin_button_U3', 0)   # button user 3 optional
         self._pin_button_U4 = params.get('pin_button_U4', 0)   # button user 4 optional
+        
+        self._pin_wakeup = params.get('pin_wakeup', 0)   # button wakeup optional
 
         self._pin_LED_A = params.get('pin_LED_A', 0)
         self._pin_LED_WB = params.get('pin_LED_WB', 0)
@@ -97,6 +99,9 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._button_U3 = Button(self._pin_button_U3, self._callback_button_U3)
         if self._pin_button_U4:
             self._button_U4 = Button(self._pin_button_U4, self._callback_button_U4)
+
+        if self._pin_wakeup:
+            self._wakeup = Button(self._pin_wakeup, self._callback_wakeup)
 
         self._number_switch = None
         if self._pin_number_switch:
@@ -253,6 +258,11 @@ class TelexRPiCtrl(txBase.TelexBase):
             return
         text = self.params.get('text_button_U4', '@')
         self._rx_buffer.extend(list(text))
+
+    def _callback_wakeup(self, gpio, level, tick):
+        if level == 1:
+            return
+        self._rx_buffer.append('\x1bZ')
 
     def _callback_number_switch(self, text:str):
         if text.isnumeric():
