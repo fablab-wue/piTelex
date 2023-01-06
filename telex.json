@@ -156,6 +156,7 @@
       "pin_button_AT": 0,
       "pin_button_ST": 0,
       "pin_button_LT": 0,
+      "pin_button_PT": 0,
       "pin_button_U1": 0,
       "pin_button_U2": 0,
       "pin_button_U3": 0,
@@ -377,13 +378,13 @@
     "news": {
       "type": "news",
       "enable": false,
-      "newspath": "/data/piTelex/news/"
+      "newspath": "/data/piTelex/RSS-feed/news/"
     },
 
     "archive": {
       "type": "archive",
       "enable": true,
-      "path": "/data/piTelex/"
+      "path": "/data/piTelex/archive/"
     },
 
     "shellcmd": {
@@ -404,5 +405,5 @@
   "dial_timeout": 0,
   "continue_with_no_printer": true,
   "debug": 3,
-  "errorlog_path": "/data/piTelex/"
+  "errorlog_path": "/data/piTelex/errorlog/"
 }

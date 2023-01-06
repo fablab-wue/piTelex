@@ -72,7 +72,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._inv_relay = params.get('inv_relay', False)
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
-        self._pin_number_switch = params.get('pin_number_switch', params.get('pin_fsg_ns', 6 if self._mode not in ('V10', 'TWM') else 0))   # pin typical wired to rxd pin
+        self._pin_number_switch = params.get('pin_number_switch', 6 if self._mode not in ('V10', 'TWM') else 0)   # pin typical wired to rxd pin
         self._inv_number_switch = params.get('inv_number_switch', False)
 
         if self._inv_rxd:
@@ -175,7 +175,7 @@ class TelexRPiTTY(txBase.TelexBase):
     # =====
 
     def idle(self):
-        ''' called by system as often as possible to do background staff '''
+        ''' called by system as often as possible to do background stuff '''
         if not self._tx_buffer \
             or (self._use_squelch and (time.monotonic() <= self._time_squelch)) \
             or self._is_writing_wave():
@@ -199,7 +199,7 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def idle20Hz(self):
-        ''' called by system every 50ms to do background staff '''
+        ''' called by system every 50ms to do background stuff '''
         if self._line_observer:
             line = self._line_observer.process()
             if line is True:   # rxd=High
@@ -238,7 +238,7 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def idle2Hz(self):
-        ''' called by system every 500ms to do background staff '''
+        ''' called by system every 500ms to do background stuff '''
         # send printer FIFO info
         waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
         waiting += len(self._tx_buffer)   # estimation of left chars in buffer
@@ -332,7 +332,10 @@ class TelexRPiTTY(txBase.TelexBase):
             self._set_time_squelch(0.25)
             self._enable_relay(True)
             self._enable_number_switch(False)
-            if self._mode == 'V10' or not self._line_observer:
+            if self._mode == 'V10' or not self._line_observer or self._state in (S_DIALING_PULSE, S_DIALING_KEYBOARD):
+                # Immediately set S_ACTIVE_READY if mode is V10, if we've been
+                # dialling or line observer isn't configured. In all other
+                # cases, the line observer will trigger S_ACTIVE_READY mode.
                 new_state = S_ACTIVE_READY
                 self._send_control_sequence('AA')
 
@@ -342,7 +345,6 @@ class TelexRPiTTY(txBase.TelexBase):
                 self._write_wave('%\\_')
 
         self._state = new_state
-        pass
 
     # -----
 
