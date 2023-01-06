@@ -198,7 +198,7 @@ class TelexMCP(txBase.TelexBase):
                     self._rx_buffer.append('\x1bWELCOME')
                 return True
 
-            if a == 'CLI':   # welcome as server
+            if a == 'CLI':   # command line interface
                 l.info("Start CLI")
                 self.enable_cli(True)
                 return True
@@ -438,16 +438,18 @@ class TelexMCP(txBase.TelexBase):
     # -----
 
     def _dial_watchdog_callback(self, name:str):
+        #print('<<<', name, self._dial_number, '>>>')
         if name.endswith('ABORT'):
             #self.write('\x1bST', 'wdg')
             self.send_abort('<<<ABORT')
         elif self._dial_number:
             if self._dial_number.startswith('00'):
                 if self._dial_number == '000':   # 000 - local mode
-                    self._set_state(S_ACTIVE_READY, True)
+                    self._set_state(S_ACTIVE_INIT, True)
+                    self._dial_number = ''
                 elif self._dial_number == '009':   # 009 - command line interface
                     self.enable_cli(True)
-                self._dial_number = ''
+                    self._dial_number = ''
             else:
                 if self._dial_timeout > 0 or name.endswith('DIREKT'):
                     self._send_control_sequence('#' + self._dial_number)
