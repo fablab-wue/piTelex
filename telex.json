@@ -15,8 +15,11 @@
 
     ###########################################################################
 
-    # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi - FULL EXAMPLE
+    # Module type "RPiTTY"
     # requirements: pigpio (deamon and lib)
+    # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi
+    
+    # FULL EXAMPLE
     "RPiTTY_full_example": {
       "type": "RPiTTY",
       "enable": false,
@@ -36,6 +39,7 @@
       "loopback": true
     },
 
+    # standard example for a teletype with FSG
     "RPiTTY_typical": {
       "type": "RPiTTY",
       "enable": false,
@@ -48,22 +52,7 @@
       "loopback": true
     },
 
-    "RPiTTY_H-bridge": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TW39H",   # "TW39", "TW39H", "TWM", "V10", "AGT"
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 22,
-      "inv_relay": true,
-      "pin_power": 0,
-      "inv_power": false,
-      "pin_number_switch": 10,   # classic layput: 6   new layout: 10
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "loopback": true
-    },
-
+    # standard example for a teletype with no FSG. Use buttons in type "RPiCtrl" to control workflow. Dialing by keyboard
     "RPiTTY_noFSG": {
       "type": "RPiTTY",
       "enable": false,
@@ -79,24 +68,6 @@
       "coding": 0,   # 0=ITA2
       "loopback": true,
       "use_observe_line": false
-    },
-
-    "RPiTTY_T68d": {
-      "type": "RPiTTY",
-      "enable": false,
-      "__mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 22,
-      "___inv_relay": false,
-      "___pin_dir": 0,
-      "xx_pin_number_switch": 6,
-      "___inv_number_switch": false,
-      "baudrate": 50,
-      "___coding": 0,   # 0=ITA2
-      "___loopback": true,
-      "___use_observe_line": true,
-      "WB_pulse_length": 50
     },
 
     # TeKaDe FS200 or FS220 over V.10 interface
@@ -118,7 +89,8 @@
       "loopback": false
     },
 
-    # TW39-teletype using an Austrian AGT (OeAGT) with SEU-M-card as controller
+    # SEU-M - TW39-teletype using an Austrian AGT (OeAGT) with SEU-M-card as controller
+    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
     "RPiTTY_SEU-M_Oe-AGT": {
       "type": "RPiTTY",
       "enable": false,
@@ -137,7 +109,7 @@
       "WB_pulse_length": 60
     },
 
-    # Lorenz LO2000 or LO2001 (or LO3000) with a SEU-M-card INSIDE as controller
+    # SEU-M - Lorenz LO2000, LO2001 or LO3000 with a SEU-M-card INSIDE the teletype as controller
     # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
     "RPiTTY_SEU-M_LO2000": {
       "type": "RPiTTY",
@@ -149,14 +121,33 @@
       "inv_relay": false,
       "pin_power": 0,
       "inv_power": false,
-      "pin_number_switch": 0,
       "baudrate": 50,   # 50, 75, 100
       "coding": 0,   # 0=ITA2
       "loopback": false
     },
 
+    # EXPERIMENTAL - use H-bridge controlled by bidirectional difference of pin_TXD and pin_relay
+    # the H-bridge replaces the mechanical relay and the power-transistor
+    "RPiTTY_H-bridge": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TW39H",   # "TW39", "TW39H", "TWM", "V10", "AGT"
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": true,
+      "pin_power": 0,
+      "inv_power": false,
+      "pin_number_switch": 10,   # classic layput: 6   new layout: 10
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true
+    },
+
     ###
 
+    # control the workflow (dialing, idle, typing-mode, text-phrases) with buttons
+    # and show status with LEDs
     "RPiCtrl": {
       "type": "RPiCtrl",
       "enable": true,
@@ -169,17 +160,22 @@
       "pin_button_U2": 0,
       "pin_button_U3": 0,
       "pin_button_U4": 0,
+      "pin_wakeup": 0,   # user buttons 1/2/3/4: 8/7/5/6   Pin 40: 21
       "pin_LED_A": 0,
       "pin_LED_WB": 0,
       "pin_LED_WB_A": 0,
       "pin_LED_status_R": 23,
-      "pin_LED_status_G": 24
+      "pin_LED_status_G": 24,
+      "pin_power": 0,   # SEU-M: 9
+      "inv_power": false
     },
 
     ###########################################################################
 
-    # TW39 or V10 teletype over USB-serial-adapter CH340
+    # Module type "CH340TTY"
     # requirements: pyserial
+
+    # TW39 or V10 teletype over USB-serial-adapter CH340
     "CH340TTY": {
       "type": "CH340TTY",
       "enable": false,
@@ -192,8 +188,10 @@
 
     ###########################################################################
 
-    # ED1000 teletype over USB-sound-card
+    # Module type "ED1000"
     # requirements: numpy scipy
+
+    # ED1000 teletype over USB-sound-card
     "ED1000": {
       "type": "ED1000",
       "enable": false,
@@ -210,6 +208,8 @@
     },
 
     ###########################################################################
+
+    # Module type "Terminal"
 
     # Terminal FULL EXAMPLE
     # requirements: pyserial (atp install python3-serial)
@@ -346,6 +346,8 @@
     },
 
     ###########################################################################
+
+    # Module type "i-Telex"
 
     "i-Telex": {
       "type": "i-Telex",
