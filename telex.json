@@ -1,5 +1,5 @@
 # Configuration examples for piTelex
-# 2022-12-31
+# 2023-01-08
 # requirements: commentjson, argparse (other see sections)
 {
   "devices": {
@@ -25,7 +25,7 @@
       "enable": false,
       "mode": "TW39",   # "TW39", "TW39H", "TWM", "V10", "AGT"
       "pin_txd": 17,
-      "pin_rxd": 27,
+      "pin_rxd": 27,   # RPi1 revision 1: 21   all other RPi: 27
       "pin_relay": 22,
       "inv_relay": false,
       "pin_power": 0,
@@ -36,10 +36,15 @@
       "inv_number_switch": false,
       "baudrate": 50,
       "coding": 0,   # 0=ITA2
-      "loopback": true
+      "loopback": true,
+      "use_observe_line": false,
+      "pin_observe_line": 6,   # normally same as "pin_number_switch"
+      "inv_observe_line": false,
+      "nZZ_observe_line": false,
+      "WB_pulse_length": 60   # ms
     },
 
-    # standard example for a teletype with FSG
+    # standard, minimal example for a teletype with FSG
     "RPiTTY_typical": {
       "type": "RPiTTY",
       "enable": false,
@@ -119,8 +124,9 @@
       "pin_rxd": 27,
       "pin_relay": 22,
       "inv_relay": false,
-      "pin_power": 0,
+      "pin_power": 9,
       "inv_power": false,
+      "nZZ_observe_line": true,
       "baudrate": 50,   # 50, 75, 100
       "coding": 0,   # 0=ITA2
       "loopback": false
@@ -136,9 +142,9 @@
       "pin_rxd": 27,
       "pin_relay": 22,
       "inv_relay": true,
-      "pin_power": 0,
+      "pin_power": 9,
       "inv_power": false,
-      "pin_number_switch": 10,   # classic layput: 6   new layout: 10
+      "pin_number_switch": 10,
       "baudrate": 50,
       "coding": 0,   # 0=ITA2
       "loopback": true
@@ -151,7 +157,9 @@
     "RPiCtrl": {
       "type": "RPiCtrl",
       "enable": true,
+      # separate number switch - see also module RPiTTY
       "pin_number_switch": 0,
+      # user buttons   1/2/3/4: 8/7/5/6   Pin 40: 21
       "pin_button_1T": 0,
       "pin_button_AT": 0,
       "pin_button_ST": 0,
@@ -161,12 +169,15 @@
       "pin_button_U2": 0,
       "pin_button_U3": 0,
       "pin_button_U4": 0,
-      "pin_wakeup": 0,   # user buttons 1/2/3/4: 8/7/5/6   Pin 40: 21
+      "pin_wakeup": 0,
+      # single LEDs
       "pin_LED_A": 0,
       "pin_LED_WB": 0,
       "pin_LED_WB_A": 0,
+      # Duo-LEDs with common cathodes for status info
       "pin_LED_status_R": 23,
       "pin_LED_status_G": 24,
+      # power saving
       "pin_power": 0,   # SEU-M: 9
       "inv_power": false
     },
