@@ -132,7 +132,7 @@ def init_error_log(log_path):
     try:
         rev = find_rev()
     except:
-        logger.info("===== piTelex (no git revision ID found)")
+        pass
     else:
         logger.info("===== piTelex rev " + rev)
 

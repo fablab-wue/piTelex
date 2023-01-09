@@ -40,6 +40,7 @@ class TelexCH340TTY(txBase.TelexBase):
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
         coding = params.get('coding', 0)
         loopback = params.get('loopback', None)
+        inverse_dtr = params.get('inverse_dtr', False)
         self._local_echo = params.get('loc_echo', False)
 
         self._rx_buffer = []
@@ -65,7 +66,7 @@ class TelexCH340TTY(txBase.TelexBase):
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
 
-        if baudrate not in self._tty.BAUDRATES:
+        if baudrate != 45 and baudrate not in self._tty.BAUDRATES:
             raise Exception('Baudrate not supported')
         if bytesize not in self._tty.BYTESIZES:
             raise Exception('Databits not supported')
@@ -76,6 +77,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._tty.bytesize = bytesize
         self._tty.stopbits = stopbits
         self._baudrate = baudrate
+        self._inverse_dtr = inverse_dtr
 
         # init codec
         #character_duration = (bytesize + 1.0 + stopbits) / baudrate
@@ -94,7 +96,6 @@ class TelexCH340TTY(txBase.TelexBase):
         self._use_cts = False
         self._inverse_cts = False
         #self._use_dtr = False
-        self._inverse_dtr = False
         self._inverse_rts = False
         self._use_dedicated_line = True
 
@@ -110,6 +111,7 @@ class TelexCH340TTY(txBase.TelexBase):
         if mode.find('TWM') >= 0:
             self._loopback = True
             self._use_cts = True
+            self._use_pulse_dial = False
             self._use_squelch = True
             self._use_dedicated_line = False
 
