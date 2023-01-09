@@ -222,6 +222,11 @@ def init():
             twitterV2 = txDevTwitterV2.TelexTwitterV2(**dev_param)
             DEVICES.append(twitterV2)
 
+        elif dev_param['type'] == 'rss' :
+            import txDevRSS
+            rss = txDevRSS.TelexRSS(**dev_param)
+            DEVICES.append(rss)
+
         elif dev_param['type'] == 'IRC':
             import txDevIRC
             news = txDevIRC.TelexIRC(**dev_param)
