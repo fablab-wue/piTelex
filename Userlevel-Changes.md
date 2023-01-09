@@ -23,6 +23,7 @@ Before committing this branch to master, the official wiki documentation should 
 |a8f40a9| Deprecated|  ITelexSrv| tns-dynip-number |              |        | replaced by tns_dynip_number|
 |a8f40a9| Deprecated|  ITelexSrv| tns-pin       |              |        | replaced by tns_pin|
 |d856a4f| Added |Global| errorlog_level | NOTSET, DEBUG, INFO, WARN, ERROR, CRITICAL | INFO | verbosity of error log
+|53de83a| Added | RPiCtrl | pin_wakeup  | non-neg. int | 0 | GPIO # pin for wake up from wakeup
 
 ###  Miscellaneous
 
