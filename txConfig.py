@@ -110,6 +110,10 @@ def load():
         dest="twitter", default='', nargs='?', metavar='CONSUMER_KEY:CONSUMER_SECRET:ACCESS_TOKEN:ACCESS_TOKEN_SECRET:BEARER_TOKEN:USERNAME',
         help="V2 Twitter client")
 
+    gg.add_argument("-S", "--rss",
+        dest="rss", default='', nargs='?', metavar='url',
+        help="RSS feed client")
+
     gg.add_argument("-C", "--IRC",
         dest="irc", default='', metavar="CHANNEL",
         help="IRC client")
@@ -163,6 +167,28 @@ def load():
                         "WRU, the configured software ID will be sent "
                         "immediately")
 
+    parser.add_argument("--invert_dtr",
+        dest="invert_dtr", default=False, action="store_true",
+        help="Invert DTR")
+
+    parser.add_argument("-t", "--track", nargs='*',
+        dest="track", metavar="USERS", help="User list")
+
+    parser.add_argument("-f", "--follow", nargs='*',
+        dest="follow", metavar="USER", help="User list")
+
+    parser.add_argument("-u", "--url", nargs='?',
+        dest="url", metavar="URL", help="URL for twitivity")
+
+    parser.add_argument("-h", "--host", nargs='?',
+        dest="host", metavar="HOST", help="Host for twitivity")
+
+    parser.add_argument("-p", "--port", nargs='?',
+        dest="port", metavar="PORT", help="Port for twitivity")
+
+    parser.add_argument("-l", "--languages", nargs='*',
+        dest="languages", metavar="LANGUAGE", help="Language list")
+
     parser.add_argument("--errorlog-path",
         dest="errorlog_path", default="./", metavar="ERRLOGPATH",
         help="Path of error log; relative paths are referred to where this program is being executed")
@@ -182,7 +208,6 @@ def load():
     parser.add_argument("-s", "--save",
         dest="save", default=False, action="store_true",
         help="Save command line args to config file (telex.json)")
-
 
     ARGS = parser.parse_args()
 
@@ -230,13 +255,13 @@ def load():
         devices['CH340'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340.strip(), 'mode': '', 'baudrate': 50, 'loopback': True}
 
     if ARGS.CH340_TW39:
-        devices['CH340_TW39'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TW39.strip(), 'mode': 'TW39', 'baudrate': 50, 'loopback': True}
+        devices['CH340_TW39'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TW39.strip(), 'mode': 'TW39', 'baudrate': 50, 'loopback': True, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.CH340_TWM:
-        devices['CH340_TWM'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TWM.strip(), 'mode': 'TWM', 'baudrate': 50, 'loopback': True}
+        devices['CH340_TWM'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TWM.strip(), 'mode': 'TWM', 'baudrate': 50, 'loopback': True, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.CH340_V10:
-        devices['CH340_V10'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_V10.strip(), 'mode': 'V10', 'baudrate': 50, 'loopback': False}
+        devices['CH340_V10'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_V10.strip(), 'mode': 'V10', 'baudrate': 50, 'loopback': False, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.RPiTTY:
         devices['RPiTTY'] = {
@@ -313,6 +338,9 @@ def load():
     if ARGS.twitter:
         twit_args = ARGS.twitter.split(":")
         devices['twitterV2'] = { 'type': 'twitterv2', 'enable'  : True, 'consumer_key' : twit_args[0], 'consumer_secret' : twit_args[1], 'access_token' : twit_args[2], 'access_token_secret' : twit_args[3] , 'bearer_token' : twit_args[4], 'user_mentions':twit_args[5] }
+    
+    if ARGS.rss:
+        devices['rss'] = {'type': "rss", 'urls' : [ ARGS.rss ], 'format': "{title}\n\r{description}\r\n{pubDate}\r\n{guid}\r\r---\r\n}"}
 
     if ARGS.irc:
         devices['IRC'] = {'type': 'IRC', 'enable': True, 'channel': ARGS.irc.strip()}

@@ -130,7 +130,7 @@ def init_error_log(log_path,log_lvl):
     try:
         rev = find_rev()
     except:
-        logger.info("===== piTelex (no git revision ID found)")
+        pass
     else:
         logger.info("===== piTelex rev " + rev)
 
@@ -219,6 +219,11 @@ def init():
             import txDevTwitterV2
             twitterV2 = txDevTwitterV2.TelexTwitterV2(**dev_param)
             DEVICES.append(twitterV2)
+
+        elif dev_param['type'] == 'rss' :
+            import txDevRSS
+            rss = txDevRSS.TelexRSS(**dev_param)
+            DEVICES.append(rss)
 
         elif dev_param['type'] == 'IRC':
             import txDevIRC
