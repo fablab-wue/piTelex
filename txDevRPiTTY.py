@@ -82,6 +82,7 @@ class TelexRPiTTY(txBase.TelexBase):
         if params.get('use_observe_line', True):
             self._pin_observe_line = params.get('pin_observe_line', self._pin_rxd)
             self._inv_observe_line = params.get('inv_observe_line', self._inv_rxd)
+            self._nZZ_observe_line = params.get('nZZ_observe_line', False)
             self._line_observer = Observer(self._pin_observe_line, self._inv_observe_line, 10)   # 10ticks = 0.5sec
 
         self._coding = params.get('coding', 0)
@@ -204,9 +205,11 @@ class TelexRPiTTY(txBase.TelexBase):
             line = self._line_observer.process()
             if line is True:   # rxd=High
                 self._send_control_sequence('___/¯¯¯')
-                if self._state in (S_SLEEPING, S_OFFLINE):
+                if self._nZZ_observe_line and self._state in (S_SLEEPING,):
+                    pass   # ignore line if sleeping/power_saving
+                elif self._state in (S_SLEEPING, S_OFFLINE):
                     self._send_control_sequence('AT')
-                if self._state == S_ACTIVE_INIT:
+                elif self._state == S_ACTIVE_INIT:
                     self._send_control_sequence('AA')
                     self._set_state(S_ACTIVE_READY)
             elif line is False:   # rxd=Low
