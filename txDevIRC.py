@@ -229,5 +229,5 @@ class IRC_Client():
 
                 source, nick, command, target, message = self.parse_irc_msg(line)
                 if target == self.channel and command in ['PRIVMSG', 'TOPIC', 'ACTION']:
-                    self.q.put({'type': command, 'user': source, 'nick': nick, 'channel': self.channel, 'msg': message, 'timestamp': time.time()})
+                    self.q.put({'type': command, 'user': source, 'nick': nick, 'channel': self.channel, 'msg': message, 'timestamp': time.monotonic()})
                     continue

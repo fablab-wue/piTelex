@@ -44,7 +44,12 @@ class TelexShellCmd(txBase.TelexBase):
         self.id = 'ShC'
         self.params = params
 
-        self._LUT = params.get('LUT', {})
+        self._LUT = {}
+        lut = params.get('LUT', {})
+        for keystr, cmd in lut.items():
+            keys = keystr.split(',')
+            for key in keys:
+                self._LUT[key.upper().strip()] = cmd
 
         self._rx_buffer = []
 
@@ -72,10 +77,10 @@ class TelexShellCmd(txBase.TelexBase):
             a = a[1:].upper().strip()
             cmd = self._LUT.get(a, '')
             if cmd:
-                l.info('execut for {} command {}'.format(a, cmd))
-                print('execut for {} command {}'.format(a, cmd))
+                l.info('execute for {} command from {}: {!r}'.format(a, source, cmd))
+                #print('execute for {} command from {}: {!r}'.format(a, source, cmd))
                 #subprocess.check_call(['iptables', '-t', 'nat', '-A',
-                #       'PREROUTING', '-p', 'tcp', 
+                #       'PREROUTING', '-p', 'tcp',
                 #       '--destination-port', '80',
                 #       '-j', 'REDIRECT', '--to-port', '8080'])
                 os.system(cmd)

@@ -1,6 +1,6 @@
 # piTelex requirements
 argparse
-json
+commentjson
 pyserial
 pigpio
 pyaudio

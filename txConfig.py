@@ -10,11 +10,21 @@ __version__     = "0.0.2"
 
 import time
 from argparse import ArgumentParser
-import json
+try:
+    import commentjson as json
+    _commentjson_error = False
+except:
+    import json
+    _commentjson_error = True
 
 import log
 import logging
 l = logging.getLogger("piTelex." + __name__)
+
+if _commentjson_error:
+    # Presently, this will only log to console and not to the error log since
+    # the latter is set up after configuration has been read successfully.
+    l.warning("commentjson could not be imported; loading configuration from telex.json may fail if there are comments inside.")
 
 #######
 # definitions and configuration
@@ -95,6 +105,11 @@ def load():
         dest="twitter", default='', nargs='?', metavar='CONSUMER_KEY:CONSUMER_SECRET:API_KEY:API_SECRET',
         help="Twitter client")
 
+
+    gg.add_argument("-W", "--twitterv2",
+        dest="twitter", default='', nargs='?', metavar='CONSUMER_KEY:CONSUMER_SECRET:ACCESS_TOKEN:ACCESS_TOKEN_SECRET:BEARER_TOKEN:USERNAME',
+        help="V2 Twitter client")
+
     gg.add_argument("-C", "--IRC",
         dest="irc", default='', metavar="CHANNEL",
         help="IRC client")
@@ -164,8 +179,8 @@ def load():
     parser.add_argument("-l", "--languages", nargs='*',
         dest="languages", metavar="LANGUAGE", help="Language list")
 
-    parser.add_argument("--errlog-path",
-        dest="errlog_path", default=False, action="store_true",
+    parser.add_argument("--errorlog-path",
+        dest="errorlog_path", default=False, action="store_true",
         help="Path of error log; relative paths are referred to where this program is being executed")
 
     #parser.add_argument("-m", "--mode",
@@ -202,19 +217,19 @@ def load():
 
     if ARGS.screen and 'screen' not in devices:
         devices['screen'] = {
-            'type': 'screen', 
-            'enable': True, 
-            'show_BuZi': True, 
-            'show_capital': False, 
-            'show_ctrl': True, 
+            'type': 'screen',
+            'enable': True,
+            'show_BuZi': True,
+            'show_capital': False,
+            'show_ctrl': True,
             'show_info': False
             }
 
     if ARGS.terminal:
         devices['terminal'] = {
-            'type': 'terminal', 
-            'enable': True, 
-            'portname': ARGS.terminal.strip(), 
+            'type': 'terminal',
+            'enable': True,
+            'portname': ARGS.terminal.strip(),
             'baudrate': 300,
             'bytesize': 8,
             'stopbits': 1,
@@ -284,10 +299,11 @@ def load():
             'baudrate': 50,
             'devindex': None,
             'zcarrier': False,
+            'unres_threshold': 100,
             }
 
     if ARGS.itelex >= 0:
-        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'number': 0, 'tns-pin': 12345}
+        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'tns-dynip-number': 0, 'tns-pin': 12345}
 
     if ARGS.news:
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
@@ -298,6 +314,10 @@ def load():
         os.environ['consumer_key'] = ARGS.consumer_key
         os.environ['consumer_secret'] = ARGS.consumer_secret
         devices['twitter'] = { 'type': 'twitter', 'enable'  : True, 'consumer_key' : twit_creds [0], 'consumer_secret' : twit_creds [1], 'access_token_key' : twit_creds [2], 'access_token_secret' : twit_creds [3] , 'track' : ARGS.track, 'follow': ARGS.follow, 'languages' : ARGS.languages, 'url' : ARGS.url, 'host' : ARGS.host, 'port' : ARGS.port }
+
+    if ARGS.twitter:
+        twit_args = ARGS.twitter.split(":")
+        devices['twitterV2'] = { 'type': 'twitterv2', 'enable'  : True, 'consumer_key' : twit_args[0], 'consumer_secret' : twit_args[1], 'access_token' : twit_args[2], 'access_token_secret' : twit_args[3] , 'bearer_token' : twit_args[4], 'user_mentions':twit_args[5] }
 
     if ARGS.irc:
         devices['IRC'] = {'type': 'IRC', 'enable': True, 'channel': ARGS.irc.strip()}
@@ -328,9 +348,9 @@ def load():
     if wru_fallback:
         CFG['wru_fallback'] = ARGS.wru_fallback
 
-    errlog_path = ARGS.errlog_path
-    if errlog_path:
-        CFG['errlog_path'] = ARGS.errlog_path
+    errorlog_path = ARGS.errorlog_path
+    if errorlog_path:
+        CFG['errorlog_path'] = ARGS.errorlog_path
 
     #mode = ARGS.mode.strip()
     #if mode:

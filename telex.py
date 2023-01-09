@@ -82,6 +82,14 @@ class MonthlyRotatingFileHandler(logging.handlers.RotatingFileHandler):
         if os.path.exists(source):
             os.rename(source, dest)
 
+def find_rev() -> str:
+    """
+    Try finding out the git commit id and return it.
+    """
+    import subprocess
+    result = subprocess.run(["git", "log", "--oneline", "-1"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
+    return result.stdout.decode("utf-8", errors="replace").strip()
+
 def init_error_log(log_path):
     """
     Initialise error logging, i.e. create the root logger. It saves all logged
@@ -121,17 +129,17 @@ def init_error_log(log_path):
     threading.excepthook = threading_excepthook
 
     # Log application start
-    from txDevLog import find_rev
-    rev = "(ERR)"
     try:
         rev = find_rev()
     except:
         pass
-    finally:
+    else:
         logger.info("===== piTelex rev " + rev)
 
 def excepthook(etype, value, tb):
-    l.critical("".join(traceback.format_exception(etype, value, tb)))
+    to_log = "".join(traceback.format_exception(etype, value, tb))
+    l.critical(to_log)
+    print(to_log)
 
 def unraisablehook(unraisable):
     excepthook(unraisable.exc_type, unraisable.exc_value, unraisable.exc_traceback)
@@ -208,6 +216,11 @@ def init():
             import txDevTwitter
             twitter = txDevTwitter.TelexTwitter(**dev_param)
             DEVICES.append(twitter)
+
+        elif dev_param['type'] == 'twitterV2':
+            import txDevTwitterV2
+            twitterV2 = txDevTwitterV2.TelexTwitterV2(**dev_param)
+            DEVICES.append(twitterV2)
 
         elif dev_param['type'] == 'IRC':
             import txDevIRC
@@ -307,22 +320,22 @@ def process_idle2Hz():
 def main():
     txConfig.load()
 
-    errlog_path = txConfig.CFG.get('errlog_path', 'error_log')
-    init_error_log(errlog_path)
+    errorlog_path = txConfig.CFG.get('errorlog_path', 'error_log')
+    init_error_log(errorlog_path)
 
     #test()   # for debug only
     init()
 
     print('\n\033[0;30;47m -=TELEX=- \033[0m\n')
 
-    time_2Hz = time.time()
-    time_20Hz = time.time()
-    time_200Hz = time.time()
+    time_2Hz = time.monotonic()
+    time_20Hz = time.monotonic()
+    time_200Hz = time.monotonic()
     sleep_time = 0.001
 
     try:
         while True:
-            time_act = int(time.time() * 1000)   # time in ms
+            time_act = int(time.monotonic() * 1000)   # time in ms
 
             new_data = process_data()
             if new_data:

@@ -25,6 +25,7 @@ import struct
 #import scipy.signal.signaltools as sigtool
 from scipy import signal
 import numpy as np
+import enum
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -40,6 +41,29 @@ plot_spectrum = False
 
 #######
 
+class ST(enum.IntEnum):
+    """
+    Represent ED1000 teleprinter state.
+    """
+    # offline / startup
+    OFFLINE = 1
+
+    # online requested by ESC-WB/-A
+    ONLINE_REQ = 2
+
+    # online
+    ONLINE = 3
+
+    # offline requested by ESC-Z
+    OFFLINE_REQ = 4
+
+    # offline delay after buffer is empty
+    OFFLINE_DELAY = 5
+
+    # offline, wait for A level
+    OFFLINE_WAIT = 6
+
+
 class TelexED1000SC(txBase.TelexBase):
     def __init__(self, **params):
         super().__init__()
@@ -53,14 +77,9 @@ class TelexED1000SC(txBase.TelexBase):
         self._rx_buffer = []
         self._is_online = Event()
         self._ST_pressed = False
-        # State of rx thread, governs most of the module operation. States:
-        # -  0 offline / startup
-        # - 10 going online by ESC-WB/-A
-        # - 20 online
-        # - 30 going offline by ESC-Z
-        # - 40 offline delay after buffer is empty
-        # - 50 offline, wait for A level
-        self._rx_state = 0
+        # State of rx thread, governs most of the module operation (see class
+        # ST)
+        self._rx_state = ST.OFFLINE
 
         # Helper variables for printer feedback
         self._last_tx_buf_len = 0
@@ -69,6 +88,7 @@ class TelexED1000SC(txBase.TelexBase):
         self.recv_squelch = self.params.get('recv_squelch', 100)
         self.recv_debug = self.params.get('recv_debug', False)
         self.send_WB_pulse = self.params.get('send_WB_pulse', False)
+        self.unres_threshold = self.params.get('unres_threshold', 100)
 
         recv_f0 = self.params.get('recv_f0', 2250)
         recv_f1 = self.params.get('recv_f1', 3150)
@@ -77,6 +97,9 @@ class TelexED1000SC(txBase.TelexBase):
 
         # Save how many characters have been printed per session
         self.printed_chars = 0
+
+        # Track MCP active state for printer start feedback
+        self._MCP_active = False
 
         self._run = True
         self._tx_thread = Thread(target=self.thread_tx, name='ED1000tx')
@@ -121,10 +144,12 @@ class TelexED1000SC(txBase.TelexBase):
         if a == '\x1bA':
             l.debug("received online command")
             self._tx_buffer.append('§A')   # signaling type A - connection
+            self._MCP_active = True
             self._set_online(True)
 
         if a == '\x1bZ':
             l.debug("received offline command (ST pressed: {})".format(self._ST_pressed))
+            self._MCP_active = False
             self._set_online(False)
 
         if a == '\x1bWB':
@@ -178,13 +203,13 @@ class TelexED1000SC(txBase.TelexBase):
         try:
             while self._run:
                 # Going online: send Z
-                if self._rx_state == 10:
+                if self._rx_state == ST.ONLINE_REQ:
                     l.debug("[tx] Sending Z level")
                     stream.write(waves[1], Fpb)   # blocking
                 # Process buffer if we're online or going offline with nonempty
                 # buffer. Critical for ASCII services that send faster than 50
                 # Bd.
-                elif 20 <= self._rx_state <= 30:
+                elif ST.ONLINE <= self._rx_state <= ST.OFFLINE_REQ:
                     if self._tx_buffer:
                         a = self._tx_buffer.pop(0)
                         if len(a) == 1:
@@ -226,10 +251,10 @@ class TelexED1000SC(txBase.TelexBase):
                         stream.write(waves[1], Fpb)   # blocking
 
                 else:   # offline
-                    if self._rx_state == 40:
+                    if self._rx_state == ST.OFFLINE_DELAY:
                         l.debug("[tx] Going offline shortly")
                         # Wait out offline delay; write Z until then
-                        while self._rx_state == 40:
+                        while self._rx_state == ST.OFFLINE_DELAY:
                             stream.write(waves[1], Fpb)   # blocking
 
                     if zcarrier:
@@ -272,6 +297,8 @@ class TelexED1000SC(txBase.TelexBase):
         audio = pyaudio.PyAudio()
         stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
 
+        bit_last = None
+
         while self._run:
             # Executing the IIR filter for bit recognition takes a lot of CPU
             # power. Normally, we do it four times per bit or every 5 ms (once
@@ -296,7 +323,7 @@ class TelexED1000SC(txBase.TelexBase):
             # optimal circumstances, after pressing AT on the teleprinter,
             # it took the filter two cycles to recognise the change.)
 
-            if quick_scanning or self._rx_state > 0:
+            if quick_scanning or self._rx_state > ST.OFFLINE:
                 pass
             else:
                 self._is_online.wait(1)
@@ -308,12 +335,33 @@ class TelexED1000SC(txBase.TelexBase):
             # Run FSK demodulation (bit detection)
             bit = self._recv_decode(data)
 
+            if bit_last != bit and not (ST.ONLINE <= self._rx_state < ST.OFFLINE_DELAY):
+                if bit is None:
+                    l.debug("[rx] Squelch active, last bit {}, previous counter value: {}".format(
+                        "Z" if bit_last else "A",
+                        _bit_counter_1 if bit_last else _bit_counter_0
+                        )
+                    )
+                elif bit_last is None:
+                    l.debug("[rx] Squelch off, bit changed to {}, previous counter value: {}".format(
+                        "Z" if bit else "A",
+                        _bit_counter_0
+                        )
+                    )
+                else:
+                    l.debug("[rx] Bit changed to {}, previous counter value: {}".format(
+                        "Z" if bit else "A",
+                        _bit_counter_1 if bit_last else _bit_counter_0
+                        )
+                    )
+                bit_last = bit
+
             # The purpose of these bit counters is to detect a stable level of
             # A or Z, which triggers state changes.
             if bit:
                 _bit_counter_0 = 0
                 _bit_counter_1 += 1
-                if self._rx_state <= 0: # offline / startup
+                if self._rx_state <= ST.OFFLINE:
                     if _bit_counter_1 == 1:
                         # First Z level detected; raise scanning rate to timely
                         # react to AT press
@@ -333,9 +381,9 @@ class TelexED1000SC(txBase.TelexBase):
             # Main state machine tracking what the teleprinter hardware does.
             # Tx thread is slaved to this state.
             state_before = self._rx_state # Only for logging
-            if self._rx_state <= 0:   # offline / startup ======================
+            if self._rx_state <= ST.OFFLINE: # ====================
                 if self._is_online.is_set():
-                    self._rx_state = 10
+                    self._rx_state = ST.ONLINE_REQ
                     # Online by external command: reset bit counters because we
                     # need a defined starting point for Z level recognition
                     _bit_counter_0 = 0
@@ -343,20 +391,21 @@ class TelexED1000SC(txBase.TelexBase):
                 # Send ESC-AT after 20 consecutive Zs (100 ms + rest of
                 # _is_online.wait delay, see above). Don't advance state;
                 # ESC-AT will cause us to receive ESC-WB/ESC-A by txDevMCP and
-                # this will toggle is_online.
-                if _bit_counter_1 >= 20:
+                # this will toggle is_online. Use == 20 to ensure sending
+                # ESC-AT only once.
+                if _bit_counter_1 == 20:
                     l.info("[rx] Detected AT press")
                     self._rx_buffer.append('\x1bAT')
                     # Don't send printer start confirmation since AT was
                     # pressed.
-            elif self._rx_state == 10: # going online by ESC-WB/-A =============
+            elif self._rx_state == ST.ONLINE_REQ: # ====================
                 # Go online after 20 consecutive Zs.
                 # - If we come here after ESC-AT, we fall through since
                 #   _bit_counter_1 is already >= 20.
                 # - If we come here by ESC-A from incoming connection, we
                 #   properly wait for a stable Z reading.
                 if _bit_counter_1 >= 20:
-                    self._rx_state = 20
+                    self._rx_state = ST.ONLINE
                     # Reset character recognition
                     slice_counter = 0
                 # If the teleprinter doesn't switch to Z, but stays in A for at
@@ -368,21 +417,21 @@ class TelexED1000SC(txBase.TelexBase):
                 # send ESC-ST because this would terminate it immediately. To
                 # keep this transparent and allow fallback mechanisms like the
                 # archive module to continue receiving, just set offline and
-                # reset our internal state to 0.
-                if _bit_counter_0 == 100:
+                # reset our internal state to ST.OFFLINE.
+                if _bit_counter_0 == self.unres_threshold:
                     l.info("[rx] Detected unresponsive teleprinter")
                     self._set_online(False)
-                    self._rx_state = 0
+                    self._rx_state = ST.OFFLINE
                     _bit_counter_0 = 0
                     _bit_counter_1 = 0
                     if self._tx_buffer:
                         l.warning("[rx] Discarding tx buffer due to unresponsive teleprinter ({} characters)".format(len(self._tx_buffer)))
                         l.debug("[rx] tx buffer contents: {!r}".format(self._tx_buffer))
                         self._tx_buffer = []
-            elif self._rx_state == 20: # online ================================
+            elif self._rx_state == ST.ONLINE: # ====================
                 # Go offline on ESC-Z
                 if not self._is_online.is_set():
-                    self._rx_state = 30
+                    self._rx_state = ST.OFFLINE_REQ
                 # Send ESC-ST after 100 consecutive As (500 ms). Don't advance
                 # state; ESC-ST will cause us to receive ESC-Z by txDevMCP and
                 # this will toggle is_online. Use == 100 to ensure sending
@@ -395,11 +444,11 @@ class TelexED1000SC(txBase.TelexBase):
                         l.warning("[rx] Discarding tx buffer due to ST press ({} characters)".format(len(self._tx_buffer)))
                         l.debug("[rx] tx buffer contents: {!r}".format(self._tx_buffer))
                         self._tx_buffer = []
-            elif self._rx_state == 30: # going offline by ESC-Z ================
+            elif self._rx_state == ST.OFFLINE_REQ: # ====================
                 # Write out tx buffer
                 if not self._tx_buffer:
                     l.info("[rx] tx buffer empty, printed characters: {}".format(self.printed_chars))
-                    self._rx_state = 40
+                    self._rx_state = ST.OFFLINE_DELAY
                 # ... but break on ST (if the operator wishes to go offline
                 # immediately).
                 # (If we reached this state by pressing ST, the buffer will be
@@ -412,27 +461,27 @@ class TelexED1000SC(txBase.TelexBase):
                     self._rx_buffer.append('\x1bST')
                     self._ST_pressed = True
                     # Don't advance state since emptying the buffer now will
-                    # trigger state 40 on next loop (see above).
+                    # trigger state ST.OFFLINE_DELAY on next loop (see above).
                     if self._tx_buffer:
                         l.warning("[rx] Discarding tx buffer due to ST press ({} characters)".format(len(self._tx_buffer)))
                         l.debug("[rx] tx buffer contents: {!r}".format(self._tx_buffer))
                         self._tx_buffer = []
-            elif self._rx_state == 40: # offline delay =========================
+            elif self._rx_state == ST.OFFLINE_DELAY: # ====================
                 if self._ST_pressed:
                     # Skip delay if ST was pressed to improve responsiveness
                     self._ST_pressed = False
-                    self._rx_state = 50
+                    self._rx_state = ST.OFFLINE_WAIT
                 offline_delay_counter += 1
                 # Wait 3000 ms until switching to A level.
                 if offline_delay_counter > 600:
-                    self._rx_state = 50
+                    self._rx_state = ST.OFFLINE_WAIT
                     offline_delay_counter = 0
                 else:
                     if offline_delay_counter % 100 == 0:
                         l.debug("[rx] Offline delay running: {!r}/600".format(offline_delay_counter))
-            elif self._rx_state >= 50: # offline, wait for A level =============
+            elif self._rx_state >= ST.OFFLINE_WAIT: # ====================
                 if _bit_counter_0 > 100:
-                    self._rx_state = 0
+                    self._rx_state = ST.OFFLINE
                     _bit_counter_0 = 0
                     _bit_counter_1 = 0
                     self.printed_chars = 0
@@ -440,7 +489,7 @@ class TelexED1000SC(txBase.TelexBase):
 
             #l.debug("[rx] _is_online: {} bit: {}".format(self._is_online.is_set(), bit))
             if state_before != self._rx_state:
-                l.info("[rx] State transition: {}=>{}".format(state_before, self._rx_state))
+                l.info("[rx] State transition: {!s}=>{!s}".format(state_before, self._rx_state))
 
             # Suppress symbol recognition until we're in full online state.
             #
@@ -467,12 +516,12 @@ class TelexED1000SC(txBase.TelexBase):
             # - Incoming connection: We send Z first, the teleprinter
             #   acknowledges this by switching from A to Z after some time.
             #
-            # The second case is critical: We have to wait for the
-            # teleprinter to send a Z; only after this we are online
-            # (_rx_state == 20). Turn off character recognition in later states
+            # The second case is critical: We have to wait for the teleprinter
+            # to send a Z; only after this we are online (_rx_state ==
+            # ST.ONLINE). Turn off character recognition in later states
             # because the other endpoint is already disconnected; received data
             # would be useless. But ST operation always works independently.
-            if not self._rx_state == 20: # online
+            if not self._rx_state == ST.ONLINE: # online
                 continue
 
             # Character recognition
@@ -623,19 +672,21 @@ class TelexED1000SC(txBase.TelexBase):
         return bit
 
     def idle2Hz(self):
-        # Send printer feedback (ESC-~)
-        # It contains the current printer buffer length, i.e. the number of
-        # characters that remain to be printed.
+        # Send printer start (ESC-AA) and buffer feedback (ESC-~)
         #
-        # Printer feedback is sent only after the printer has been started, so
-        # it doubles as a printer start feedback.
-        printer_online = (20 <= self._rx_state <= 30)
+        # ESC-AA is sent as soon as the teleprinter is running and MCP is in
+        # S_ACTIVE* state (i.e. ESC-A has been received; otherwise we'd cancel
+        # dialling).
+        #
+        # ESC-~ communicates the current printer buffer length, i.e. the number
+        # of characters that remain to be printed.
+        printer_online = (ST.ONLINE <= self._rx_state <= ST.OFFLINE_REQ)
         if printer_online or self._send_feedback:
             tx_buf_len = len(self._tx_buffer)
-            if not self._send_feedback:
+            if (not self._send_feedback) and self._MCP_active:
                 self._send_feedback = True
-                # We came online, send buffer length as printer start feedback
-                self._rx_buffer.append('\x1b~' + str(tx_buf_len))
+                # Confirm that we just came online
+                self._rx_buffer.append('\x1bAA')
             elif self._last_tx_buf_len != tx_buf_len:
                 # Normal feedback (when buffer changed)
                 self._rx_buffer.append('\x1b~' + str(tx_buf_len))

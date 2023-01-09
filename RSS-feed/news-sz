@@ -1,6 +1,0 @@
-#!/bin/sh
-cd ~/piTelex
-rm -rf /data/piTelex/news/sz
-mkdir -p /data/piTelex/news/sz  
-./rssFileWriter.py -f -n SZ:\  -p /data/piTelex/news/sz/sz -u https://rss.sueddeutsche.de/rss/Topthemen/ > /data/piTelex/log/news-sz.log 2> /data/piTelex/log/news-sz.error.log &
-

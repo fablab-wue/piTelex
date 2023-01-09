@@ -1,6 +1,0 @@
-#!/bin/sh
-cd ~/piTelex
-rm -rf /data/piTelex/news/faz
-mkdir -p /data/piTelex/news/faz  
-./rssFileWriter.py -f -n FAZ:\  -p /data/piTelex/news/faz/faz -u https://www.faz.net/rss/aktuell/ > /data/piTelex/log/news-faz.log 2> /data/piTelex/log/news-faz.error.log &
-

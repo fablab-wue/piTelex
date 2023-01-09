@@ -26,6 +26,7 @@ l = logging.getLogger("piTelex." + __name__)
 import txCode
 import txBase
 import txDevITelexCommon
+from txDevITelexCommon import ST
 
 
 class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
@@ -91,7 +92,7 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         if source in ['iTc', 'iTs']:
             return
 
-        if not self._connected:
+        if self._connected <= ST.DISCON:
             return
 
         self._tx_buffer.append(a)

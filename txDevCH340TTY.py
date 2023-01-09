@@ -139,7 +139,7 @@ class TelexCH340TTY(txBase.TelexBase):
 
             bb = self._tty.read(1)
 
-            if bb and (not self._use_squelch or time.time() >= self._time_squelch):
+            if bb and (not self._use_squelch or time.monotonic() >= self._time_squelch):
                 if self._is_enabled or self._use_dedicated_line:
                     if self._local_echo:
                         self._tty.write(bb)
@@ -156,7 +156,7 @@ class TelexCH340TTY(txBase.TelexBase):
                         pass
                     elif (b & 0x13) == 0x10:   # valid dial pulse - min 3 bits = 40ms, max 5 bits = 66ms
                         self._counter_dial += 1
-                        self._time_last_dial = time.time()
+                        self._time_last_dial = time.monotonic()
 
                 self._cts_counter = 0
 
@@ -172,8 +172,8 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def write(self, a:str, source:str):
-        if len(a) != 1:
-            self._check_commands(a)
+        if len(a) > 1 and a[0] == '\x1b':
+            self._check_commands(a[1:])
             return 
 
         if a == '#':
@@ -186,19 +186,22 @@ class TelexCH340TTY(txBase.TelexBase):
     # =====
 
     def idle(self):
-        if not self._use_squelch or time.time() >= self._time_squelch:
+        if not self._use_squelch or time.monotonic() >= self._time_squelch:
             if self._tx_buffer:
                 #a = self._tx_buffer.pop(0)
                 aa = ''.join(self._tx_buffer)
                 self._tx_buffer = []
                 bb = self._mc.encodeA2BM(aa)
                 if bb:
+                    self._rx_buffer.append('\x1b~' + str(self._tty.out_waiting + len(bb)))
+                    # Force-update last out_waiting value to trigger idle2Hz update
+                    self._last_out_waiting += len(bb)
                     self._tty.write(bb)
 
     # -----
 
     def idle20Hz(self):
-        time_act = time.time()
+        time_act = time.monotonic()
 
         if self._use_pulse_dial and self._counter_dial and (time_act - self._time_last_dial) > 0.2:
             if self._counter_dial >= 10:
@@ -229,7 +232,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def idle2Hz(self):
         # send printer FIFO info
         out_waiting = self._tty.out_waiting
-        if out_waiting != self._last_out_waiting and self._is_enabled:
+        if out_waiting != self._last_out_waiting:
             self._rx_buffer.append('\x1b~' + str(out_waiting))
             self._last_out_waiting = out_waiting
 
@@ -244,7 +247,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def _set_enable(self, enable:bool):
         if enable and not self._is_enabled:
             # Confirm enable status for MCP
-            self._rx_buffer.append('\x1b~0')
+            self._rx_buffer.append('\x1bAA')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
         self._mc.reset()
@@ -255,7 +258,7 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def _set_time_squelch(self, t_diff):
-        t = time.time() + t_diff
+        t = time.monotonic() + t_diff
         if self._time_squelch < t:
             self._time_squelch = t
 
@@ -293,12 +296,12 @@ class TelexCH340TTY(txBase.TelexBase):
     def _check_commands(self, a:str):
         enable = None
 
-        if a == '\x1bA':
+        if a in ('A', 'AA'):
             self._set_pulse_dial(False)
             self._set_online(True)
             enable = True
 
-        if a == '\x1bZ':
+        if a in ('Z', 'ZZ'):
             self._tx_buffer = []    # empty write buffer...
             self._set_pulse_dial(False)
             self._set_online(False)
@@ -306,7 +309,7 @@ class TelexCH340TTY(txBase.TelexBase):
             if not enable and self._use_squelch:
                 self._set_time_squelch(1.5)
 
-        if a == '\x1bWB':
+        if a in ('WB',):
             self._set_online(True)
             if self._use_pulse_dial:   # TW39
                 self._set_pulse_dial(True)

@@ -19,6 +19,7 @@ l = logging.getLogger("piTelex." + __name__)
 import txCode
 import txBase
 import txDevITelexCommon
+from txDevITelexCommon import ST
 
 #                        Code  Len   Data ...
 selftest_packet = bytes([0x08, 0x04, 0xDE, 0xCA, 0xFB, 0xAD])
@@ -34,7 +35,11 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         self._port = params.get('port', 2342)
 
-        self._number = int(params.get('number', 0))
+        self._number = int(params.get('tns-dynip-number', 0))
+        if not self._number:
+            self._number = int(params.get('number', 0))
+            if self._number:
+                l.warning("Configuration option \"number\" is deprecated and will be removed in a future version. Use \"tns-dynip-number\" instead.")
         if self._number <= 0 or self._number > 0xffffffff:
             # Own number no valid integer inside 32 bit; client_update requires
             # this though, so ignore
@@ -103,7 +108,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
     def read(self) -> str:
         if self._rx_buffer:
-            if 0 < self._connected <= 3:
+            if ST.DISCON < self._connected <= ST.CON_TP_RUN:
                 # Welcome banner hasn't been sent yet. Pop only non-printable
                 # items.
                 for nr, item in enumerate(self._rx_buffer):
@@ -116,7 +121,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     def write(self, a:str, source:str):
         super().write(a, source)
         if len(a) != 1:
-            if self._connected <= 0:
+            if self._connected <= ST.DISCON:
                 if a in ('\x1bWB', '\x1bA'):
                     # Ready-to-dial or printer start states triggered: There is
                     # an outgoing connection. Block inbound ones.
@@ -126,20 +131,20 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                     # Connection ended, unblock
                     self.block_inbound = False
                     l.debug("Unblocking inbound connections")
-            elif self._connected > 0:
+            elif self._connected > ST.DISCON:
                 if a == '\x1bZ':   # end session
-                    if self._connected < 3 and source == 'MCP':
+                    if self._connected < ST.CON_TP_RUN and source == 'MCP':
                         # Printer start failed, initiate disconnect with error
                         # message
                         self.printer_start_timed_out = True
                     else:
                         # Printer had already been started, disconnect normally
                         self.disconnect_client()
-                elif self._connected == 3 and a == '\x1bWELCOME' and source == 'MCP':
+                elif self._connected == ST.CON_TP_RUN and a == '\x1bWELCOME' and source == 'MCP':
                     # MCP says: Welcome banner has been received completely. Enable
                     # non-command reads in read method so that normal communication
                     # can begin.
-                    self._connected = 4
+                    self._connected = ST.CON_FULL
             return
 
         if source in ['iTc', 'iTs']:
