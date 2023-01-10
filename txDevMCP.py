@@ -456,7 +456,7 @@ class TelexMCP(txBase.TelexBase):
         #print('<<<', name, self._dial_number, '>>>')
         if name.endswith('ABORT'):
             #self.write('\x1bST', 'wdg')
-            self.send_abort('<<<ABORT')
+            self.send_abort('<<<   ABORT   ')
         elif self._dial_number:
             if self._dial_number.startswith('00'):
                 if self._dial_number == '000':   # 000 - local mode

@@ -189,7 +189,8 @@ class TelexRPiTTY(txBase.TelexBase):
             text += self._tx_buffer.pop(0)
 
         if text:
-            self._write_wave(text)
+            if self._state >= S_ACTIVE_INIT:
+                self._write_wave(text)
             self._keep_alive_counter = 0
 
         elif self._tx_buffer and len(self._tx_buffer[0]) > 1:   # control sequence
@@ -276,9 +277,10 @@ class TelexRPiTTY(txBase.TelexBase):
         elif a == 'Z':
             self._set_state(S_OFFLINE)
             self._tx_buffer = []    # empty write buffer...
+            self._send_control_sequence('~0')
 
         elif a == 'WB':
-            if self._mode == 'TW39' or self._mode == 'TW39H' or self._mode == 'AGT':
+            if self._mode in ('TW39', 'TW39H', 'AGT'):
                 self._set_state(S_DIALING_PULSE)
             else:
                 self._set_state(S_DIALING_KEYBOARD)
@@ -433,10 +435,6 @@ class TelexRPiTTY(txBase.TelexBase):
             self._send_control_sequence('PULSE')
 
         else:
-            #if self._mode == 'TW39H' and self._state <= S_OFFLINE:
-            if self._state < S_ACTIVE_INIT:
-                return
-
             bb = self._mc.encodeA2BM(text)
             if not bb:
                 return
