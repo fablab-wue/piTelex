@@ -38,6 +38,7 @@ Must update page for rssFileWriter.py to reflect this.
 #### Module RPiTTY: Add modes 
 
 `AGT` for Ö-AGT support  --> another sub mode for Lorenz TTY?
-`TW39H" for H-Bridge HW Support
+
+`TW39H` for H-Bridge HW Support
 
 tbc...
