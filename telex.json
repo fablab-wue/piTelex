@@ -1,6 +1,16 @@
 # Configuration examples for piTelex
-# 2023-01-08
-# requirements: commentjson, argparse (other see sections)
+# 2023-02-02
+# requirements: commentjson, argparse (additional requirements per section are listed there)
+#
+# This file can be used as a starting point for piTelex installations using the default hardware configuration.
+# Screen and log module should be enabled always for testing and debugging purposes.
+# Archive module, if enabled, saves a prettyprint transcript of each connection.
+#
+# enable the TTY module(s) that correspond to your TTY type.
+# Disable ("enable": false,) or optionally delete unused modules or entries.
+#
+# For detailed configuration infos see the wiki pages.
+#
 {
   "devices": {
     # screen output and kwyboard input (for debugging)
@@ -169,8 +179,8 @@
       "pin_button_U2": 0,
       "pin_button_U3": 0,
       "pin_button_U4": 0,
-      "pin_wakeup": 0,
       # single LEDs
+      "pin_LED_LT": 0,
       "pin_LED_A": 0,
       "pin_LED_WB": 0,
       "pin_LED_WB_A": 0,
@@ -409,12 +419,9 @@
     }
   },
 
-  "verbose": true,
   "wru_id": "12345 dummy d",
-  "wru_fallback": false,
   "wru_replace_always": false,
   "dial_timeout": 0,
-  "continue_with_no_printer": true,
-  "debug": 3,
+  "continue_with_no_printer": false,
   "errorlog_path": "/data/piTelex/errorlog/"
 }
