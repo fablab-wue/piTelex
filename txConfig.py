@@ -190,11 +190,11 @@ def load():
         dest="languages", metavar="LANGUAGE", help="Language list")
 
     parser.add_argument("--errorlog-path",
-        dest="errorlog_path", default="./", metavar="ERRLOGPATH",
+        dest="errorlog_path", default="", metavar="ERRLOGPATH",
         help="Path of error log; relative paths are referred to where this program is being executed")
 
     parser.add_argument("--errorlog-level",
-        dest="errorlog_level", default="INFO", metavar="ERRLOGLEVEL",
+        dest="errorlog_level", default="", metavar="ERRLOGLEVEL",
         help="Verbosity of error log; see python log levels")
 
     #parser.add_argument("-m", "--mode",
@@ -376,7 +376,7 @@ def load():
         CFG['errorlog_path'] = errorlog_path
 
     errorlog_level = ARGS.errorlog_level.strip().upper()
-    if errorlog_path:
+    if errorlog_level:
         CFG['errorlog_level'] = errorlog_level
 
     #mode = ARGS.mode.strip()
