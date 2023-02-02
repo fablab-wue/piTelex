@@ -416,25 +416,26 @@ class TelexRPiTTY(txBase.TelexBase):
 
         #pi.wave_clear()
 
-        if text == '§':
+        if text == '§':   # add WB-pulse with XXXms to waveform
             if self._WB_pulse_length <= 0:
                 return
-            #bb = [0x11110]   # experimental: 40ms pulse  @50Bd
-            if self._mode == 'TW39H' or self._mode == 'AGT':
-                pins0 = 1<<self._pin_relay
-                pins1 = 0
+
+            if self._mode in ('TW39H', 'AGT'):   # pulse on relay-pin
+                pins_to_H = 1<<self._pin_relay
+                pins_to_L = 0
                 if self._inv_relay:
-                    pins0, pins1 = pins1, pins0
-            else:
-                pins0 = 1<<self._pin_txd
-                pins1 = 0
-            pi.wave_add_generic([   # add WB-pulse with XXXms to waveform
-                pigpio.pulse(pins0, pins1, self._WB_pulse_length * 1000),
-                pigpio.pulse(pins1, pins0, 1)
+                    pins_to_H, pins_to_L = pins_to_L, pins_to_H
+            else:   # pulse on TXD-pin
+                pins_to_H = 0
+                pins_to_L = 1<<self._pin_txd
+            pi.wave_add_generic([
+                #            ON         OFF        DELAY
+                pigpio.pulse(pins_to_H, pins_to_L, self._WB_pulse_length * 1000),   # send pulse
+                pigpio.pulse(pins_to_L, pins_to_H, 1)                               # reset to prev. state
                 ])
             self._send_control_sequence('PULSE')
 
-        else:
+        else:   # add characters as serial protocol to waveform
             bb = self._mc.encodeA2BM(text)
             if not bb:
                 return
