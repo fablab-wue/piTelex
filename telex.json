@@ -393,19 +393,19 @@
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "/data/piTelex/data.log"
+      "filename": "/home/pi/piTelex/data.log"
     },
 
     "news": {
       "type": "news",
       "enable": false,
-      "newspath": "/data/piTelex/RSS-feed/news/"
+      "newspath": "/home/pi/piTelex/RSS-feed/news/"
     },
 
     "archive": {
       "type": "archive",
       "enable": true,
-      "path": "/data/piTelex/archive/"
+      "path": "/home/pi/piTelex/archive/"
     },
 
     "shellcmd": {
@@ -423,5 +423,5 @@
   "wru_replace_always": false,
   "dial_timeout": 0,
   "continue_with_no_printer": false,
-  "errorlog_path": "/data/piTelex/errorlog/"
+  "errorlog_path": "/home/pi/piTelex/errorlog/"
 }
