@@ -470,6 +470,7 @@ class TelexITelexCommon(txBase.TelexBase):
                         l.info('i-Telex connection rejected, reason {!r}'.format(aa))
                         aa = bmc.translate(aa)
                         with self._rx_lock:
+                            self._rx_buffer.append('\x1bA')
                             for a in aa:
                                 self._rx_buffer.append(a)
                         break
