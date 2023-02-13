@@ -97,6 +97,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._use_cts = False
         self._inverse_cts = False
         #self._use_dtr = False
+        self._inverse_dtr = False
         self._inverse_rts = False
         self._use_dedicated_line = True
 
