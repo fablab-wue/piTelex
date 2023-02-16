@@ -255,6 +255,11 @@ def init():
             log = txDevLog.TelexLog(**dev_param)
             DEVICES.insert(0,log)
 
+        elif dev_param['type'] == 'KeyPad':
+            import txDevKeyPad
+            keypad = txDevKeyPad.TelexKeyPad(**dev_param)
+            DEVICES.append(keypad)
+
         else:
             l.warning("Unknown module type in configuration, section {!r}: {!r}".format(dev_name, dev_param['type']))
 

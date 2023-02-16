@@ -143,18 +143,18 @@
     },
 
     # EXPERIMENTAL - use H-bridge controlled by bidirectional difference of pin_TXD and pin_relay
-    # the H-bridge replaces the mechanical relay and the power-transistor
+    # the H-bridge replaces the mechanical relay and the power-transistor with opto-coupler
     "RPiTTY_H-bridge": {
       "type": "RPiTTY",
       "enable": false,
       "mode": "TW39H",   # "TW39", "TW39H", "TWM", "V10", "AGT"
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 22,
+      "pin_txd": 27,
+      "pin_rxd": 17,
+      "pin_relay": 25,
       "inv_relay": true,
       "pin_power": 9,
       "inv_power": false,
-      "pin_number_switch": 10,
+      "pin_number_switch": 22,
       "baudrate": 50,
       "coding": 0,   # 0=ITA2
       "loopback": true
@@ -369,6 +369,37 @@
 
     ###########################################################################
 
+    # Module type "KeyPad"
+    # USB-KeyPad input for text shortcuts and test teletypes
+    # requirements: evdev (apt install python3-evdev)
+
+    "KeyPad1": {
+      "type": "KeyPad", 
+      "enable": false, 
+      "device_name": "KEYPAD",   # part of device name to select a special keyboard/keypad device
+      "show_key_name": true,
+      "KEYS": { 
+        "KEY_KP0": " ",
+        "KEY_KP1": "RY",
+        "KEY_KP2": "RYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRY",
+        "KEY_KP3": "",
+        "KEY_KP4": "{ABC}",
+        "KEY_KP5": "{FOX}",
+        "KEY_KP6": "{PELZE}",
+        "KEY_KP7": "{A1}",
+        "KEY_KP8": "{TEST}",
+        "KEY_KP9": "{LOREM}",
+        "KEY_KPDOT>": "#",   # WRU
+        "KEY_KPPLUS": "{A}",
+        "KEY_KPMINUS": "{Z}",
+        "KEY_KPASTERISK": "{WB}",
+        "KEY_KPSLASH>": "{ZZ}",
+        "KEY_KPENTER": "\\_"
+      }
+    },
+
+    ###########################################################################
+
     # Module type "i-Telex"
 
     "i-Telex": {
@@ -417,6 +448,7 @@
         "x": "explorer"
       }
     }
+
   },
 
   "wru_id": "12345 dummy d",

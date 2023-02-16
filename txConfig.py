@@ -137,6 +137,10 @@ def load():
         dest="shellcmd", default=False, action="store_true",
         help="Execute shell command of ESC sequ.")
 
+    gt.add_argument("-K", "--keypad",
+        dest="keypad", default=False, action="store_true",
+        help="KeyPad shortcuts")
+
 
     gd = parser.add_argument_group("Debug")
 
@@ -356,6 +360,19 @@ def load():
 
     if ARGS.shellcmd:
         devices['shellcmd'] = {'type': 'shellcmd', 'enable': True, 'LUT': { 'X': 'xxx'} }
+
+    if ARGS.keypad:
+        devices['KeyPad1'] = {
+            'type': 'KeyPad', 
+            'enable': True, 
+            'device_name': 'KEYPAD', 
+            'KEYS': { 
+                'KEY_KP1': 'RY'*30, 
+                'KEY_KPENTER': '\\_', 
+                'KEY_KPPLUS': '{A}', 
+                'KEY_KPMINUS': '{Z}',
+                }
+            }
 
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
