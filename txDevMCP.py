@@ -234,9 +234,10 @@ class TelexMCP(txBase.TelexBase):
             if self.cli_enable:
                 if a in ' \n+?':
                     ans = self.cli.command(self.cli_text)
+                    self._rx_buffer.extend(list(ans))
                     if ans == 'BYE\r\n':
                         self.enable_cli(False)
-                    self._rx_buffer.extend(list(ans))
+                        self._rx_buffer.append('\x1bZ')
                     self.cli_text = ''
                 else:
                     self.cli_text += a
