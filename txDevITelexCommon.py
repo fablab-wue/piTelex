@@ -788,7 +788,10 @@ class TelexITelexCommon(txBase.TelexBase):
         '''Send end packet (3)'''
         send = bytearray([3, 0])   # End
         l.debug('Sending i-Telex packet: End ({})'.format(display_hex(send)))
-        s.sendall(send)
+        try:   # socket can possible be closed by other side
+            s.sendall(send)
+        except:
+            pass
 
 
     # Types of reject packets (see txDevMCP):
