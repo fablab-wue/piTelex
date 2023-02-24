@@ -46,7 +46,6 @@ class TelexRPiTTY(txBase.TelexBase):
         self.params = params
         self._timing_tick = 0
         self._time_EOT = 0
-        self._last_waiting = 0
         self._state = None
         self._time_squelch = 0
         self._use_squelch = True
@@ -73,13 +72,17 @@ class TelexRPiTTY(txBase.TelexBase):
         self._inv_relay = params.get('inv_relay', False)
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
-        self._pin_number_switch = params.get('pin_number_switch', params.get('pin_fsg_ns', 6))   # pin typical wired to rxd pin
+        self._pin_number_switch = params.get('pin_number_switch', 6 if self._mode not in ('V10', 'TWM') else 0)   # pin typical wired to rxd pin
         self._inv_number_switch = params.get('inv_number_switch', False)
+
+        if self._inv_rxd:
+            raise Exception('PIGPIO-lib does not support inverted RXD correctly on serial communication')
 
         self._line_observer = None
         if params.get('use_observe_line', True):
             self._pin_observe_line = params.get('pin_observe_line', self._pin_rxd)
             self._inv_observe_line = params.get('inv_observe_line', self._inv_rxd)
+            self._nZZ_observe_line = params.get('nZZ_observe_line', False)
             self._line_observer = Observer(self._pin_observe_line, self._inv_observe_line, 10)   # 10ticks = 0.5sec
 
         self._coding = params.get('coding', 0)
@@ -134,7 +137,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         # init state
 
-        self._set_state(S_OFFLINE)
+        self._set_state(S_SLEEPING)
 
         # debug
         #cbs = pi.wave_get_max_cbs()
@@ -173,7 +176,7 @@ class TelexRPiTTY(txBase.TelexBase):
     # =====
 
     def idle(self):
-        ''' called by system as often as possible to do background staff '''
+        ''' called by system as often as possible to do background stuff '''
         if not self._tx_buffer \
             or (self._use_squelch and (time.monotonic() <= self._time_squelch)) \
             or self._is_writing_wave():
@@ -186,7 +189,8 @@ class TelexRPiTTY(txBase.TelexBase):
             text += self._tx_buffer.pop(0)
 
         if text:
-            self._write_wave(text)
+            if self._state >= S_ACTIVE_INIT:
+                self._write_wave(text)
             self._keep_alive_counter = 0
 
         elif self._tx_buffer and len(self._tx_buffer[0]) > 1:   # control sequence
@@ -197,14 +201,17 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def idle20Hz(self):
-        ''' called by system every 50ms to do background staff '''
+        ''' called by system every 50ms to do background stuff '''
         if self._line_observer:
             line = self._line_observer.process()
             if line is True:   # rxd=High
                 self._send_control_sequence('___/¯¯¯')
-                if self._state in (S_SLEEPING, S_OFFLINE):
+                if self._nZZ_observe_line and self._state in (S_SLEEPING,):
+                    pass   # ignore line if sleeping/power_saving
+                elif self._state in (S_SLEEPING, S_OFFLINE):
                     self._send_control_sequence('AT')
-                if self._state == S_ACTIVE_INIT:
+                elif self._state == S_ACTIVE_INIT:
+                    self._send_control_sequence('AA')
                     self._set_state(S_ACTIVE_READY)
             elif line is False:   # rxd=Low
                 self._send_control_sequence('¯¯¯\\___')
@@ -235,17 +242,20 @@ class TelexRPiTTY(txBase.TelexBase):
     # -----
 
     def idle2Hz(self):
-        ''' called by system every 500ms to do background staff '''
+        ''' called by system every 500ms to do background stuff '''
         # send printer FIFO info
-        if self._state == S_ACTIVE_READY:
-            waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
-            waiting += len(self._tx_buffer)   # estimation of left chars in buffer
-            if waiting < 0:
-                waiting = 0
-            if waiting != self._last_waiting:
-                self._send_control_sequence('~' + str(waiting))
-                self._last_waiting = waiting
+        waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
+        waiting += len(self._tx_buffer)   # estimation of left chars in buffer
 
+        # Cap negative waiting times (sending finished in the past)
+        if waiting < 0:
+            waiting = 0
+
+        # Send buffer updates to i-Telex when teleprinter is active.
+        if self._state >= S_ACTIVE_INIT:
+            self._send_control_sequence('~' + str(waiting))
+
+        if self._state == S_ACTIVE_READY:
             self._keep_alive_counter += 1
             if self._mode == 'V10' and self._keep_alive_counter > 60:   # 30sec
                 self._keep_alive_counter = 0
@@ -267,9 +277,10 @@ class TelexRPiTTY(txBase.TelexBase):
         elif a == 'Z':
             self._set_state(S_OFFLINE)
             self._tx_buffer = []    # empty write buffer...
+            self._send_control_sequence('~0')
 
         elif a == 'WB':
-            if self._mode == 'TW39':
+            if self._mode in ('TW39', 'TW39H', 'AGT'):
                 self._set_state(S_DIALING_PULSE)
             else:
                 self._set_state(S_DIALING_KEYBOARD)
@@ -309,35 +320,36 @@ class TelexRPiTTY(txBase.TelexBase):
             self._enable_power(True)
 
         elif new_state == S_DIALING_PULSE:
+            self._enable_power(True)
             self._set_time_squelch(0.5)
             self._enable_relay(False)
             self._enable_number_switch(True)
             self._write_wave('§')   # special control character to send WB-pulse to FSG
-            self._enable_power(True)
 
         elif new_state == S_DIALING_KEYBOARD:
+            self._enable_power(True)
             self._set_time_squelch(0.25)
             self._enable_relay(True)
             self._enable_number_switch(False)
-            self._enable_power(True)
 
         elif new_state == S_ACTIVE_INIT:
+            self._enable_power(True)
             self._set_time_squelch(0.25)
             self._enable_relay(True)
             self._enable_number_switch(False)
-            self._enable_power(True)
-            if self._mode == 'V10' or not self._line_observer:
+            if self._mode == 'V10' or not self._line_observer or self._state in (S_DIALING_PULSE, S_DIALING_KEYBOARD):
+                # Immediately set S_ACTIVE_READY if mode is V10, if we've been
+                # dialling or line observer isn't configured. In all other
+                # cases, the line observer will trigger S_ACTIVE_READY mode.
                 new_state = S_ACTIVE_READY
                 self._send_control_sequence('AA')
 
         if new_state == S_ACTIVE_READY:
-            self._last_waiting = -1
             self._enable_power(True)
             if self._mode == 'V10':
                 self._write_wave('%\\_')
 
         self._state = new_state
-        pass
 
     # -----
 
@@ -348,10 +360,20 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def _enable_relay(self, enable:bool):
         ''' set GPIO for the relay '''
+        if not enable and self._mode == 'TW39H':
+            pi.write(self._pin_txd, False)
+            time.sleep(0.005)
+            self._send_control_sequence('OFF')
+            
         if self._pin_relay:
             l.debug('enable_relay {}'.format(enable))
             pi.write(self._pin_relay, enable != self._inv_relay)   # pos polarity
 
+        if enable and self._mode == 'TW39H':
+            time.sleep(0.005)
+            pi.write(self._pin_txd, True)
+            self._send_control_sequence('ON')
+            
     # -----
 
     def _enable_number_switch(self, enable:bool):
@@ -394,16 +416,26 @@ class TelexRPiTTY(txBase.TelexBase):
 
         #pi.wave_clear()
 
-        if text == '§':
+        if text == '§':   # add WB-pulse with XXXms to waveform
             if self._WB_pulse_length <= 0:
                 return
-            #bb = [0x11110]   # experimental: 40ms pulse  @50Bd
-            pi.wave_add_generic([   # add WB-pulse with XXXms to waveform
-                pigpio.pulse(0, 1<<self._pin_txd, self._WB_pulse_length * 1000),
-                pigpio.pulse(1<<self._pin_txd, 0, 1)
-                ])
 
-        else:
+            if self._mode in ('TW39H', 'AGT'):   # pulse on relay-pin
+                pins_to_H = 1<<self._pin_relay
+                pins_to_L = 0
+                if self._inv_relay:
+                    pins_to_H, pins_to_L = pins_to_L, pins_to_H
+            else:   # pulse on TXD-pin
+                pins_to_H = 0
+                pins_to_L = 1<<self._pin_txd
+            pi.wave_add_generic([
+                #            ON         OFF        DELAY
+                pigpio.pulse(pins_to_H, pins_to_L, self._WB_pulse_length * 1000),   # send pulse
+                pigpio.pulse(pins_to_L, pins_to_H, 1)                               # reset to prev. state
+                ])
+            self._send_control_sequence('PULSE')
+
+        else:   # add characters as serial protocol to waveform
             bb = self._mc.encodeA2BM(text)
             if not bb:
                 return
@@ -439,13 +471,14 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def _callback_timing(self, gpio, level, tick):
         diff = tick - self._timing_tick
+        diff = (diff + 500) // 1000   # us to ms
         self._timing_tick = tick
         if level == 0:
-            text = str(diff) + '¯¯¯\\___'
+            text = str(diff) + '¯\\_'
         elif level == 1:
-            text = str(diff) + '___/¯¯¯'
+            text = str(diff) + '_/¯'
         else:
-            text = '?'
+            text = '-?-'
 
         print(text, end='')
 

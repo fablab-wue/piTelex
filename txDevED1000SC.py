@@ -82,7 +82,7 @@ class TelexED1000SC(txBase.TelexBase):
         self._rx_state = ST.OFFLINE
 
         # Helper variables for printer feedback
-        self._last_tx_buf_len = 0
+        self._last_printed_chars = 0
         self._send_feedback = False
 
         self.recv_squelch = self.params.get('recv_squelch', 100)
@@ -197,7 +197,13 @@ class TelexED1000SC(txBase.TelexBase):
             waves.append(struct.pack('%sh' % Fpb, *samples))   # 16 bit
 
         audio = pyaudio.PyAudio()
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex, input_device_index=devindex)
+        try:
+            devindex_out = devindex[1]
+        except (TypeError, IndexError):
+            # No separate in/out devices, assume them being the same
+            devindex_out = devindex
+
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=True, input=False, output_device_index=devindex_out)
 
         #a = stream.get_write_available()
         try:
@@ -221,7 +227,18 @@ class TelexED1000SC(txBase.TelexBase):
                         elif a == '§A':   # signal A (online)
                             bb = (0xFFC0,)   # 140ms pulse
                             nbit = 16
+                        elif a == '§L':   # transmit lock, to wait for WRU printing
+                            # Send idle frequency for 20 characters, plus 1 for
+                            # good measure: 7.5 bits * 21 = 157.5
+                            # So wait for 158 bits.
+                            nbit = 158
+                            bb = ((2**nbit)-1,)
                         else:   # normal ANSI character
+                            if a == '@':
+                                # Teleprinter's WRU unit will trigger after
+                                # this character -- lock further sending to
+                                # prevent collisions
+                                self._tx_buffer.insert(0, '§L')
                             bb = self._mc.encodeA2BM(a)
                             if not bb:
                                 continue
@@ -295,7 +312,14 @@ class TelexED1000SC(txBase.TelexBase):
         time.sleep(1.5)
 
         audio = pyaudio.PyAudio()
-        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex)
+
+        try:
+            devindex_in = devindex[0]
+        except (TypeError, IndexError):
+            # No separate in/out devices, assume them being the same
+            devindex_in = devindex
+
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=sample_f, output=False, input=True, frames_per_buffer=FpS, input_device_index=devindex_in)
 
         bit_last = None
 
@@ -448,6 +472,8 @@ class TelexED1000SC(txBase.TelexBase):
                 # Write out tx buffer
                 if not self._tx_buffer:
                     l.info("[rx] tx buffer empty, printed characters: {}".format(self.printed_chars))
+                    # Ensure that everyone knows our buffer is empty
+                    self._rx_buffer.append('\x1b~0')
                     self._rx_state = ST.OFFLINE_DELAY
                 # ... but break on ST (if the operator wishes to go offline
                 # immediately).
@@ -687,15 +713,15 @@ class TelexED1000SC(txBase.TelexBase):
                 self._send_feedback = True
                 # Confirm that we just came online
                 self._rx_buffer.append('\x1bAA')
-            elif self._last_tx_buf_len != tx_buf_len:
-                # Normal feedback (when buffer changed)
+            elif self._last_printed_chars != self.printed_chars:
+                # Normal feedback (when number of printed characters changed)
                 self._rx_buffer.append('\x1b~' + str(tx_buf_len))
 
             if not printer_online:
                 # We went offline: turn off feedback
                 self._send_feedback = False
 
-            self._last_tx_buf_len = tx_buf_len
+            self._last_printed_chars = self.printed_chars
 
 #######
 

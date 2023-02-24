@@ -11,13 +11,13 @@ __version__     = "0.0.1"
 #https://www.programcreek.com/python/example/93338/pigpio.pi
 
 import os
-import time
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html   pip install pigpio
 
 import txCode
 import txBase
 import log
 from RPiIO import Button, LED, LED_PWM, NumberSwitch, pi, pi_exit
+from txWatchdog import Watchdog
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -41,20 +41,32 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_button_AT = params.get('pin_button_AT', 0)   # button AT optional
         self._pin_button_ST = params.get('pin_button_ST', 0)   # button ST optional
         self._pin_button_LT = params.get('pin_button_LT', 0)   # button LT optional
+        self._pin_button_PT = params.get('pin_button_PT', 0)   # button PT optional
         self._pin_button_U1 = params.get('pin_button_U1', 0)   # button user 1 optional
         self._pin_button_U2 = params.get('pin_button_U2', 0)   # button user 2 optional
         self._pin_button_U3 = params.get('pin_button_U3', 0)   # button user 3 optional
         self._pin_button_U4 = params.get('pin_button_U4', 0)   # button user 4 optional
+        
+        self._pin_wakeup = params.get('pin_wakeup', 0)   # button wakeup optional
 
         self._pin_LED_A = params.get('pin_LED_A', 0)
         self._pin_LED_WB = params.get('pin_LED_WB', 0)
         self._pin_LED_WB_A = params.get('pin_LED_WB_A', 0)
         self._pin_LED_status_R = params.get('pin_LED_status_R', 0)   # LED red
         self._pin_LED_status_G = params.get('pin_LED_status_G', 0)   # LED green
+        self._pin_LED_LT = params.get('pin_LED_LT', 0)  # LED for local mode
 
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
 
+        self._delay_AT = params.get('delay_AT', 0)  # delay between pressing AT and entering WB
+        self._delay_ST = params.get('delay_ST', 0)  # delay between pressing ST and leaving A
+
+        self._wd = Watchdog()
+        if self._delay_AT:
+            self._wd.init(name="DELAY_AT", callback=self._delay_AT_watchdog_callback, time_out_period=self._delay_AT)
+        if self._delay_ST:
+            self._wd.init(name="DELAY_ST", callback=self._delay_ST_watchdog_callback, time_out_period=self._delay_ST)
 
         self._rx_buffer = []
         self._mode = None
@@ -62,6 +74,9 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._status_out = 0
         self._status_act = 0
         self._status_dst = 0
+
+        # Helper for local mode LED.
+        self._LT_pressed = False
 
         self._LED_status_R = None
         self._LED_status_G = None
@@ -73,12 +88,16 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._LED_A = None
         self._LED_WB = None
         self._LED_WB_A = None
+        self._LED_LT = None
+
         if self._pin_LED_A:
             self._LED_A = LED(self._pin_LED_A)
         if self._pin_LED_WB:
             self._LED_WB = LED(self._pin_LED_WB)
         if self._pin_LED_WB_A:
             self._LED_WB_A = LED(self._pin_LED_WB_A)
+        if self._pin_LED_LT:
+            self._LED_LT = LED(self._pin_LED_LT)
 
         if self._pin_button_1T:
             self._button_1T = Button(self._pin_button_1T, self._callback_button_1T)
@@ -88,6 +107,8 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._button_ST = Button(self._pin_button_ST, self._callback_button_ST)
         if self._pin_button_LT:
             self._button_LT = Button(self._pin_button_LT, self._callback_button_LT)
+        if self._pin_button_PT:
+            self._button_PT = Button(self._pin_button_PT, self._callback_button_PT)
 
         if self._pin_button_U1:
             self._button_U1 = Button(self._pin_button_U1, self._callback_button_U1)
@@ -97,6 +118,9 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._button_U3 = Button(self._pin_button_U3, self._callback_button_U3)
         if self._pin_button_U4:
             self._button_U4 = Button(self._pin_button_U4, self._callback_button_U4)
+
+        if self._pin_wakeup:
+            self._wakeup = Button(self._pin_wakeup, self._callback_wakeup)
 
         self._number_switch = None
         if self._pin_number_switch:
@@ -152,6 +176,8 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._LED_status_R.process_fade()
             self._LED_status_G.process_fade()
 
+        self._wd.process()
+
     # -----
 
     def idle(self):
@@ -183,6 +209,9 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._LED_WB.off()
             if self._LED_WB_A:
                 self._LED_WB_A.on()
+            if self._LED_LT and self._LT_pressed:
+                self._LED_LT.on()
+            self._LT_pressed = False
             if self._number_switch:
                 self._number_switch.enable(False)
 
@@ -193,6 +222,8 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._LED_WB.off()
             if self._LED_WB_A:
                 self._LED_WB_A.off()
+            if self._LED_LT:
+                self._LED_LT.off()
             if self._number_switch:
                 self._number_switch.enable(False)
 
@@ -203,6 +234,8 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._LED_WB.on()
             if self._LED_WB_A:
                 self._LED_WB_A.on()
+            if self._LED_LT:
+                self._LED_LT.off()
             if self._number_switch:
                 self._number_switch.enable(True)
 
@@ -218,17 +251,35 @@ class TelexRPiCtrl(txBase.TelexBase):
     def _callback_button_AT(self, gpio, level, tick):
         if level == 1:
             return
+        if self._delay_AT:
+            self._wd.restart(name="DELAY_AT")
+        else:
+            self._delay_AT_watchdog_callback("")
+
+    def _delay_AT_watchdog_callback(self, name:str):
         self._rx_buffer.append('\x1bAT')
 
     def _callback_button_ST(self, gpio, level, tick):
         if level == 1:
             return
+        if self._delay_ST:
+            self._wd.restart(name="DELAY_ST")
+        else:
+            self._delay_ST_watchdog_callback("")
+
+    def _delay_ST_watchdog_callback(self, name:str):
         self._rx_buffer.append('\x1bST')
 
     def _callback_button_LT(self, gpio, level, tick):
         if level == 1:
             return
+        self._LT_pressed = True
         self._rx_buffer.append('\x1bLT')
+
+    def _callback_button_PT(self, gpio, level, tick):
+        if level == 1:
+            return
+        self._rx_buffer.append('\x1bPT')
 
     def _callback_button_U1(self, gpio, level, tick):
         if level == 1:
@@ -253,6 +304,11 @@ class TelexRPiCtrl(txBase.TelexBase):
             return
         text = self.params.get('text_button_U4', '@')
         self._rx_buffer.extend(list(text))
+
+    def _callback_wakeup(self, gpio, level, tick):
+        if level == 1:
+            return
+        self._rx_buffer.append('\x1bZ')
 
     def _callback_number_switch(self, text:str):
         if text.isnumeric():

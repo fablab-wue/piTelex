@@ -1,8 +1,8 @@
 Service installation (tested on Raspbian buster):
 
-1. Make sure byobu is installed:
+1. Make sure byobu and screen are installed:
 
-   sudo apt install byobu
+   sudo apt install byobu screen
 
 2. Adapt pitelex.service to configure piTelex path (WorkingDirectory=,
    ExecStart=) and user (User=), if needed

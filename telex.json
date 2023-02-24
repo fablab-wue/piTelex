@@ -1,5 +1,19 @@
+# Configuration examples for piTelex
+# 2023-02-24
+# requirements: commentjson, argparse (additional requirements per section are listed there)
+#
+# This file can be used as a starting point for piTelex installations using the default hardware configuration.
+# Screen and log module should be enabled always for testing and debugging purposes.
+# Archive module, if enabled, saves a prettyprint transcript of each connection.
+#
+# enable the TTY module(s) that correspond to your TTY type.
+# Disable ("enable": false,) or optionally delete unused modules or entries.
+#
+# For detailed configuration infos see the wiki pages.
+#
 {
   "devices": {
+    # screen output and kwyboard input (for debugging)
     "screen": {
       "type": "screen",
       "enable": true,
@@ -8,87 +22,217 @@
       "show_info": false,
       "show_capital": false
     },
-    "Terminal VFD TEC/LIUST": {
-      "type": "terminal",
+
+    ###########################################################################
+
+    # Module type "RPiTTY"
+    # requirements: pigpio (deamon and lib)
+    # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi
+    
+    # FULL EXAMPLE
+    "RPiTTY_full_example": {
+      "type": "RPiTTY",
       "enable": false,
-      "portname": "COM3",
-      "baudrate": 9600,
-      "dsrdtr": false,
-      "rtscts": false,
-      "xonxoff": false,
-      "show_BuZi": true,
-      "show_ctrl": true,
-      "show_info": false,
-      "show_capital": true,
-      "send_only": true,
-      "auto_CRLF": 20,
-      "init_hex": "1B 5B 32 4A   1B 5C 3F 4C 44 35   1F 5C 3F 4C 43 31",   # clear display   brightness   cursor mode
-      "init_text": "\r -= piTelex VFD =-\r\n",
-      "replace_hex": {
-        # "0": "D0",
-        # "1": "D1",
-        # "2": "D2",
-        # "3": "D3",
-        # "4": "D4",
-        # "5": "D5",
-        # "6": "D6",
-        # "7": "D7",
-        # "8": "D8",
-        # "9": "D9",
-        # "A": "DA",
-        # "B": "DB",
-        # "C": "DC",
-        # "D": "DD",
-        # "E": "DE",
-        # "F": "DF",
-        "\r": "AE",     # WR
-        "\n": "F2",     # ZL
-        "<": "DC",      # Bu
-        ">": "DF",      # Zi
-        "~": "F8",      # null
-        "%": "DB"       # bell
-      },
-      "replace_text": { 
-        " ": "_"        # space
-      }
+      "mode": "TW39",   # "TW39", "TW39H", "TWM", "V10", "AGT"
+      "pin_txd": 17,
+      "pin_rxd": 27,   # RPi1 revision 1: 21   all other RPi: 27
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_power": 0,
+      "inv_power": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
+      "inv_number_switch": false,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true,
+      "use_observe_line": false,
+      "pin_observe_line": 6,   # normally same as "pin_number_switch"
+      "inv_observe_line": false,
+      "nZZ_observe_line": false,
+      "WB_pulse_length": 60   # ms
     },
-    "Terminal VFD ESC/POS": {
-      "type": "terminal",
+
+    # standard, minimal example for a teletype with FSG
+    "RPiTTY_typical": {
+      "type": "RPiTTY",
       "enable": false,
-      "portname": "COM3",
-      "baudrate": 9600,
-      "dsrdtr": false,
-      "rtscts": false,
-      "xonxoff": false,
-      "show_BuZi": true,
-      "show_ctrl": true,
-      "show_info": false,
-      "show_capital": true,
-      "send_only": true,
-      "init_hex": "0C   1F 58 04   1F 43 01   1F 02",   # clear display   brightness   cursor on   vert. scroll
-      "init_text": " -= piTelex VFD =-\r\n",
-      "replace_hex": { 
-        "\r": "AE",     # WR
-        "\n": "F0",     # ZL
-        "<": "DC",      # Bu
-        ">": "DF",      # Zi
-        " ": "FA",      # space
-        "~": "B1",      # null
-        "%": "EA"       # bell
-      },
-      "replace_text": { 
-        "+": "+"        # example
-      }
+      "mode": "TW39",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
+      "baudrate": 50,
+      "loopback": true
     },
+
+    # standard example for a teletype with no FSG. Use buttons in type "RPiCtrl" to control workflow. Dialing by keyboard
+    "RPiTTY_noFSG": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_online": 0,
+      "pin_dir": 0,
+      "pin_number_switch": 0,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true,
+      "use_observe_line": false
+    },
+
+    # TeKaDe FS200 or FS220 over V.10 interface (old pinout)
+    "RPiTTY_FS200_V10_old": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "V10",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 0,
+      "inv_relay": true,
+      "pin_power": 0,
+      "inv_power": false,
+      "use_observe_line": true,
+      "pin_observe_line": 10,
+      "inv_observe_line": true,
+      "baudrate": 200,   # 50, 75, 100, 200
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    # TeKaDe FS200 or FS220 over V.10 interface (new pinout)
+    "RPiTTY_FS200_V10_new": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "V10",
+      "pin_txd": 27,
+      "pin_rxd": 17,
+      "pin_relay": 0,
+      "inv_relay": true,
+      "pin_power": 0,
+      "inv_power": false,
+      "use_observe_line": true,
+      "pin_observe_line": 22,
+      "inv_observe_line": true,
+      "baudrate": 200,   # 50, 75, 100, 200
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    # SEU-M - TW39-teletype using an Austrian AGT (OeAGT) with SEU-M-card as controller
+    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
+    "RPiTTY_SEU-M_Oe-AGT": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "AGT",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": true,
+      "pin_power": 9,
+      "inv_power": false,
+      "pin_number_switch": 10,
+      "inv_number_switch": true,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": false,
+      "WB_pulse_length": 60
+    },
+
+    # SEU-M - Lorenz LO2000, LO2001 or LO3000 with a SEU-M-card INSIDE the teletype as controller
+    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
+    "RPiTTY_SEU-M_LO2000": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": false,
+      "pin_power": 9,
+      "inv_power": false,
+      "nZZ_observe_line": true,
+      "baudrate": 50,   # 50, 75, 100
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    # EXPERIMENTAL - use H-bridge controlled by bidirectional difference of pin_TXD and pin_relay
+    # the H-bridge replaces the mechanical relay and the power-transistor with opto-coupler
+    "RPiTTY_H-bridge": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TW39H",   # "TW39", "TW39H", "TWM", "V10", "AGT"
+      "pin_txd": 27,
+      "pin_rxd": 17,
+      "pin_relay": 25,
+      "inv_relay": true,
+      "pin_power": 9,
+      "inv_power": false,
+      "pin_number_switch": 22,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "loopback": true
+    },
+
+    ###
+
+    # control the workflow (dialing, idle, typing-mode, text-phrases) with buttons
+    # and show status with LEDs
+    "RPiCtrl": {
+      "type": "RPiCtrl",
+      "enable": true,
+      # separate number switch - see also module RPiTTY
+      "pin_number_switch": 0,
+      # user buttons   1/2/3/4: 8/7/5/6   Pin 40: 21
+      "pin_button_1T": 0,
+      "pin_button_AT": 0,
+      "pin_button_ST": 0,
+      "pin_button_LT": 0,
+      "pin_button_PT": 0,
+      "pin_button_U1": 0,
+      "pin_button_U2": 0,
+      "pin_button_U3": 0,
+      "pin_button_U4": 0,
+      # single LEDs
+      "pin_LED_LT": 0,
+      "pin_LED_A": 0,
+      "pin_LED_WB": 0,
+      "pin_LED_WB_A": 0,
+      # Duo-LEDs with common cathodes for status info
+      "pin_LED_status_R": 23,
+      "pin_LED_status_G": 24,
+      # power saving
+      "pin_power": 0,   # SEU-M: 9
+      "inv_power": false
+    },
+
+    ###########################################################################
+
+    # Module type "CH340TTY"
+    # requirements: pyserial
+
+    # TW39 or V10 teletype over USB-serial-adapter CH340
     "CH340TTY": {
       "type": "CH340TTY",
       "enable": false,
-      "portname": "COM3",
-      "baudrate": 50,
-      "mode": "TW39",
-      "coding": 0,
+      "portname": "COM5",
+      "baudrate": 100,
+      "mode": "EDS",   # modes: "TW39", "TWM", "V10", "EDS"
+      "coding": 0,   # 0=ITA2
       "loopback": false
     },
+
+    ###########################################################################
+
+    # Module type "ED1000"
+    # requirements: numpy scipy
+
+    # ED1000 teletype over USB-sound-card
     "ED1000": {
       "type": "ED1000",
       "enable": false,
@@ -103,113 +247,217 @@
       "recv_debug": false,
       "unres_threshold": 100
     },
-    "RPiTTY": {
-      "type": "RPiTTY",
-      "enable": true,
-      "mode": "TW39",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_online": 0,
-      "pin_dir": 0,
-      "pin_number_switch": 6,
-      "baudrate": 50,
-      "coding": 0,
-      "loopback": true
-    },
-    "RPiTTY_noFSG": {
-      "type": "RPiTTY",
+
+    ###########################################################################
+
+    # Module type "Terminal"
+
+    # Terminal FULL EXAMPLE
+    # requirements: pyserial (atp install python3-serial)
+    "Terminal FULL EXAMPLE": {
+      "type": "terminal",
       "enable": false,
-      "mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_online": 0,
-      "pin_dir": 0,
-      "pin_number_switch": 0,
-      "baudrate": 50,
-      "coding": 0,
-      "loopback": true,
-      "use_observe_line": false
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
+      "baudrate": 300,
+      "bytesize": 8,
+      "stopbits": 1,
+      "parity": "N",
+      "dsrdtr": false,
+      "rtscts": false,
+      "xonxoff": false,
+      "RS485": false,
+      "show_BuZi": true,
+      "show_ctrl": true,
+      "show_info": false,
+      "show_capital": false,
+      "send_only": false,
+      "auto_CRLF": 0,   # number of chars in a line before CR LF
+      "init": "[0C][1B 5F 00][1B 12] -= piTelex VFD =-\r\n",   # clear display   cursor off   vert. scroll
+      "replace_char": {
+        "\r": "[AE]",     # WR
+        "\n": "[F0]",     # ZL
+        " ":  "_"         # space
+      },
+      "replace_esc": {
+        "ZZ": "[0C]"    # clear display on sleep mode
+      }
     },
-    "RPiTTY_T68d": {
-      "type": "RPiTTY",
+
+    # Vacuum Flourescent Display (VFD) on serial port with TEC/LIUST protocol
+    # requirements: pyserial (atp install python3-serial)
+    "VFD POS7300": {
+      "type": "terminal",
       "enable": false,
-      "__mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "___inv_rxd": false,
-      "pin_relay": 22,
-      "___inv_relay": false,
-      "___pin_dir": 0,
-      "xx_pin_number_switch": 6,
-      "___inv_number_switch": false,
-      "baudrate": 50,
-      "___coding": 0,
-      "___loopback": true,
-      "___use_observe_line": true,
-      "WB_pulse_length": 50
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
+      "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
+      "show_BuZi": true,
+      "show_ctrl": true,
+      "send_only": true,
+      "init": "[0C][1B 5F 00][1B 12] -= piTelex VFD =-  ",   # clear display   cursor off   vert. scroll
+      "replace_char": {
+        "\r": "[AE]",     # WR
+        "\n": "[F0]",     # ZL
+        "<":  "[DC]",     # Bu
+        ">":  "[DF]",     # Zi
+        " ":  "[FA]",     # space
+        "~":  "[B1]",     # null
+        "%":  "[EA]"      # bell
+      },
+      "replace_esc": {
+        "ZZ": "[0C]"    # clear display on sleep mode
+      }
     },
-    "RPiTTY_FS200_V10": {
-      "type": "RPiTTY",
+
+    # Vacuum Flourescent Display (VFD) on serial port with TEC/LIUST protocol
+    # requirements: pyserial (atp install python3-serial)
+    "VFD TEC/LIUST": {
+      "type": "terminal",
       "enable": false,
-      "mode": "V10",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "inv_rxd": false,
-      "pin_relay": 0,
-      "inv_relay": true,
-      "use_observe_line": true,
-      "pin_observe_line": 10,
-      "inv_observe_line": true,
-      "baudrate": 200,
-      "coding": 0,
-      "loopback": false
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
+      "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
+      "dsrdtr": false,
+      "rtscts": false,
+      "xonxoff": false,
+      "show_BuZi": true,
+      "show_ctrl": true,
+      "show_info": false,
+      "show_capital": true,
+      "send_only": true,
+      "auto_CRLF": 20,
+      "init": "[1B 5B 32 4A][1B 5C 3F 4C 44 35][1F 5C 3F 4C 43 31]\r -= piTelex VFD =-\r\n",   # clear display   brightness   cursor mode
+      "replace_char": {
+        "\r": "[AE]",     # WR
+        "\n": "[F2]",     # ZL
+        "<":  "[DC]",     # Bu
+        ">":  "[DF]",     # Zi
+        "~":  "[F8]",     # null
+        "%":  "[DB]",     # bell
+        " ":  "_"         # space
+      }
     },
-    "RPiCtrl": {
-      "type": "RPiCtrl",
+
+    # Vacuum Flourescent Display (VFD) on serial port with EPSON ESC/POS protocol
+    # requirements: pyserial (atp install python3-serial)
+    "Terminal VFD ESC/POS": {
+      "type": "terminal",
       "enable": false,
-      "pin_number_switch": 0,
-      "pin_button_1T": 8,
-      "pin_button_AT": 0,
-      "pin_button_ST": 0,
-      "pin_button_LT": 0,
-      "pin_button_U1": 12,
-      "pin_button_U2": 16,
-      "pin_button_U3": 20,
-      "pin_button_U4": 21,
-      "pin_LED_A": 0,
-      "pin_LED_WB": 0,
-      "pin_LED_WB_A": 9,
-      "pin_LED_status_R": 23,
-      "pin_LED_status_G": 24
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
+      "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
+      "show_BuZi": true,
+      "show_ctrl": true,
+      "show_info": false,
+      "show_capital": true,
+      "send_only": true,
+      "init": "[0C][1F 58 04][1F 43 01][1F 02] -= piTelex VFD =-\r\n",   # clear display   brightness   cursor on   vert. scroll
+      "replace_char": { 
+        "\r": "[AE]",     # WR
+        "\n": "[F0]",     # ZL
+        "<":  "[DC]",     # Bu
+        ">":  "[DF]",     # Zi
+        " ":  "[FA]",     # space
+        "~":  "[B1]",     # null
+        "%":  "[EA]"      # bell
+      }
     },
+
+    # POS-Printer EPSON TM-T88 Series
+    # requirements: pyserial (atp install python3-serial)
+    "Printer TM-T88": {
+      "type": "terminal",
+      "enable": false,
+      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
+      "baudrate": 38400,   # adapt to printer settings
+      "show_BuZi": false,
+      "show_ctrl": false,
+      "show_info": false,
+      "show_capital": false,
+      "send_only": true,
+      "auto_CRLF": 0,   # number of chars in a line before CR LF
+      "init": "[1B]M1\r\n -= BON-Telex =-\r\n",   # small font: [1B]M1   normal font [1B]M0
+      "replace_char": { 
+        "<":  "[DC]",     # Bu
+        ">":  "[DF]",     # Zi
+        " ":  "[FA]",     # space
+        "~":  "[B1]",     # null
+        "%":  "[EA]"      # bell
+      },
+      "replace_esc": {
+        "Z": "\r\n\r\n\r\n\r\n[1B6D]"    # cut paper
+      }
+    },
+
+    ###########################################################################
+
+    # Module type "KeyPad"
+    # USB-KeyPad input for text shortcuts and test teletypes
+    # requirements: evdev (apt install python3-evdev)
+
+    "KeyPad1": {
+      "type": "KeyPad", 
+      "enable": false, 
+      "device_name": "KEYPAD",   # part of device name to select a special keyboard/keypad device
+      "show_key_name": true,
+      "KEYS": { 
+        "KEY_KP0": " ",
+        "KEY_KP1": "RY",
+        "KEY_KP2": "RYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRY",
+        "KEY_KP3": "",
+        "KEY_KP4": "{ABC}",
+        "KEY_KP5": "{FOX}",
+        "KEY_KP6": "{PELZE}",
+        "KEY_KP7": "{A1}",
+        "KEY_KP8": "{TEST}",
+        "KEY_KP9": "{LOREM}",
+        "KEY_KPDOT>": "#",   # WRU
+        "KEY_KPPLUS": "{A}",
+        "KEY_KPMINUS": "{Z}",
+        "KEY_KPASTERISK": "{WB}",
+        "KEY_KPSLASH>": "{ZZ}",
+        "KEY_KPENTER": "\\_"
+      }
+    },
+
+    ###########################################################################
+
+    # Module type "i-Telex"
+
     "i-Telex": {
       "type": "i-Telex",
       "enable": true,
       "port": 2342,
+      # WARNING
+      # Setting tns-dynip-number to anything except 0 will enable dynamic IP
+      # updates with i-Telex TNS (Teilnehmerserver, Subscriber Server).
+      #
+      # Leave at 0 if you've chosen a static TNS entry!
+      # Change to something nonzero if and only if
+      # - you've got your number approved by i-Telex administrators, and
+      # - you've chosen dynamic IP update and told i-Telex administrators so, and
+      # - you've set your TNS pin properly.
       "tns-dynip-number": 0,
       "tns-pin": 12345
     },
+
+    ###########################################################################
+
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "/data/piTelex/data.log"
+      "filename": "/home/pi/piTelex/data.log"
     },
+
     "news": {
       "type": "news",
       "enable": false,
-      "newspath": "/data/piTelex/news/"
+      "newspath": "/home/pi/piTelex/RSS-feed/news/"
     },
+
     "archive": {
       "type": "archive",
-      "enable": false,
-      "path": "/data/piTelex/"
+      "enable": true,
+      "path": "/home/pi/piTelex/archive/"
     },
+
     "shellcmd": {
       "type": "shellcmd",
       "enable": false,
@@ -219,13 +467,12 @@
         "x": "explorer"
       }
     }
+
   },
-  "verbose": true,
+
   "wru_id": "12345 dummy d",
-  "wru_fallback": false,
+  "wru_replace_always": false,
   "dial_timeout": 0,
-  "continue_with_no_printer": true,
-  "debug": 3,
-  "errorlog_path": "piTelex/",
-  "errorlog_path_x": "/data/piTelex/"
+  "continue_with_no_printer": false,
+  "errorlog_path": "/home/pi/piTelex/errorlog/"
 }
