@@ -1,5 +1,5 @@
 # Configuration examples for piTelex
-# 2023-02-02
+# 2023-02-24
 # requirements: commentjson, argparse (additional requirements per section are listed there)
 #
 # This file can be used as a starting point for piTelex installations using the default hardware configuration.
@@ -85,8 +85,8 @@
       "use_observe_line": false
     },
 
-    # TeKaDe FS200 or FS220 over V.10 interface
-    "RPiTTY_FS200_V10": {
+    # TeKaDe FS200 or FS220 over V.10 interface (old pinout)
+    "RPiTTY_FS200_V10_old": {
       "type": "RPiTTY",
       "enable": false,
       "mode": "V10",
@@ -98,6 +98,25 @@
       "inv_power": false,
       "use_observe_line": true,
       "pin_observe_line": 10,
+      "inv_observe_line": true,
+      "baudrate": 200,   # 50, 75, 100, 200
+      "coding": 0,   # 0=ITA2
+      "loopback": false
+    },
+
+    # TeKaDe FS200 or FS220 over V.10 interface (new pinout)
+    "RPiTTY_FS200_V10_new": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "V10",
+      "pin_txd": 27,
+      "pin_rxd": 17,
+      "pin_relay": 0,
+      "inv_relay": true,
+      "pin_power": 0,
+      "inv_power": false,
+      "use_observe_line": true,
+      "pin_observe_line": 22,
       "inv_observe_line": true,
       "baudrate": 200,   # 50, 75, 100, 200
       "coding": 0,   # 0=ITA2
