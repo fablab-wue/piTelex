@@ -112,7 +112,7 @@ def load():
 
     gg.add_argument("-S", "--rss",
         dest="rss", default='', nargs='?', metavar='url',
-        help="RSS feed client")
+        help="RSS feed client (experimental)")
 
     gg.add_argument("-C", "--IRC",
         dest="irc", default='', metavar="CHANNEL",
@@ -200,14 +200,6 @@ def load():
     parser.add_argument("--errorlog-level",
         dest="errorlog_level", default="", metavar="ERRLOGLEVEL",
         help="Verbosity of error log; see python log levels")
-
-    #parser.add_argument("-m", "--mode",
-    #    dest="mode", default='', metavar="MODE",
-    #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
-
-    #parser.add_argument("-q", "--quiet",
-    #    dest="verbose", default=True, action="store_false",
-    #    help="don't print status messages to stdout")
 
     parser.add_argument("-s", "--save",
         dest="save", default=False, action="store_true",
@@ -377,8 +369,6 @@ def load():
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
 
-
-#    CFG['verbose'] = ARGS.verbose
 
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
