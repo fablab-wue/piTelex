@@ -47,7 +47,7 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_button_U3 = params.get('pin_button_U3', 0)   # button user 3 optional
         self._pin_button_U4 = params.get('pin_button_U4', 0)   # button user 4 optional
         
-        self._pin_wakeup = params.get('pin_wakeup', 0)   # button wakeup optional
+        self._pin_button_wakeup = params.get('pin_button_wakeup', 0)   # button wakeup optional
 
         self._pin_LED_A = params.get('pin_LED_A', 0)
         self._pin_LED_WB = params.get('pin_LED_WB', 0)
@@ -119,8 +119,8 @@ class TelexRPiCtrl(txBase.TelexBase):
         if self._pin_button_U4:
             self._button_U4 = Button(self._pin_button_U4, self._callback_button_U4)
 
-        if self._pin_wakeup:
-            self._wakeup = Button(self._pin_wakeup, self._callback_wakeup)
+        if self._pin_button_wakeup:
+            self._wakeup = Button(self._pin_button_wakeup, self._callback_wakeup)
 
         self._number_switch = None
         if self._pin_number_switch:
