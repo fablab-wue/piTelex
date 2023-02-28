@@ -1,6 +1,17 @@
-## Changes compared to branch Experimental-22-01
-This file will hopefully help to keep track of the  changes from the Experimental-branch, as far as the user level is concerned.
-Before committing this branch to master, the official wiki documentation should be updated according to the entries in this file.
+# User level changes 
+This file will hopefully help to keep track of the  changes compared to "master" , as far as the user level is concerned.
+When committing this branch to master, the official wiki documentation should be updated according to the entries in this file.
+
+## Changes compared to master as of 2023-02-24 (https://github.com/fablab-wue/piTelex/pull/26)
+
+|commit No|Action  | Device | Parameter                          | type / range | default| comment|
+|---------|--------|--------|------------------------------------|--------------|--------|---------|
+| [06dc5c7](https://github.com/fablab-wue/piTelex/commit/06dc5c7b096a92d265168d31bab87de4fd0bb90f)|Added|RPiCtrl|pin_button_wakeup|number|0|GPIO of button to wake up from ZZ, replaces pin_wakeup _(just to obey the naming conventions, no functional change)_|
+| [06dc5c7](https://github.com/fablab-wue/piTelex/commit/06dc5c7b096a92d265168d31bab87de4fd0bb90f)|Deleted|RPiCtrl|pin_wakeup|number|0|GPIO of button to wake up from ZZ, replaced by pin_button_wakeup|
+
+***
+## Older changes
+### Changes compared to branch Experimental-22-01
 
 ### Configuration Parameters
 
@@ -37,8 +48,8 @@ Must update page for rssFileWriter.py to reflect this.
 
 #### Module RPiTTY: Add modes 
 
-`AGT` for Ö-AGT support  --> another sub mode for Lorenz TTY?
+`AGT` for Ö-AGT support  
 
 `TW39H` for H-Bridge HW Support
 
-tbc...
+
