@@ -72,7 +72,7 @@ class TelexRPiTTY(txBase.TelexBase):
         self._inv_relay = params.get('inv_relay', False)
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
-        self._pin_number_switch = params.get('pin_number_switch', 6 if self._mode not in ('V10', 'TWM') else 0)   # pin typical wired to rxd pin
+        self._pin_number_switch = params.get('pin_number_switch', 6 if self._mode not in ('V10', 'TWM', 'AGT-TWM') else 0)   # pin typical wired to rxd pin
         self._inv_number_switch = params.get('inv_number_switch', False)
 
         if self._inv_rxd:
@@ -280,7 +280,7 @@ class TelexRPiTTY(txBase.TelexBase):
             self._send_control_sequence('~0')
 
         elif a == 'WB':
-            if self._mode in ('TW39', 'TW39H', 'AGT'):
+            if self._mode in ('TW39', 'TW39H', 'AGT', 'AGT-TW39'):
                 self._set_state(S_DIALING_PULSE)
             else:
                 self._set_state(S_DIALING_KEYBOARD)
@@ -420,7 +420,7 @@ class TelexRPiTTY(txBase.TelexBase):
             if self._WB_pulse_length <= 0:
                 return
 
-            if self._mode in ('TW39H', 'AGT'):   # pulse on relay-pin
+            if self._mode in ('TW39H', 'AGT', 'AGT-TW39'):   # pulse on relay-pin
                 pins_to_H = 1<<self._pin_relay
                 pins_to_L = 0
                 if self._inv_relay:
