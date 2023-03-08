@@ -156,6 +156,9 @@ class TelexMCP(txBase.TelexBase):
             if a == 'AA':   # printer ready
                 self._set_state(S_ACTIVE_READY)
 
+            if a == 'WB':   # start dialing
+                self._set_state(S_DIALING)
+
             if a.startswith('~') or a.startswith('^'):   # printer buffer feedback
                 # Reset ACTIVE watchdog only if we're still online, to prevent
                 # re-enabling teleprinter power later
