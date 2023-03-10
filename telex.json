@@ -33,7 +33,7 @@
     "RPiTTY_full_example": {
       "type": "RPiTTY",
       "enable": false,
-      "mode": "TW39",   # "TW39", "TW39H", "TWM", "V10", "AGT"
+      "mode": "TW39",   # "TW39", "TW39H", "TWM", "V10", "AGT-TW39", "AGT-TWM"
       "pin_txd": 17,
       "pin_rxd": 27,   # RPi1 revision 1: 21   all other RPi: 27
       "pin_relay": 22,
@@ -67,7 +67,8 @@
       "loopback": true
     },
 
-    # standard example for a teletype with no FSG. Use buttons in type "RPiCtrl" to control workflow. Dialing by keyboard
+    # standard example for a teletype without FSG. Dialing by keyboard
+    # Note: Use user buttons in module 'RPiCtrl' for AT-button and ST-button (or 1T-button)
     "RPiTTY_noFSG": {
       "type": "RPiTTY",
       "enable": false,
@@ -81,8 +82,8 @@
       "pin_number_switch": 0,
       "baudrate": 50,
       "coding": 0,   # 0=ITA2
-      "loopback": true,
-      "use_observe_line": false
+      "use_observe_line": false,
+      "loopback": true
     },
 
     # TeKaDe FS200 or FS220 over V.10 interface (old pinout)
@@ -123,12 +124,12 @@
       "loopback": false
     },
 
-    # SEU-M - TW39-teletype using an Austrian AGT (OeAGT) with SEU-M-card as controller
+    # SEU-M - TW39-teletype with FSG using an Austrian AGT (OeAGT) with SEU-M-card as controller
     # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
-    "RPiTTY_SEU-M_Oe-AGT": {
+    "RPiTTY_SEU-M_Oe_AGT-TW39": {
       "type": "RPiTTY",
       "enable": false,
-      "mode": "AGT",
+      "mode": "AGT-TW39",
       "pin_txd": 17,
       "pin_rxd": 27,
       "pin_relay": 22,
@@ -137,10 +138,30 @@
       "inv_power": false,
       "pin_number_switch": 10,
       "inv_number_switch": true,
+      "WB_pulse_length": 60,
       "baudrate": 50,
       "coding": 0,   # 0=ITA2
-      "loopback": false,
-      "WB_pulse_length": 60
+      "loopback": false
+    },
+
+    # SEU-M - TW39-teletype without FSG using an Austrian AGT (OeAGT) with SEU-M-card as controller
+    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
+    # Note: Use user buttons in module 'RPiCtrl' for AT-button and ST-button (or 1T-button)
+    # e.g. TeKaDe FS200 or FS220
+    "RPiTTY_SEU-M_Oe_AGT-TWM": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "AGT-TWM",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "inv_relay": true,
+      "pin_power": 9,
+      "inv_power": false,
+      "baudrate": 50,
+      "coding": 0,   # 0=ITA2
+      "use_observe_line": false,   # optional
+      "loopback": false
     },
 
     # SEU-M - Lorenz LO2000, LO2001 or LO3000 with a SEU-M-card INSIDE the teletype as controller
