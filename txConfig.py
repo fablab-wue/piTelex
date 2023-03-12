@@ -17,7 +17,7 @@ except:
     import json
     _commentjson_error = True
 
-import log
+#import log
 import logging
 l = logging.getLogger("piTelex." + __name__)
 
@@ -385,14 +385,6 @@ def load():
     errorlog_level = ARGS.errorlog_level.strip().upper()
     if errorlog_level:
         CFG['errorlog_level'] = errorlog_level
-
-    #mode = ARGS.mode.strip()
-    #if mode:
-    #    CFG['mode'] = mode
-
-    if ARGS.debug:
-        CFG['debug'] = ARGS.debug
-    log.set_log_level(CFG.get('debug', 0))
 
 
     if ARGS.save:

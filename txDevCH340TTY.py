@@ -20,7 +20,6 @@ l = logging.getLogger("piTelex." + __name__)
 
 import txCode
 import txBase
-import log
 
 #def LOG(text:str, level:int=3):
 #    #log.LOG('\033[30;43m<'+text+'>\033[0m', level)
@@ -270,7 +269,7 @@ class TelexCH340TTY(txBase.TelexBase):
             self._rx_buffer.append('\x1bAA')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
-        if 1:
+        if 0:   # experimental
             self._tty.break_condition = not enable
         self._mc.reset()
         if self._use_squelch:

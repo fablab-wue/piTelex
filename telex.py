@@ -19,7 +19,6 @@ import logging
 l = logging.getLogger("piTelex." + __name__)
 import logging.handlers
 import traceback
-import log
 
 #def LOG(text:str, level:int=3):
 #    log.LOG('\033[0;30;47m '+text+' \033[0m', level)
