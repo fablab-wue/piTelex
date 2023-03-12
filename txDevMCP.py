@@ -136,11 +136,11 @@ class TelexMCP(txBase.TelexBase):
 
             if a == 'PT':   # PT
                 if self._state == S_SLEEPING:
-                    self._set_state(S_OFFLINE)
+                    self._set_state(S_OFFLINE, True)
                     self._wd.restart('POWER', self._power_button_timeout)
                     self._on_by_PT = True
                 else:
-                    self._set_state(S_OFFLINE)
+                    self._set_state(S_OFFLINE, True)
                     self._wd.restart('POWER', 1)
                 return True
 
