@@ -1,5 +1,5 @@
 # Configuration examples for piTelex
-# 2023-02-24
+# 2023-03-15
 # requirements: commentjson, argparse (additional requirements per section are listed there)
 #
 # This file can be used as a starting point for piTelex installations using the default hardware configuration.
@@ -10,6 +10,8 @@
 # Disable ("enable": false,) or optionally delete unused modules or entries.
 #
 # For detailed configuration infos see the wiki pages.
+#
+# Additional modules are described in the telex_Example_XXX.json files
 #
 {
   "devices": {
@@ -29,31 +31,6 @@
     # requirements: pigpio (deamon and lib)
     # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi
     
-    # FULL EXAMPLE
-    "RPiTTY_full_example": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TW39",   # "TW39", "TW39H", "TWM", "V10", "AGT-TW39", "AGT-TWM"
-      "pin_txd": 17,
-      "pin_rxd": 27,   # RPi1 revision 1: 21   all other RPi: 27
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_power": 0,
-      "inv_power": false,
-      "pin_online": 0,
-      "pin_dir": 0,
-      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
-      "inv_number_switch": false,
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "loopback": true,
-      "use_observe_line": false,
-      "pin_observe_line": 6,   # normally same as "pin_number_switch"
-      "inv_observe_line": false,
-      "nZZ_observe_line": false,
-      "WB_pulse_length": 60   # ms
-    },
-
     # standard, minimal example for a teletype with FSG
     "RPiTTY_typical": {
       "type": "RPiTTY",
@@ -62,142 +39,8 @@
       "pin_txd": 17,
       "pin_rxd": 27,
       "pin_relay": 22,
-      "pin_number_switch": 6,   # classic layput: 6   new layout: 10
+      "pin_number_switch": 6,      # classic layput: 6   new layout: 10
       "baudrate": 50,
-      "loopback": true
-    },
-
-    # standard example for a teletype without FSG. Dialing by keyboard
-    # Note: Use user buttons in module 'RPiCtrl' for AT-button and ST-button (or 1T-button)
-    "RPiTTY_noFSG": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_online": 0,
-      "pin_dir": 0,
-      "pin_number_switch": 0,
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "use_observe_line": false,
-      "loopback": true
-    },
-
-    # TeKaDe FS200 or FS220 over V.10 interface (old pinout)
-    "RPiTTY_FS200_V10_old": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "V10",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 0,
-      "inv_relay": true,
-      "pin_power": 0,
-      "inv_power": false,
-      "use_observe_line": true,
-      "pin_observe_line": 10,
-      "inv_observe_line": true,
-      "baudrate": 200,             # 50, 75, 100, 200
-      "coding": 0,                 # 0=ITA2
-      "loopback": false
-    },
-
-    # TeKaDe FS200 or FS220 over V.10 interface (new pinout)
-    "RPiTTY_FS200_V10_new": {
-      "type": "RPiTTY",
-      "enable": true,
-      "mode": "V10",
-      "pin_txd": 27,               # Pin13
-      "pin_rxd": 17,               # Pin11
-      "pin_relay": 0,
-      "inv_relay": true,
-      "pin_power": 9,              # Pin21
-      "inv_power": false,
-      "use_observe_line": true,
-      "pin_observe_line": 22,      # Pin15
-      "inv_observe_line": true,
-      "nZZ_observe_line": false,   # observe LIN-button in deep sleep mode. Should be 'true' if SSR is used
-      "baudrate": 200,             # 50, 75, 100, 200
-      "coding": 0,                 # 0=ITA2
-      "loopback": false
-    },
-
-    # SEU-M - TW39-teletype with FSG using an Austrian AGT (OeAGT) with SEU-M-card as controller
-    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
-    "RPiTTY_SEU-M_Oe_AGT-TW39": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "AGT-TW39",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 22,
-      "inv_relay": true,
-      "pin_power": 9,
-      "inv_power": false,
-      "pin_number_switch": 10,
-      "inv_number_switch": true,
-      "WB_pulse_length": 60,
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "loopback": false
-    },
-
-    # SEU-M - TW39-teletype without FSG using an Austrian AGT (OeAGT) with SEU-M-card as controller
-    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
-    # Note: Use user buttons in module 'RPiCtrl' for AT-button and ST-button (or 1T-button)
-    # e.g. TeKaDe FS200 or FS220
-    "RPiTTY_SEU-M_Oe_AGT-TWM": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "AGT-TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 22,
-      "inv_relay": true,
-      "pin_power": 9,
-      "inv_power": false,
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
-      "use_observe_line": false,   # optional
-      "loopback": false
-    },
-
-    # SEU-M - Lorenz LO2000, LO2001 or LO3000 with a SEU-M-card INSIDE the teletype as controller
-    # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
-    "RPiTTY_SEU-M_LO2000": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TWM",
-      "pin_txd": 17,
-      "pin_rxd": 27,
-      "pin_relay": 22,
-      "inv_relay": false,
-      "pin_power": 9,
-      "inv_power": false,
-      "nZZ_observe_line": true,
-      "baudrate": 50,   # 50, 75, 100
-      "coding": 0,   # 0=ITA2
-      "loopback": false
-    },
-
-    # EXPERIMENTAL - use H-bridge controlled by bidirectional difference of pin_TXD and pin_relay
-    # the H-bridge replaces the mechanical relay and the power-transistor with opto-coupler
-    "RPiTTY_H-bridge": {
-      "type": "RPiTTY",
-      "enable": false,
-      "mode": "TW39H",   # "TW39", "TW39H", "TWM", "V10", "AGT"
-      "pin_txd": 27,
-      "pin_rxd": 17,
-      "pin_relay": 25,
-      "inv_relay": true,
-      "pin_power": 9,
-      "inv_power": false,
-      "pin_number_switch": 22,
-      "baudrate": 50,
-      "coding": 0,   # 0=ITA2
       "loopback": true
     },
 
@@ -238,214 +81,8 @@
       "pin_LED_status_G": 24,
 
       # power saving
-      "pin_power": 0,              # SEU-M: 9
+      "pin_power": 0,              # GPIO on SEU-M: 9
       "inv_power": false
-    },
-
-    ###########################################################################
-
-    # Module type "CH340TTY"
-    # requirements: pyserial
-
-    # TW39 or V10 teletype over USB-serial-adapter CH340
-    "CH340TTY": {
-      "type": "CH340TTY",
-      "enable": false,
-      "portname": "COM5",
-      "baudrate": 100,
-      "mode": "EDS",   # modes: "TW39", "TWM", "V10", "EDS"
-      "coding": 0,   # 0=ITA2
-      "loopback": false
-    },
-
-    ###########################################################################
-
-    # Module type "ED1000"
-    # requirements: numpy scipy
-
-    # ED1000 teletype over USB-sound-card
-    "ED1000": {
-      "type": "ED1000",
-      "enable": false,
-      "devindex": null,
-      "zcarrier": false,
-      "baudrate": 50,
-      "send_f0": 500,
-      "send_f1": 700,
-      "recv_f0": 2250,
-      "recv_f1": 3150,
-      "recv_squelch": 100,
-      "recv_debug": false,
-      "unres_threshold": 100
-    },
-
-    ###########################################################################
-
-    # Module type "Terminal"
-
-    # Terminal FULL EXAMPLE
-    # requirements: pyserial (atp install python3-serial)
-    "Terminal FULL EXAMPLE": {
-      "type": "terminal",
-      "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
-      "baudrate": 300,
-      "bytesize": 8,
-      "stopbits": 1,
-      "parity": "N",
-      "dsrdtr": false,
-      "rtscts": false,
-      "xonxoff": false,
-      "RS485": false,
-      "show_BuZi": true,
-      "show_ctrl": true,
-      "show_info": false,
-      "show_capital": false,
-      "send_only": false,
-      "auto_CRLF": 0,   # number of chars in a line before CR LF
-      "init": "[0C][1B 5F 00][1B 12] -= piTelex VFD =-\r\n",   # clear display   cursor off   vert. scroll
-      "replace_char": {
-        "\r": "[AE]",     # WR
-        "\n": "[F0]",     # ZL
-        " ":  "_"         # space
-      },
-      "replace_esc": {
-        "ZZ": "[0C]"    # clear display on sleep mode
-      }
-    },
-
-    # Vacuum Flourescent Display (VFD) on serial port with TEC/LIUST protocol
-    # requirements: pyserial (atp install python3-serial)
-    "VFD POS7300": {
-      "type": "terminal",
-      "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
-      "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
-      "show_BuZi": true,
-      "show_ctrl": true,
-      "send_only": true,
-      "init": "[0C][1B 5F 00][1B 12] -= piTelex VFD =-  ",   # clear display   cursor off   vert. scroll
-      "replace_char": {
-        "\r": "[AE]",     # WR
-        "\n": "[F0]",     # ZL
-        "<":  "[DC]",     # Bu
-        ">":  "[DF]",     # Zi
-        " ":  "[FA]",     # space
-        "~":  "[B1]",     # null
-        "%":  "[EA]"      # bell
-      },
-      "replace_esc": {
-        "ZZ": "[0C]"    # clear display on sleep mode
-      }
-    },
-
-    # Vacuum Flourescent Display (VFD) on serial port with TEC/LIUST protocol
-    # requirements: pyserial (atp install python3-serial)
-    "VFD TEC/LIUST": {
-      "type": "terminal",
-      "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
-      "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
-      "dsrdtr": false,
-      "rtscts": false,
-      "xonxoff": false,
-      "show_BuZi": true,
-      "show_ctrl": true,
-      "show_info": false,
-      "show_capital": true,
-      "send_only": true,
-      "auto_CRLF": 20,
-      "init": "[1B 5B 32 4A][1B 5C 3F 4C 44 35][1F 5C 3F 4C 43 31]\r -= piTelex VFD =-\r\n",   # clear display   brightness   cursor mode
-      "replace_char": {
-        "\r": "[AE]",     # WR
-        "\n": "[F2]",     # ZL
-        "<":  "[DC]",     # Bu
-        ">":  "[DF]",     # Zi
-        "~":  "[F8]",     # null
-        "%":  "[DB]",     # bell
-        " ":  "_"         # space
-      }
-    },
-
-    # Vacuum Flourescent Display (VFD) on serial port with EPSON ESC/POS protocol
-    # requirements: pyserial (atp install python3-serial)
-    "Terminal VFD ESC/POS": {
-      "type": "terminal",
-      "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
-      "baudrate": 9600,    # default is 9600. Some VFDs come with 19200 or 38400
-      "show_BuZi": true,
-      "show_ctrl": true,
-      "show_info": false,
-      "show_capital": true,
-      "send_only": true,
-      "init": "[0C][1F 58 04][1F 43 01][1F 02] -= piTelex VFD =-\r\n",   # clear display   brightness   cursor on   vert. scroll
-      "replace_char": { 
-        "\r": "[AE]",     # WR
-        "\n": "[F0]",     # ZL
-        "<":  "[DC]",     # Bu
-        ">":  "[DF]",     # Zi
-        " ":  "[FA]",     # space
-        "~":  "[B1]",     # null
-        "%":  "[EA]"      # bell
-      }
-    },
-
-    # POS-Printer EPSON TM-T88 Series
-    # requirements: pyserial (atp install python3-serial)
-    "Printer TM-T88": {
-      "type": "terminal",
-      "enable": false,
-      "portname": "/dev/ttyS0",    # port name. On Windows e.g. COM3. On Linux e.g. /dev/ttyUSB0 or /dev/ttyS0
-      "baudrate": 38400,   # adapt to printer settings
-      "show_BuZi": false,
-      "show_ctrl": false,
-      "show_info": false,
-      "show_capital": false,
-      "send_only": true,
-      "auto_CRLF": 0,   # number of chars in a line before CR LF
-      "init": "[1B]M1\r\n -= BON-Telex =-\r\n",   # small font: [1B]M1   normal font [1B]M0
-      "replace_char": { 
-        "<":  "[DC]",     # Bu
-        ">":  "[DF]",     # Zi
-        " ":  "[FA]",     # space
-        "~":  "[B1]",     # null
-        "%":  "[EA]"      # bell
-      },
-      "replace_esc": {
-        "Z": "\r\n\r\n\r\n\r\n[1B6D]"    # cut paper
-      }
-    },
-
-    ###########################################################################
-
-    # Module type "KeyPad"
-    # USB-KeyPad input for text shortcuts and test teletypes
-    # requirements: evdev (apt install python3-evdev)
-
-    "KeyPad1": {
-      "type": "KeyPad", 
-      "enable": false, 
-      "device_name": "KEYPAD",   # part of device name to select a special keyboard/keypad device
-      "show_key_name": true,
-      "KEYS": { 
-        "KEY_KP0": " ",
-        "KEY_KP1": "RY",
-        "KEY_KP2": "RYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRYRY",
-        "KEY_KP3": "",
-        "KEY_KP4": "{ABC}",
-        "KEY_KP5": "{FOX}",
-        "KEY_KP6": "{PELZE}",
-        "KEY_KP7": "{A1}",
-        "KEY_KP8": "{TEST}",
-        "KEY_KP9": "{LOREM}",
-        "KEY_KPDOT>": "#",   # WRU
-        "KEY_KPPLUS": "{A}",
-        "KEY_KPMINUS": "{Z}",
-        "KEY_KPASTERISK": "{WB}",
-        "KEY_KPSLASH>": "{ZZ}",
-        "KEY_KPENTER": "\\_"
-      }
     },
 
     ###########################################################################
@@ -477,29 +114,17 @@
       "filename": "/home/pi/piTelex/data.log"
     },
 
-    "news": {
-      "type": "news",
-      "enable": false,
-      "newspath": "/home/pi/piTelex/RSS-feed/news/"
-    },
+    ###########################################################################
 
     "archive": {
       "type": "archive",
       "enable": true,
       "path": "/home/pi/piTelex/archive/"
     },
+  
+  }
 
-    "shellcmd": {
-      "type": "shellcmd",
-      "enable": false,
-      "LUT": {
-        "TP1": "curl -s -o null http://fs200.fritz.box/cm?cmnd=Power%20On",
-        "TP0": "curl -s -o null http://fs200.fritz.box/cm?cmnd=Power%20Off",
-        "x": "explorer"
-      }
-    }
-
-  },
+  ###########################################################################
 
   "wru_id": "12345 dummy d",
   "wru_replace_always": false,
