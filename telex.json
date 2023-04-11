@@ -111,7 +111,7 @@
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "/home/pi/piTelex/data.log"
+      "filename": "./data.log"
     },
 
     ###########################################################################
@@ -119,10 +119,10 @@
     "archive": {
       "type": "archive",
       "enable": true,
-      "path": "/home/pi/piTelex/archive/"
-    },
+      "path": "./archive/"
+    }
   
-  }
+  },
 
   ###########################################################################
 
@@ -130,5 +130,5 @@
   "wru_replace_always": false,
   "dial_timeout": 0,
   "continue_with_no_printer": false,
-  "errorlog_path": "/home/pi/piTelex/errorlog/"
+  "errorlog_path": "./errorlog/"
 }
