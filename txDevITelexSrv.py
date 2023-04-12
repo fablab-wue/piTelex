@@ -194,8 +194,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 if data == selftest_packet:
                     # Signal self-test thread that we received the packet
                     self.selftest_event.set()
-                client.close()
-                continue
+                    client.close()
+                    continue
             l.info("%s:%s has connected" % client_address)
             if self.clients or self.block_inbound or self._connected != ST.DISCON:
                 # Our line is occupied (occ), reject client. Little issue here:
