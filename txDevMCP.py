@@ -11,6 +11,7 @@ __version__     = "0.1.0"
 import time
 import os
 import sys
+import random
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -96,6 +97,9 @@ class TelexMCP(txBase.TelexBase):
         self.cli_enable = False
 
         self._on_by_PT = False
+
+        self._hand_type_buffer = []
+        self._hand_type_wait = -1
 
 
     def __del__(self):
@@ -226,6 +230,11 @@ class TelexMCP(txBase.TelexBase):
                 #self._set_state(S_OFFLINE)
                 raise(SystemExit('EXIT'))
 
+            if a == 'T':   # hand type simulator
+                if self._hand_type_wait >= 0:
+                    self._hand_type_wait = -1
+                else:
+                    self._hand_type_wait = 40   # 2 sec delay
 
         else:   # single char -------------------------------------------------
 
@@ -297,6 +306,21 @@ class TelexMCP(txBase.TelexBase):
 
     def idle20Hz(self):
         self._wd.process()
+
+        # hand type simulator
+        if self._hand_type_wait >= 0:
+            if self._hand_type_wait == 0:
+                if not self._hand_type_buffer:
+                    self._hand_type_buffer = list(escape_texts['LOREM'])
+                a = self._hand_type_buffer.pop(0)
+                self._rx_buffer.append(a)   # send text
+                self._hand_type_wait = int(random.random()**2.0 * 7 + 2)   # emulate human typing waits
+                if a in ('\r', '\n'):
+                    self._hand_type_wait += 10
+                if a in (' ', '.', ',', '<', '>'):
+                    self._hand_type_wait += 3
+            else:
+                self._hand_type_wait -= 1
 
     def idle2Hz(self):
         if self._state == S_ACTIVE_NO_P and self._continue_with_no_printer:
