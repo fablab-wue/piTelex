@@ -314,11 +314,11 @@ class TelexMCP(txBase.TelexBase):
                     self._hand_type_buffer = list(escape_texts['LOREM'])
                 a = self._hand_type_buffer.pop(0)
                 self._rx_buffer.append(a)   # send text
-                self._hand_type_wait = int(random.random()**2.0 * 7 + 2)   # emulate human typing waits
+                self._hand_type_wait = int(random.random()**2.0 * 5 + 2)   # emulate human typing waits
                 if a in ('\r', '\n'):
-                    self._hand_type_wait += 10
+                    self._hand_type_wait += 7
                 if a in (' ', '.', ',', '<', '>'):
-                    self._hand_type_wait += 3
+                    self._hand_type_wait += 1
             else:
                 self._hand_type_wait -= 1
 
