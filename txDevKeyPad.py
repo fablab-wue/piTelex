@@ -35,34 +35,35 @@ class TelexKeyPad(txBase.TelexBase):
         self._device = None
 
         self._show_key_name = self.params.get('show_key_name', False)
+        device_name = self.params.get('device_name', 'KEYPAD').upper()
 
 
+        # get list of all input devices
         devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
 
         for device in devices:
             #print('path:', device.path, 'name:', device.name, 'phys:', device.phys)
             #print(device)
-            l.info("TelexKeyPad - device: {}".format(device))
-
-        device_name = self.params.get('device_name', 'KEYPAD').upper()
+            text = "TelexKeyPad - device: {}".format(device)
+            l.info(text)
+            if self._show_key_name:
+                print(text)
 
         # linux magic - event interfaces to spy keyboards and mice
         for device in devices:
             if device.name.upper().find(device_name) >= 0:
                 self._device = evdev.InputDevice(device.path)
+                text = 'TelexKeyPad - using keypad/keyboard: {}'.format(self._device)
+                l.info(text)
+                if self._show_key_name:
+                    print(text)
                 break
-
-        if not self._device:
-            for device in devices:
-                if device.name.upper().find('KEY') >= 0:
-                    self._device = evdev.InputDevice(device.path)
-                    break
-
-        if not self._device:
-            l.error('TelexKeyPad - no keypad/keyboard found')
+        else:   # no fitting device found
+            text = 'TelexKeyPad - no keypad/keyboard found'
+            l.error(text)
+            if self._show_key_name:
+                print(text)
             return
-        else:
-            l.info('TelexKeyPad - using keypad/keyboard: {}'.format(self._device))
 
         # get all key-names which are available for this device
         self._keys = {}
@@ -114,6 +115,7 @@ class TelexKeyPad(txBase.TelexBase):
 
                 l.info('TelexKeyPad - key pressed: code={} key_name={} text="{}"'.format(ev.code, key_name, text))
 
+                # scan text and filter escape sequences
                 while text:
                     a = text[0]
                     text = text[1:]
@@ -133,4 +135,3 @@ class TelexKeyPad(txBase.TelexBase):
                         self._rx_buffer.append(a)
 
 #######
-
