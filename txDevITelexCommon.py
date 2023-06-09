@@ -577,6 +577,11 @@ class TelexITelexCommon(txBase.TelexBase):
                 # ASCII character(s)
                 else:
                     l.debug('Received non-i-Telex data: {} ({})'.format(repr(data), display_hex(data)))
+
+                    if is_server and self._block_ascii:
+                        l.warning("Incoming ASCII connection blocked")
+                        break
+
                     if is_ascii is None:
                         l.info('Detected ASCII connection')
                         is_ascii = True

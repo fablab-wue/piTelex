@@ -59,6 +59,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self._number = None
             self._tns_pin = None
 
+        self._block_ascii = params.get('block_ascii', True)
+
         self.clients = {}
 
         self.SERVER = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
