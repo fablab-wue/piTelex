@@ -7,7 +7,7 @@
 * commit: https://github.com/fablab-wue/piTelex/commit/6c4ae196d4bc84fbcb5309b17ef936fdc4fdd2d3
    
 * Description:
-Added config file parameter `block_ascii` (boolean, default false) to avoid port scans and such being printed on the TTY, if set to true
+Added config file parameter `block_ascii` (boolean, default false) to avoid port scans and such being printed at the TTY, if set to true
 
 
 
@@ -33,7 +33,7 @@ Added config file parameter `block_ascii` (boolean, default false) to avoid port
 * commit: https://github.com/fablab-wue/piTelex/commit/6d4ae6055ebb5265e21930b720c472887bea0845
 * Description:
  
-   Added "hand type simulator", i.e insert random pauses between "keystrokes" if enabled.
+   Added "hand type simulator", i.e insert random delays between "keystrokes" if enabled.
    Enable/disable in Screen via `<ESC>T`. When enabled, TTY then prints "lorem ipsum" blind text.
 
 ### Added modes "AGT-TWM", "AGT-TW39"
