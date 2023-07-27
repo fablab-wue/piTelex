@@ -34,7 +34,7 @@
     # standard, minimal example for a teletype with FSG
     "RPiTTY_typical": {
       "type": "RPiTTY",
-      "enable": false,
+      "enable": true,
       "mode": "TW39",
       "pin_txd": 17,
       "pin_rxd": 27,
@@ -50,7 +50,7 @@
     # and show status with LEDs
     "RPiCtrl": {
       "type": "RPiCtrl",
-      "enable": true,
+      "enable": false,
 
       # separate number switch - see also module RPiTTY
       "pin_number_switch": 0,
@@ -111,15 +111,15 @@
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "/home/pi/piTelex/data.log"
+      "filename": "./piTelex.log"
     },
 
     ###########################################################################
 
     "archive": {
       "type": "archive",
-      "enable": true,
-      "path": "/home/pi/piTelex/archive/"
+      "enable": false,
+      "path": "./archive/"
     }
   
   },
@@ -130,5 +130,5 @@
   "wru_replace_always": false,
   "dial_timeout": 0,
   "continue_with_no_printer": false,
-  "errorlog_path": "/home/pi/piTelex/errorlog/"
+  "errorlog_path": "./"
 }
