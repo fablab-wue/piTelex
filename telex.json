@@ -77,8 +77,8 @@
       "pin_LED_WB_A": 0,
 
       # Duo-LEDs with common cathodes for status info
-      "pin_LED_status_R": 23,
-      "pin_LED_status_G": 24,
+      "pin_LED_status_R": 0,  # usually  23,
+      "pin_LED_status_G": 0,  # usually  24,
 
       # power saving
       "pin_power": 0,              # GPIO on SEU-M: 9
@@ -102,9 +102,10 @@
       # - you've got your number approved by i-Telex administrators, and
       # - you've chosen dynamic IP update and told i-Telex administrators so, and
       # - you've set your TNS pin properly.
-      "tns-dynip-number": 0,
-      "tns-pin": 12345
+      "tns_dynip_number": 0,
+      "tns_pin": 12345
     },
+
 
     ###########################################################################
 
