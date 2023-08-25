@@ -9,7 +9,9 @@
 # enable the TTY module(s) that correspond to your TTY type.
 # Disable ("enable": false,) or optionally delete unused modules or entries.
 #
-# For detailed configuration infos see the wiki pages.
+#########################################################
+# For detailed configuration infos see the wiki pages !!!
+#########################################################
 #
 # Additional modules are described in the telex_Example_XXX.json files
 #
@@ -98,7 +100,8 @@
       # updates with i-Telex TNS (Teilnehmerserver, Subscriber Server).
       #
       # Leave at 0 if you've chosen a static TNS entry!
-      # Change to something nonzero if and only if
+      #
+      # Change to the calling number of your i-telex device if and only if
       # - you've got your number approved by i-Telex administrators, and
       # - you've chosen dynamic IP update and told i-Telex administrators so, and
       # - you've set your TNS pin properly.
