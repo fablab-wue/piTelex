@@ -46,3 +46,11 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
 * Description:
 
   Introduce more specific modes `AGT-TW39`, `AGT-TWM` (module RPiTTY) for use with Ö-AGT's (will probably replace general mode `AGT` in a later version)
+
+### Added LED_Z
+
+* Module: RPiCtrl
+* Description:
+
+  Added config parameter "pin_LED_Z" ; defines a connection pin for a LED which is lit in "Z" and "ZZ" mode.
+  TODO: Tweak code so that LED is switched off after finishing telex.py on error or normally.
