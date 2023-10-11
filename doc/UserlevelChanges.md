@@ -7,7 +7,7 @@
 * commit: https://github.com/fablab-wue/piTelex/commit/6c4ae196d4bc84fbcb5309b17ef936fdc4fdd2d3
    
 * Description:
-Added config file parameter `block_ascii` (boolean, default false) to avoid port scans and such being printed at the TTY, if set to true
+Added config file parameter `block_ascii` (boolean, default true) to avoid port scans and such being printed at the TTY, if set to true
 Hint: On an incoming ASCII-connection, the teleprinter may or may not be switched on for a few seconds, but printing is suppressed.
 
 
