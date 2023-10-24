@@ -235,7 +235,7 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._LED_WB_A.on()
             if self._LED_LT and self._LT_pressed:
                 self._LED_LT.on()
-            self._LT_pressed = False
+                self._LT_pressed = False
             if self._number_switch:
                 self._number_switch.enable(False)
 
