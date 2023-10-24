@@ -58,6 +58,8 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
 
+        self._pin_txd = params.get('pin_txd', 0)
+
         self._delay_AT = params.get('delay_AT', 0)  # delay between pressing AT and entering WB
         self._delay_ST = params.get('delay_ST', 0)  # delay between pressing ST and leaving A
 
@@ -127,9 +129,11 @@ class TelexRPiCtrl(txBase.TelexBase):
 
         if self._pin_power:
             pi.set_mode(self._pin_power, pigpio.OUTPUT)
-            pi.write(self._pin_power, self._inv_power)
+            pi.write(self._pin_power, self._inv_power) # switch mains off
+            pi.set_mode(self._pin_txd, pigpio.OUTPUT)
+            pi.write(self._pin_txd, 0)                 # switch loop current off
 
-        self._set_mode('Z')
+        self._set_mode('Z')                            # Z = sleeping
 
 
         # debug
@@ -144,8 +148,25 @@ class TelexRPiCtrl(txBase.TelexBase):
         global pi
 
         if pi:
+            pi.write(self._pin_txd,0)
             if self._LED_Z:
                 self._LED_Z.off()
+            if self._LED_A:
+                self._LED_A.off()
+            if self._LED_WB:
+                self._LED_WB.off()
+            if self._LED_WB_A:
+                self._LED_WB_A.off()
+            if self._LED_LT:
+                self._LED_LT.off()
+            if self._LED_status_G:
+                self._LED_status_G.off()
+            if self._LED_status_R:
+                self._LED_status_R.off()
+            if(self._pin_relay):
+                pi.write(self._pin_relay,0)
+            if(self._pin_power):
+                pi.write(self._pin_power,0)
             del pi
             pi = None
             pi_exit()
@@ -214,7 +235,7 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._LED_WB_A.on()
             if self._LED_LT and self._LT_pressed:
                 self._LED_LT.on()
-                self._LT_pressed = False
+            self._LT_pressed = False
             if self._number_switch:
                 self._number_switch.enable(False)
 
@@ -363,6 +384,7 @@ class TelexRPiCtrl(txBase.TelexBase):
         if self._pin_power:
             l.debug('enable_power {}'.format(enable))
             pi.write(self._pin_power, enable != self._inv_power)   # pos polarity
+            pi.write(self._pin_txd, enable)                        # loop current on/off
 
 #######
 
