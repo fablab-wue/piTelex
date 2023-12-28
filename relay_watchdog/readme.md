@@ -7,6 +7,28 @@ It listens on a socket (by default localhost port 22000) and when a client conne
 
 If you connect a relay to the GPI port, you can use it to programatically switch on your telex when there is data to receive.
 
+You can switch on the telex with anything that connects to a TCP port, e.g.:
+```
+nc localhost 22000
+curl http://localhost:22000
+cat /dev/tcp/127.0.0.1/22000 # If your OS supports it
+```
+
+Or a simple python program
+```python
+import socket
+
+host = socket.gethostname()
+port = 22000                   # The same port as used by the server
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+s.sendall(b'Hello, world')
+data = s.recv(1024)
+s.close()
+print('Received', repr(data))
+
+```
+
 Usage
 -----
 ```
