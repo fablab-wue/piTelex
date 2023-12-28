@@ -110,6 +110,11 @@ def load():
         dest="twitter", default='', nargs='?', metavar='CONSUMER_KEY:CONSUMER_SECRET:ACCESS_TOKEN:ACCESS_TOKEN_SECRET:BEARER_TOKEN:USERNAME',
         help="V2 Twitter client")
 
+    gg.add_argument("--socket",
+        dest="socket", default='', nargs='?', metavar='HOST:PORT',
+        help="Socket client")
+
+
     gg.add_argument("-C", "--IRC",
         dest="irc", default='', metavar="CHANNEL",
         help="IRC client")
@@ -132,7 +137,6 @@ def load():
     gt.add_argument("-S", "--shellcmd",
         dest="shellcmd", default=False, action="store_true",
         help="Execute shell command of ESC sequ.")
-
 
     gd = parser.add_argument_group("Debug")
 
@@ -297,6 +301,10 @@ def load():
     if ARGS.twitter:
         twit_args = ARGS.twitter.split(":")
         devices['twitterV2'] = { 'type': 'twitterv2', 'enable'  : True, 'consumer_key' : twit_args[0], 'consumer_secret' : twit_args[1], 'access_token' : twit_args[2], 'access_token_secret' : twit_args[3] , 'bearer_token' : twit_args[4], 'user_mentions':twit_args[5] }
+
+    if ARGS.socket:
+        socket_args = ARGS.socket.split(":")
+        devices['socket'] = { 'type': 'socket', 'enable'  : True, 'host' : socket_args[0], 'port' : int(socket_args[1]) }
 
     if ARGS.irc:
         devices['IRC'] = {'type': 'IRC', 'enable': True, 'channel': ARGS.irc.strip()}

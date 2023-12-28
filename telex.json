@@ -218,6 +218,12 @@
         "TP0": "curl -s -o null http://fs200.fritz.box/cm?cmnd=Power%20Off",
         "x": "explorer"
       }
+    },
+    "socket" : {
+      "type" : "socket",
+      "enable" : false,
+      "host" : "127.0.0.1",
+      "port" : 31337
     }
   },
   "verbose": true,
