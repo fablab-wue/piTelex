@@ -126,7 +126,6 @@ def load():
         dest="rest", default='', metavar="TEMPLATE",
         help="REST client")
 
-
     gt = parser.add_argument_group("Tools / Toys")
 
     gt.add_argument("-Z", "--eliza",
@@ -141,14 +140,10 @@ def load():
         dest="shellcmd", default=False, action="store_true",
         help="Execute shell command of ESC sequ.")
 
-<<<<<<< HEAD
-=======
     gt.add_argument("-K", "--keypad",
         dest="keypad", default=False, action="store_true",
         help="KeyPad shortcuts")
 
-
->>>>>>> 1bf678995e1060d77a289de723abe3a0d6ca15ae
     gd = parser.add_argument_group("Debug")
 
     gd.add_argument("-L", "--log",
