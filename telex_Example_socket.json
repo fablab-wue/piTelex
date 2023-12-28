@@ -1,0 +1,19 @@
+# Configuration example for piTelex
+# 2023-12-28
+# This is only a partial example. This can be copied in the main configuration file "telex.json"
+#
+{
+    "devices": {
+        # ...
+
+        "socket": {
+            "type": "socket",
+            "enable": true,
+            "host" : "127.0.0.1",
+            "port" : 31337
+          }
+        },
+
+        # ...
+    }
+}
