@@ -199,7 +199,6 @@ class Twitter_Client():
         self.running = False
         self.thread.join()
         #self.api.close()
-
         del self
 
    def get_msg(self):
@@ -217,7 +216,6 @@ class Twitter_Client():
                self.stream.filter(follow=self.idl, track=self.track)
                time.sleep(10000000)
              else:
-               LOG("EEP", 1)
                stream_events = Twitter_Client.ActivityStreamEvent(self, self.url)
                stream_events._server.run(debug=False, ssl_context='adhoc', host=self.host, port = self.port)
            except tweepy.error.TweepError as e:

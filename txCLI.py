@@ -54,14 +54,14 @@ class CLI():
         elif cmd in ['KG', 'WRU']:
             ans = self.params.get('wru_id', 'NO')
 
-        elif cmd in ['DEBUG']:
-            ans = str(self.params.get('debug', 'NO'))
+        #elif cmd in ['DEBUG']:
+        #    ans = str(self.params.get('debug', 'NO'))
 
-        elif cmd.startswith('DEBUG='):
-            level = int(cmd[6:])
-            self.params['debug'] = level
-            l.setLevel(level)
-            ans = ' '
+        #elif cmd.startswith('DEBUG='):
+        #    level = int(cmd[6:])
+        #    self.params['debug'] = level
+        #    l.setLevel(level)
+        #    ans = ' '
 
         elif cmd == 'PING':
             ans = 'PONG'

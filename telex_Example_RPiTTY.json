@@ -1,0 +1,187 @@
+# Configuration examples for piTelex
+# 2023-03-15
+# This is only a partial example. This can be copied in the main configuration file "telex.json"
+#
+{
+    "devices": {
+        # ...
+
+        # Module type "RPiTTY"
+        # requirements: pigpio (deamon and lib)
+        # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi
+        
+        # FULL EXAMPLE
+        "RPiTTY_full_example": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "TW39",              # "TW39", "TW39H", "TWM", "V10", "AGT-TW39", "AGT-TWM"
+          "pin_txd": 17,
+          "pin_rxd": 27,               # RPi1 revision 1: 21   all other RPi: 27
+          "pin_relay": 22,
+          "inv_relay": false,
+          "pin_power": 0,
+          "inv_power": false,
+          "pin_online": 0,
+          "pin_dir": 0,
+          "pin_number_switch": 6,      # classic layput: 6   new layout: 10
+          "inv_number_switch": false,
+          "baudrate": 50,
+          "coding": 0,                 # 0=ITA2
+          "loopback": true,
+          "use_observe_line": false,
+          "pin_observe_line": 6,       # normally same as "pin_number_switch"
+          "inv_observe_line": false,
+          "nZZ_observe_line": false,
+          "WB_pulse_length": 60        # ms
+        },
+    
+        # standard, minimal example for a teletype with FSG
+        "RPiTTY_typical": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "TW39",
+          "pin_txd": 17,
+          "pin_rxd": 27,
+          "pin_relay": 22,
+          "pin_number_switch": 6,      # classic layput: 6   new layout: 10
+          "baudrate": 50,
+          "loopback": true
+        },
+    
+        # standard example for a teletype without FSG. Dialing by keyboard
+        # Note: Use user buttons in module 'RPiCtrl' for AT-button and ST-button (or 1T-button)
+        "RPiTTY_noFSG": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "TWM",
+          "pin_txd": 17,
+          "pin_rxd": 27,
+          "pin_relay": 22,
+          "inv_relay": false,
+          "pin_online": 0,
+          "pin_dir": 0,
+          "pin_number_switch": 0,
+          "baudrate": 50,
+          "coding": 0,                 # 0=ITA2
+          "use_observe_line": false,
+          "loopback": true
+        },
+    
+        # TeKaDe FS200 or FS220 over V.10 interface (old pinout)
+        "RPiTTY_FS200_V10_old": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "V10",
+          "pin_txd": 17,
+          "pin_rxd": 27,
+          "pin_relay": 0,
+          "inv_relay": true,
+          "pin_power": 0,
+          "inv_power": false,
+          "use_observe_line": true,
+          "pin_observe_line": 10,
+          "inv_observe_line": true,
+          "baudrate": 200,             # 50, 75, 100, 200
+          "coding": 0,                 # 0=ITA2
+          "loopback": false
+        },
+    
+        # TeKaDe FS200 or FS220 over V.10 interface (new pinout)
+        "RPiTTY_FS200_V10_new": {
+          "type": "RPiTTY",
+          "enable": true,
+          "mode": "V10",
+          "pin_txd": 27,               # Pin13
+          "pin_rxd": 17,               # Pin11
+          "pin_relay": 0,
+          "inv_relay": true,
+          "pin_power": 9,              # Pin21
+          "inv_power": false,
+          "use_observe_line": true,
+          "pin_observe_line": 22,      # Pin15
+          "inv_observe_line": true,
+          "nZZ_observe_line": false,   # observe LIN-button in deep sleep mode. Should be 'true' if SSR is used
+          "baudrate": 200,             # 50, 75, 100, 200
+          "coding": 0,                 # 0=ITA2
+          "loopback": false
+        },
+    
+        # SEU-M - TW39-teletype with FSG using an Austrian AGT (OeAGT) with SEU-M-card as controller
+        # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
+        "RPiTTY_SEU-M_Oe_AGT-TW39": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "AGT-TW39",
+          "pin_txd": 17,
+          "pin_rxd": 27,
+          "pin_relay": 22,
+          "inv_relay": true,
+          "pin_power": 9,
+          "inv_power": false,
+          "pin_number_switch": 10,
+          "inv_number_switch": true,
+          "WB_pulse_length": 60,
+          "baudrate": 50,
+          "coding": 0,                 # 0=ITA2
+          "loopback": false
+        },
+    
+        # SEU-M - TW39-teletype without FSG using an Austrian AGT (OeAGT) with SEU-M-card as controller
+        # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
+        # Note: Use user buttons in module 'RPiCtrl' for AT-button and ST-button (or 1T-button)
+        # e.g. TeKaDe FS200 or FS220
+        "RPiTTY_SEU-M_Oe_AGT-TWM": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "AGT-TWM",
+          "pin_txd": 17,
+          "pin_rxd": 27,
+          "pin_relay": 22,
+          "inv_relay": true,
+          "pin_power": 9,
+          "inv_power": false,
+          "baudrate": 50,
+          "coding": 0,                 # 0=ITA2
+          "use_observe_line": false,   # optional!
+          "loopback": false
+        },
+    
+        # SEU-M - Lorenz LO2000, LO2001 or LO3000 with a SEU-M-card INSIDE the teletype as controller
+        # Note: SEU-M-card (with aRPi) is a replacement of a SEU-B ord SES-B-card
+        "RPiTTY_SEU-M_LO2000": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "TWM",
+          "pin_txd": 17,
+          "pin_rxd": 27,
+          "pin_relay": 22,
+          "inv_relay": false,
+          "pin_power": 9,
+          "inv_power": false,
+          "nZZ_observe_line": true,
+          "baudrate": 50,              # 50, 75, 100
+          "coding": 0,                 # 0=ITA2
+          "loopback": false
+        },
+    
+        # EXPERIMENTAL - use H-bridge controlled by bidirectional difference of pin_TXD and pin_relay
+        # the H-bridge replaces the mechanical relay and the power-transistor with opto-coupler
+        "RPiTTY_H-bridge": {
+          "type": "RPiTTY",
+          "enable": false,
+          "mode": "TW39H",
+          "pin_txd": 27,
+          "pin_rxd": 17,
+          "pin_relay": 25,
+          "inv_relay": true,
+          "pin_power": 9,
+          "inv_power": false,
+          "pin_number_switch": 22,
+          "baudrate": 50,
+          "coding": 0,                 # 0=ITA2
+          "loopback": true
+        },
+
+        # ...
+    }
+}

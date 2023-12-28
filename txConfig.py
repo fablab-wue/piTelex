@@ -114,6 +114,9 @@ def load():
         dest="socket", default='', nargs='?', metavar='HOST:PORT',
         help="Socket client")
 
+    gg.add_argument("-S", "--rss",
+        dest="rss", default='', nargs='?', metavar='url',
+        help="RSS feed client (experimental)")
 
     gg.add_argument("-C", "--IRC",
         dest="irc", default='', metavar="CHANNEL",
@@ -138,6 +141,14 @@ def load():
         dest="shellcmd", default=False, action="store_true",
         help="Execute shell command of ESC sequ.")
 
+<<<<<<< HEAD
+=======
+    gt.add_argument("-K", "--keypad",
+        dest="keypad", default=False, action="store_true",
+        help="KeyPad shortcuts")
+
+
+>>>>>>> 1bf678995e1060d77a289de723abe3a0d6ca15ae
     gd = parser.add_argument_group("Debug")
 
     gd.add_argument("-L", "--log",
@@ -155,28 +166,51 @@ def load():
 
     parser.add_argument("-k", "--id", "--KG",
         dest="wru_id", default='', metavar="ID",
-        help="Set the ID of the telex device. Leave empty to use the hardware ID")
+        help="Enable software answerback unit and set the telex device ID. If "
+                        "enabled and a WRU is received, the software answerback "
+                        "will be triggered after 2 s if no hardware answerback "
+                        "unit replies (fallback mode). Leave empty to use "
+                        "hardware answerback unit only")
 
-    parser.add_argument("--id-fallback",
-        dest="wru_fallback", default=False, action="store_true",
-        help="Enable software ID fallback mode: If printer isn't starting up on command, enable software ID")
+    parser.add_argument("--id-replace-always",
+        dest="wru_replace_always", default=False, action="store_true",
+        help="Enable if your teleprinter has no answerback unit: On receipt of "
+                        "WRU, the configured software ID will be sent "
+                        "immediately")
+
+    parser.add_argument("--invert_dtr",
+        dest="invert_dtr", default=False, action="store_true",
+        help="Invert DTR")
+
+    parser.add_argument("-t", "--track", nargs='*',
+        dest="track", metavar="USERS", help="User list")
+
+    parser.add_argument("-f", "--follow", nargs='*',
+        dest="follow", metavar="USER", help="User list")
+
+    parser.add_argument("-u", "--url", nargs='?',
+        dest="url", metavar="URL", help="URL for twitivity")
+
+    parser.add_argument("-h", "--host", nargs='?',
+        dest="host", metavar="HOST", help="Host for twitivity")
+
+    parser.add_argument("-p", "--port", nargs='?',
+        dest="port", metavar="PORT", help="Port for twitivity")
+
+    parser.add_argument("-l", "--languages", nargs='*',
+        dest="languages", metavar="LANGUAGE", help="Language list")
 
     parser.add_argument("--errorlog-path",
-        dest="errorlog_path", default=False, action="store_true",
+        dest="errorlog_path", default="", metavar="ERRLOGPATH",
         help="Path of error log; relative paths are referred to where this program is being executed")
 
-    #parser.add_argument("-m", "--mode",
-    #    dest="mode", default='', metavar="MODE",
-    #    help="Set the mode of the Telex Device. e.g. TW39, TWM, V.10")
-
-    parser.add_argument("-q", "--quiet",
-        dest="verbose", default=True, action="store_false",
-        help="don't print status messages to stdout")
+    parser.add_argument("--errorlog-level",
+        dest="errorlog_level", default="", metavar="ERRLOGLEVEL",
+        help="Verbosity of error log; see python log levels")
 
     parser.add_argument("-s", "--save",
         dest="save", default=False, action="store_true",
         help="Save command line args to config file (telex.json)")
-
 
     ARGS = parser.parse_args()
 
@@ -224,13 +258,13 @@ def load():
         devices['CH340'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340.strip(), 'mode': '', 'baudrate': 50, 'loopback': True}
 
     if ARGS.CH340_TW39:
-        devices['CH340_TW39'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TW39.strip(), 'mode': 'TW39', 'baudrate': 50, 'loopback': True}
+        devices['CH340_TW39'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TW39.strip(), 'mode': 'TW39', 'baudrate': 50, 'loopback': True, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.CH340_TWM:
-        devices['CH340_TWM'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TWM.strip(), 'mode': 'TWM', 'baudrate': 50, 'loopback': True}
+        devices['CH340_TWM'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_TWM.strip(), 'mode': 'TWM', 'baudrate': 50, 'loopback': True, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.CH340_V10:
-        devices['CH340_V10'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_V10.strip(), 'mode': 'V10', 'baudrate': 50, 'loopback': False}
+        devices['CH340_V10'] = {'type': 'CH340TTY', 'enable': True, 'portname': ARGS.CH340_V10.strip(), 'mode': 'V10', 'baudrate': 50, 'loopback': False, 'inverse_dtr': ARGS.invert_dtr}
 
     if ARGS.RPiTTY:
         devices['RPiTTY'] = {
@@ -247,18 +281,19 @@ def load():
             'baudrate': 50,
             'coding': 0,
             'loopback': True,
-            'observe_rxd': True,
             }
 
     if ARGS.RPiCtrl:
         devices['RPiCtrl'] = {
             'type': 'RPiCtrl',
             'enable': True,
-            'pin_switch_num': 0,
+            'pin_number_switch': 0,
+            'inv_number_switch': 0,
             'pin_button_1T': 0,
             'pin_button_AT': 0,
             'pin_button_ST': 0,
             'pin_button_LT': 0,
+            'pin_button_PT': 0,
             'pin_button_U1': 0,
             'pin_button_U2': 0,
             'pin_button_U3': 0,
@@ -268,6 +303,11 @@ def load():
             'pin_LED_WB_A': 9,
             'pin_LED_status_R': 23,
             'pin_LED_status_G': 24,
+            'pin_LED_LT': 0,
+            'pin_power': 0,
+            'inv_power': 0,
+            'delay_AT': 0,
+            'delay_ST': 0,
             }
 
     if ARGS.ED1000:
@@ -286,7 +326,7 @@ def load():
             }
 
     if ARGS.itelex >= 0:
-        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'tns-dynip-number': 0, 'tns-pin': 12345}
+        devices['i-Telex'] = {'type': 'i-Telex', 'enable': True, 'port': ARGS.itelex, 'tns_dynip_number': 0, 'tns_pin': 12345}
 
     if ARGS.news:
         devices['news'] = {'type': 'news', 'enable': True, 'newspath': ARGS.news.strip()}
@@ -301,6 +341,9 @@ def load():
     if ARGS.twitter:
         twit_args = ARGS.twitter.split(":")
         devices['twitterV2'] = { 'type': 'twitterv2', 'enable'  : True, 'consumer_key' : twit_args[0], 'consumer_secret' : twit_args[1], 'access_token' : twit_args[2], 'access_token_secret' : twit_args[3] , 'bearer_token' : twit_args[4], 'user_mentions':twit_args[5] }
+    
+    if ARGS.rss:
+        devices['rss'] = {'type': "rss", 'urls' : [ ARGS.rss ], 'format': "{title}\n\r{description}\r\n{pubDate}\r\n{guid}\r\r---\r\n}"}
 
     if ARGS.socket:
         socket_args = ARGS.socket.split(":")
@@ -321,27 +364,39 @@ def load():
     if ARGS.shellcmd:
         devices['shellcmd'] = {'type': 'shellcmd', 'enable': True, 'LUT': { 'X': 'xxx'} }
 
+    if ARGS.keypad:
+        devices['KeyPad1'] = {
+            'type': 'KeyPad', 
+            'enable': True, 
+            'device_name': 'KEYPAD', 
+            'KEYS': { 
+                'KEY_KP1': 'RY'*30, 
+                'KEY_KPENTER': '\\_', 
+                'KEY_KPPLUS': '{A}', 
+                'KEY_KPMINUS': '{Z}',
+                }
+            }
+
     if ARGS.log:
         devices['log'] = {'type': 'log', 'enable': True, 'filename': ARGS.log.strip()}
 
-
-    CFG['verbose'] = ARGS.verbose
 
     wru_id = ARGS.wru_id.strip().upper()
     if wru_id:
         CFG['wru_id'] = wru_id
 
-    wru_fallback = ARGS.wru_fallback
-    if wru_fallback:
-        CFG['wru_fallback'] = ARGS.wru_fallback
+    wru_replace_always = ARGS.wru_replace_always
+    if wru_replace_always:
+        CFG['wru_replace_always'] = wru_replace_always
 
-    errorlog_path = ARGS.errorlog_path
+    errorlog_path = ARGS.errorlog_path.strip()
     if errorlog_path:
-        CFG['errorlog_path'] = ARGS.errorlog_path
+        CFG['errorlog_path'] = errorlog_path
 
-    #mode = ARGS.mode.strip()
-    #if mode:
-    #    CFG['mode'] = mode
+    errorlog_level = ARGS.errorlog_level.strip().upper()
+    if errorlog_level:
+        CFG['errorlog_level'] = errorlog_level
+
 
     if ARGS.debug:
         CFG['debug'] = ARGS.debug

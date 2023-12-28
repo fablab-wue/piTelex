@@ -19,8 +19,8 @@ import logging
 l = logging.getLogger("piTelex." + __name__)
 import logging.handlers
 import traceback
-import log
 
+#import log
 #def LOG(text:str, level:int=3):
 #    log.LOG('\033[0;30;47m '+text+' \033[0m', level)
 
@@ -36,9 +36,6 @@ except NameError:
     # If __file__ is not defined, fall back to working directory; should be
     # close enough.
     OUR_PATH = os.getcwd()
-# Default log level for all modules
-ERRLOG_LEVEL = logging.INFO
-#ERRLOG_LEVEL = logging.DEBUG
 
 #######
 # -----
@@ -90,7 +87,7 @@ def find_rev() -> str:
     result = subprocess.run(["git", "log", "--oneline", "-1"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
     return result.stdout.decode("utf-8", errors="replace").strip()
 
-def init_error_log(log_path):
+def init_error_log(log_path,log_lvl):
     """
     Initialise error logging, i.e. create the root logger. It saves all logged
     information in a monthly rotating file inside the path given. If the latter
@@ -110,7 +107,8 @@ def init_error_log(log_path):
     root logger ("piTelex").
     """
     logger = logging.getLogger("piTelex")
-    logger.setLevel(ERRLOG_LEVEL) # Log level of this root logger
+    logger.setLevel(log_lvl) # Log level of this root logger
+    
     if not os.path.isabs(log_path):
         log_path = os.path.join(OUR_PATH, log_path)
     try:
@@ -132,7 +130,7 @@ def init_error_log(log_path):
     try:
         rev = find_rev()
     except:
-        logger.info("===== piTelex (no git revision ID found)")
+        pass
     else:
         logger.info("===== piTelex rev " + rev)
 
@@ -227,6 +225,11 @@ def init():
             socket = txDevSocket.TelexSocket(**dev_param)
             DEVICES.append(socket)        
 
+        elif dev_param['type'] == 'rss' :
+            import txDevRSS
+            rss = txDevRSS.TelexRSS(**dev_param)
+            DEVICES.append(rss)
+
         elif dev_param['type'] == 'IRC':
             import txDevIRC
             news = txDevIRC.TelexIRC(**dev_param)
@@ -256,6 +259,11 @@ def init():
             import txDevLog
             log = txDevLog.TelexLog(**dev_param)
             DEVICES.insert(0,log)
+
+        elif dev_param['type'] == 'KeyPad':
+            import txDevKeyPad
+            keypad = txDevKeyPad.TelexKeyPad(**dev_param)
+            DEVICES.append(keypad)
 
         else:
             l.warning("Unknown module type in configuration, section {!r}: {!r}".format(dev_name, dev_param['type']))
@@ -288,14 +296,24 @@ def process_data():
     new_data = False
 
     for in_device in DEVICES:
-        c = in_device.read()
+        try:
+            c = in_device.read()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.read(): {!r}".format(in_device.id, e))
         if c:
             new_data = True
             l.debug("read {!r} from {!r}".format(c, in_device))
             for out_device in DEVICES:
                 if out_device != in_device:
                     l.debug("writing {!r} to {!r}".format(c, out_device))
-                    ret = out_device.write(c, in_device.id)
+                    try:
+                        ret = out_device.write(c, in_device.id)
+                    except (KeyboardInterrupt, SystemExit):
+                        raise
+                    except Exception as e:
+                        l.warning("Uncaught Exception in {}.write({!r}), {!r}: {!r}".format(out_device.id, c, in_device.id, e))
                     if ret:
                         l.debug("writing returned {!r}".format(ret))
                         break   # stop writing to other devices (discard data)
@@ -306,27 +324,53 @@ def process_data():
 
 def process_idle():
     for device in DEVICES:
-        device.idle()
+        try:
+            device.idle()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.idle(): {!r}".format(device.id, e))
 
 # -----
 
 def process_idle20Hz():
     for device in DEVICES:
-        device.idle20Hz()
+        try:
+            device.idle20Hz()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.idle20Hz(): {!r}".format(device.id, e))
 
 # -----
 
 def process_idle2Hz():
     for device in DEVICES:
-        device.idle2Hz()
+        try:
+            device.idle2Hz()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            l.warning("Uncaught Exception in {}.idle2Hz(): {!r}".format(device.id, e))
 
 # =====
 
 def main():
     txConfig.load()
 
+    LOGLVL = { 'NOTSET' : 0 , 'DEBUG' : 10 , 'INFO' : 20 , 'WARN' : 30 , 'ERROR' : 40 , 'CRITICAL' : 50 }
     errorlog_path = txConfig.CFG.get('errorlog_path', 'error_log')
-    init_error_log(errorlog_path)
+    errorlog_level = txConfig.CFG.get('errorlog_level', 'INFO')
+    errorlog_level = errorlog_level.strip()
+    errorlog_level = errorlog_level.upper()
+
+    if errorlog_level in LOGLVL :
+        loglvl = LOGLVL[errorlog_level]
+    else:
+        print('\n unknown loglevel: ',errorlog_level,', set to INFO.')       
+        loglvl = logging.INFO
+
+    init_error_log(errorlog_path,loglvl)
 
     #test()   # for debug only
     init()
@@ -364,9 +408,6 @@ def main():
 
     except (KeyboardInterrupt, SystemExit):
         l.info('Exit by Keyboard')
-
-    except:
-        raise
 
     finally:
         exit()

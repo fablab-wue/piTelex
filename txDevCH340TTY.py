@@ -10,7 +10,7 @@ __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
 __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "0.0.2"
 
 import serial
 import time
@@ -20,7 +20,6 @@ l = logging.getLogger("piTelex." + __name__)
 
 import txCode
 import txBase
-import log
 
 #def LOG(text:str, level:int=3):
 #    #log.LOG('\033[30;43m<'+text+'>\033[0m', level)
@@ -40,6 +39,7 @@ class TelexCH340TTY(txBase.TelexBase):
         stopbits = params.get('stopbits', serial.STOPBITS_ONE_POINT_FIVE)
         coding = params.get('coding', 0)
         loopback = params.get('loopback', None)
+        inverse_dtr = params.get('inverse_dtr', False)
         self._local_echo = params.get('loc_echo', False)
 
         self._rx_buffer = []
@@ -51,6 +51,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._cts_stable = True   # rxd=Low
         self._cts_counter = 0
         self._time_squelch = 0
+        self._time_tx_lock = 0
         self._is_enabled = False
         self._is_online = False
         self._last_out_waiting = 0
@@ -65,7 +66,7 @@ class TelexCH340TTY(txBase.TelexBase):
         # init serial
         self._tty = serial.Serial(portname, write_timeout=0)
 
-        if baudrate not in self._tty.BAUDRATES:
+        if baudrate not in self._tty.BAUDRATES and baudrate not in (45, 100):
             raise Exception('Baudrate not supported')
         if bytesize not in self._tty.BYTESIZES:
             raise Exception('Databits not supported')
@@ -76,6 +77,7 @@ class TelexCH340TTY(txBase.TelexBase):
         self._tty.bytesize = bytesize
         self._tty.stopbits = stopbits
         self._baudrate = baudrate
+        self._inverse_dtr = inverse_dtr
 
         # init codec
         #character_duration = (bytesize + 1.0 + stopbits) / baudrate
@@ -110,6 +112,7 @@ class TelexCH340TTY(txBase.TelexBase):
         if mode.find('TWM') >= 0:
             self._loopback = True
             self._use_cts = True
+            self._use_pulse_dial = False
             self._use_squelch = True
             self._use_dedicated_line = False
 
@@ -118,6 +121,14 @@ class TelexCH340TTY(txBase.TelexBase):
             self._inverse_cts = True
             #self._inverse_dtr = True
             self._use_dedicated_line = False
+
+        if mode.find('EDS') >= 0:
+            self._loopback = False
+            self._use_cts = True
+            self._inverse_dtr = True
+            self._use_squelch = True
+            self._use_dedicated_line = False
+
 
     # -----
 
@@ -184,10 +195,20 @@ class TelexCH340TTY(txBase.TelexBase):
     # =====
 
     def idle(self):
-        if not self._use_squelch or time.monotonic() >= self._time_squelch:
+        if (not self._use_squelch) or time.monotonic() >= max(self._time_squelch, self._time_tx_lock):
             if self._tx_buffer:
-                #a = self._tx_buffer.pop(0)
-                aa = ''.join(self._tx_buffer)
+                aa = []
+                a = None
+                while a != '@' and self._tx_buffer:
+                    a = self._tx_buffer.pop(0)
+                    aa.append(a)
+                    if a == '@':
+                        # WRU received: lock sending until after 21 character's
+                        # time has passed. This may need to be raised due to
+                        # the CH340's substantial write buffer.
+                        self._time_tx_lock = time.monotonic() + 7.5*21/self._baudrate
+
+                aa = ''.join(aa)
                 self._tx_buffer = []
                 bb = self._mc.encodeA2BM(aa)
                 if bb:
@@ -248,6 +269,8 @@ class TelexCH340TTY(txBase.TelexBase):
             self._rx_buffer.append('\x1bAA')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
+        if 0:   # experimental
+            self._tty.break_condition = not enable
         self._mc.reset()
         if self._use_squelch:
             self._set_time_squelch(0.5)

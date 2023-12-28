@@ -35,18 +35,23 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
 
         self._port = params.get('port', 2342)
 
-        self._number = int(params.get('tns-dynip-number', 0))
+        self._number = int(params.get('tns_dynip_number', 0))
         if not self._number:
-            self._number = int(params.get('number', 0))
+            self._number = int(params.get('tns-dynip-number', 0))
             if self._number:
-                l.warning("Configuration option \"number\" is deprecated and will be removed in a future version. Use \"tns-dynip-number\" instead.")
-        if self._number <= 0 or self._number > 0xffffffff:
-            # Own number no valid integer inside 32 bit; client_update requires
-            # this though, so ignore
+                l.warning("Configuration option \"tns-dynip-number\" is deprecated and will be removed in a future version. Use \"tns_dynip_number\" instead.")
+        if self._number < 10000 or self._number > 0xffffffff:
+            # Own number must be a valid 32-bit integer with at least 5 digits.
+            # client_update requires this, so ignore faulty number
             l.warning("Invalid own number, ignored: " + repr(self._number))
             self._number = None
 
-        self._tns_pin = params.get('tns-pin', None)
+        self._tns_pin = params.get('tns_pin', None)
+        if not self._tns_pin:
+            self._tns_pin = params.get('tns-pin', None)
+            if self._tns_pin:
+                l.warning("Configuration option \"tns-pin\" is deprecated and will be removed in a future version. Use \"tns_pin\" instead.")
+
         if self._tns_pin < 0 or self._tns_pin > 0xffff:
             # TNS pin no valid integer inside 16 bit; client_update requires
             # this though, so ignore
@@ -107,15 +112,16 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
     # =====
 
     def read(self) -> str:
-        if self._rx_buffer:
-            if ST.DISCON < self._connected <= ST.CON_TP_RUN:
-                # Welcome banner hasn't been sent yet. Pop only non-printable
-                # items.
-                for nr, item in enumerate(self._rx_buffer):
-                    if item.startswith('\x1b'):
-                        return self._rx_buffer.pop(nr)
-            else:
-                return self._rx_buffer.pop(0)
+        with self._rx_lock:
+            if self._rx_buffer:
+                if ST.DISCON < self._connected <= ST.CON_TP_RUN:
+                    # Welcome banner hasn't been sent yet. Pop only non-printable
+                    # items.
+                    for nr, item in enumerate(self._rx_buffer):
+                        if item.startswith('\x1b'):
+                            return self._rx_buffer.pop(nr)
+                else:
+                    return self._rx_buffer.pop(0)
 
 
     def write(self, a:str, source:str):
@@ -160,14 +166,6 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         while self._run:
             try:
                 client, client_address = self.SERVER.accept()
-            except (socket.timeout, OSError):
-                # Socket timed out: Just check if we're still running
-                # (self._run) and recall accept. This serves to not prevent
-                # shutting down piTelex.
-                #
-                # An OSError can occur on quitting piTelex, if the server
-                # socket is closed before accept returns. Ignore.
-                continue
             except ConnectionAbortedError:
                 # This exception results from ECONNABORT from "under the hood".
                 # It happens if the client resets the connection after it is
@@ -182,6 +180,14 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # The only reasonable thing to do is to ignore it.
                 l.info("Exception caught:", exc_info = sys.exc_info())
                 continue
+            except (socket.timeout, OSError):
+                # Socket timed out: Just check if we're still running
+                # (self._run) and recall accept. This serves to not prevent
+                # shutting down piTelex.
+                #
+                # An OSError can occur on quitting piTelex, if the server
+                # socket is closed before accept returns. Ignore.
+                continue
             # Recognise self-tests early and mute them
             if client_address[0] == self.ip_address:
                 data = client.recv(128)
@@ -191,7 +197,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 client.close()
                 continue
             l.info("%s:%s has connected" % client_address)
-            if self.clients or self.block_inbound:
+            if self.clients or self.block_inbound or self._connected != ST.DISCON:
                 # Our line is occupied (occ), reject client. Little issue here:
                 # ASCII clients get an i-Telex package. But the content should
                 # be readable enough to infer our message.
@@ -214,7 +220,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self.disconnect_client()
 
         s.close()
-        self._rx_buffer.append('\x1bZ')
+        with self._rx_lock: self._rx_buffer.append('\x1bZ')
         self._printer_running = False
         del self.clients[s]
 
@@ -259,7 +265,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         while self._run:
             # Update TNS record on startup to obtain own IP address. After
             # that, update on hourly schedule (roughly).
-            if self.update_tns_record():
+            result = self.update_tns_record()
+            if result is True:
                 self.update_tns_fail = 0
                 # If update succeeded, restart self-test
                 if self.test_connection_fail == 666:
@@ -269,7 +276,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                     l.debug("self-test: TNS update successful")
             else:
                 self.update_tns_fail += 1
-                l.warning("self-test: TNS update failed {}x".format(self.update_tns_fail))
+                l.warning("self-test: TNS update failed {}x ({})".format(self.update_tns_fail, result))
 
             # Startup: As long as own IP address not known, self-test not
             # possible. Retry.
@@ -301,12 +308,13 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # continue self-testing no matter if the TNS update succeeded.
 
                 # Do connection self-test. Count failures, reset on success.
-                if self.test_connection():
+                test_result = self.test_connection()
+                if test_result is True:
                     self.test_connection_fail = 0
                     l.debug("self-test: connection test successful")
                 else:
                     self.test_connection_fail += 1
-                    l.warning("self-test: connection test failed {}x".format(self.test_connection_fail))
+                    l.warning("self-test: connection test failed {}x ({})".format(self.test_connection_fail, test_result))
 
                 if self.test_connection_fail == 6:
                     # After six failed tries, update TNS immediately.
@@ -318,7 +326,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         check our external reachability. Nonstandard LAN routing setups may
         cause this to fail though, even if we're reachable externally.
 
-        return True on success, False otherwise.
+        return True on success, an error string otherwise.
 
         For details, see implementation and i-Telex Communication Specification
         (r874).
@@ -335,12 +343,13 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 s.close()
                 # Wait for confirmation from server thread
                 ret = self.selftest_event.wait(timeout = 1.0)
+                if not ret:
+                    ret = "self-test timeout"
                 self.selftest_event.clear()
                 return ret
 
-        except Exception:
-            l.warning("Exception caught:", exc_info = sys.exc_info())
-            return False
+        except Exception as e:
+            return str(e)
 
     def update_tns_record(self):
         """
@@ -348,7 +357,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         address changes (e.g. because of a forced internet disconnection),
         publish the new address with the TNS.
 
-        return True on success, False otherwise.
+        return True on success, an error string otherwise.
 
         For details, see implementation and i-Telex Communication Specification
         (r874).
@@ -386,9 +395,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 content = data[2:]
                 raise Exception("Unexpected answer to Address_confirm: type 0x{0:x}, content: ".format(msg_type), repr(content))
 
-        except Exception:
-            l.error("Exception caught:", exc_info = sys.exc_info())
-            return False
+        except Exception as e:
+            return str(e)
 
 #######
 

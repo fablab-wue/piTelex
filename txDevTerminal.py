@@ -47,8 +47,8 @@ class TelexTerminal(txBase.TelexBase):
         self._show_info = self.params.get('show_info', False)
         self._send_only = self.params.get('send_only', False)
         self._auto_CRLF = self.params.get('auto_CRLF', 0)
-        self._replace_hex = self.params.get('replace_hex', {})
-        self._replace_text = self.params.get('replace_text', {})
+        self._replace_char = self.params.get('replace_char', {})
+        self._replace_esc = self.params.get('replace_esc', {})
 
         self._rx_buffer = []
 
@@ -77,15 +77,9 @@ class TelexTerminal(txBase.TelexBase):
         if RS485:
             self._tty.rs485_mode = serial.rs485.RS485Settings()
 
-        text = params.get('init_hex', '')
+        text = params.get('init', '')
         if text:
-            b = bytes.fromhex(text)
-            self._tty.write(b)
-
-        text = params.get('init_text', '')
-        if text:
-            b = bytes(text, 'ascii')
-            self._tty.write(b)
+            self._write_hextext(text)
         
         self.char_count = 0
 
@@ -110,7 +104,7 @@ class TelexTerminal(txBase.TelexBase):
                 pass
             else:
                 if self._local_echo:
-                    self._tty.write(b)
+                    self._write_raw(b)
                 a = b.decode('ASCII', errors='ignore')
                 if a:
                     a = a.upper()
@@ -123,46 +117,89 @@ class TelexTerminal(txBase.TelexBase):
     # -----
 
     def write(self, a:str, source:str):
+        if not a:
+            return
+
         if len(a) != 1:
+            a = a[1:]
+            if a in self._replace_esc:
+                self._write_hextext(self._replace_esc.get(a, '?'))
+                return
+
             self._check_commands(a)
-            if (self._show_ctrl and a[1:2].isalpha()) or (self._show_info and not a[1:2].isalpha()):
-                a = '{' + a[1:] + '}'
+            if (self._show_ctrl and a[0].isalpha()) or (self._show_info and not a[0].isalpha()):
+                a = '{' + a + '}'
             else:
                 return
 
-        if a:
+        else:   # single char
             if not self._show_BuZi and a in '<>':
                 return
-            if a in self._replace_hex:
-                text = self._replace_hex.get(a, '')
-                if text:
-                    b = bytes.fromhex(text)
-                    self._tty.write(b)
-                    self._check_auto_CRLF(b)
-                    return
-            if a in self._replace_text:
-                a = self._replace_text.get(a, '?')
+            if a in self._replace_char:
+                self._write_hextext(self._replace_char.get(a, '?'))
+                return
 
             if self._show_capital:
                 a = a.upper()
             else:
                 a = a.lower()
-            b = a.encode('ASCII')
-            self._tty.write(b)
-            self._check_auto_CRLF(b)
+            
+        self._write_ascii(a)
 
     # =====
 
-    def _check_auto_CRLF(self, b:bytes):
-        if self._auto_CRLF:
-            self.char_count += len(b)
-            if b'\r' in b:
-                self.char_count = 0
-            if self.char_count >= self._auto_CRLF:
-                self._tty.write(b'\r\n')
-                self.char_count = 0
+    def _write_raw(self, bb:bytes):
+        self._tty.write(bb)
 
     # -----
+
+    def _write_ascii(self, text:str):
+        if not text:
+            return
+
+        bb = text.encode('ASCII')
+            
+        if self._auto_CRLF:
+            for b in bb:
+                self.char_count += 1
+                if b == b'\r':
+                    self.char_count = 0
+                self._write_raw(b)
+                if self.char_count >= self._auto_CRLF:
+                    self._write_raw(b'\r\n')
+                    self.char_count = 0
+
+        else:
+            self._write_raw(bb)
+
+    # -----
+
+    def _write_hextext(self, s:str):
+        if not s:
+            return b''
+
+        ishex = False
+        hexval = ''
+        for c in s:
+            if c == '[':   # start hex string
+                ishex = True
+                hexval = ''
+            elif c == ']':   # end hex string
+                ishex = False
+            else:   # normal char
+                if ishex:
+                    if c == ' ':
+                        continue
+                    if hexval == '':
+                        hexval = c
+                    else:
+                        hexval += c
+                        self._write_raw(bytes([int(hexval, 16)]))
+                        hexval = ''
+                else:
+                    self._write_ascii(c)
+
+    # =====
 
     def idle20Hz(self):
         pass
@@ -175,13 +212,13 @@ class TelexTerminal(txBase.TelexBase):
     # =====
 
     def _check_commands(self, a:str):
-        if a == '\x1bA':
+        if a == 'A':
             pass
 
-        if a == '\x1bZ':
+        if a == 'Z':
             pass
 
-        if a == '\x1bWB':
+        if a == 'WB':
             pass
 
 #######

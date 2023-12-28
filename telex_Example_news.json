@@ -1,0 +1,17 @@
+# Configuration examples for piTelex
+# 2023-03-15
+# This is only a partial example. This can be copied in the main configuration file "telex.json"
+#
+{
+    "devices": {
+        # ...
+
+        "news": {
+            "type": "news",
+            "enable": false,
+            "newspath": "/home/pi/piTelex/RSS-feed/news/"
+          },      
+
+        # ...
+    }
+}
