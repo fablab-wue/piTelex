@@ -70,8 +70,7 @@ class Twitter_Client_V2():
                 access_token_secret = access_token_secret,
                 bearer_token        = bearer_token
             )
-        except tweepy.error.TweepyException as e:
-           LOG("Twitter login error:",1)
+        except tweepy.error.TweepError as e:
            LOG(str(e),1)
         self.user_mentions = "{}".format(user_mentions)
         self.last_id = 0
@@ -79,7 +78,6 @@ class Twitter_Client_V2():
         self.running = True
         self.thread = threading.Thread(target=self.thread_function, name='Twitter_Client_V2')
         self.thread.start()
-        print ("End of _init_")
 
 
 
@@ -114,8 +112,6 @@ class Twitter_Client_V2():
                     else :
                         max_results = None
                     user = self.client.get_user(username=self.user_mentions)
-                    LOG("User:",1)
-                    LOG(str(user),1)
                     mentions = self.client.get_users_mentions(
                         id=user[0]["id"],
                         tweet_fields=["author_id","created_at"],
@@ -149,8 +145,7 @@ class Twitter_Client_V2():
                             LOG(f'TWEET: {txt}', 3)
                             self.q.put(user_tweet)
                             self.last_id=tweet['id']
-                except tweepy.TweepyException as e:
-                    LOG("Twitter mentions error:", 1)
+                except tweepy.TweepError as e:
                     LOG(str(e), 1)
                 
                 time.sleep(15)
