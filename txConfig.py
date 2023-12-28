@@ -126,6 +126,7 @@ def load():
         dest="rest", default='', metavar="TEMPLATE",
         help="REST client")
 
+
     gt = parser.add_argument_group("Tools / Toys")
 
     gt.add_argument("-Z", "--eliza",
@@ -143,6 +144,7 @@ def load():
     gt.add_argument("-K", "--keypad",
         dest="keypad", default=False, action="store_true",
         help="KeyPad shortcuts")
+
 
     gd = parser.add_argument_group("Debug")
 
