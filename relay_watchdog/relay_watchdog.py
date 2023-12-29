@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-#import socket
 import threading
 import socketserver
 import pigpio
@@ -33,7 +32,7 @@ if __name__ == "__main__":
 	)
 	parser.add_argument('--host', type=str, metavar="localhost", default="localhost", help="IP address to listen on")
 	parser.add_argument('-p', '--port', type=int, metavar=22000, default=22000, help="Port to listen on")
-	parser.add_argument('-d', '--duration', type=int, metavar=300, default=300, help="Default time to keep the GPIO pin high for")
+	parser.add_argument('-d', '--duration', type=int, metavar=60, default=60, help="Default time to keep the GPIO pin high for")
 	parser.add_argument('-g', '--gpio', type=int, metavar=27, default=27, help="GPIO pin to toggle")
 	parser.add_argument('--pigpio', type=str, metavar="hostname", default="", help="Hostname of ip address of pigpiod")
 	

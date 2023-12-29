@@ -1,0 +1,15 @@
+telegram:
+  bot_token : "YOUR_BOT_TOKEN_HERE"
+  api_id    : "YOUR_APP_ID_HERE"
+  api_hash  : "YOUR_API_HASH_HERE"
+  session   : sessions/session
+socket:
+  host      : localhost
+  port      : 31337
+watchdog :
+  enabled   : true
+  host      : localhost
+  port      : 22000
+security    :
+  - question  : Answer to the Ultimate Question of Life, the Universe, and Everything?
+    answer    : 42
