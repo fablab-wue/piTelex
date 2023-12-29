@@ -10,6 +10,3 @@ watchdog :
   enabled   : true
   host      : localhost
   port      : 22000
-security    :
-  - question  : Answer to the Ultimate Question of Life, the Universe, and Everything?
-    answer    : 42
