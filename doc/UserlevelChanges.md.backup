@@ -73,9 +73,8 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
 * Module: MCP
 * Description:
 
-  Entering five or more subsequent `WR` (carriage return) at the telerpinter lets pitelex 
+  Entering five or more subsequent 'WR' (carriage return) at the telerpinter lets pitelex 
   interpret the following number from 0 to 9 as a file name located in the subdirectory 
   "read" of pitelex. The file must have the extension `.txt`.
-  
   If the fie exists, pitelex will insert the contents of the file.
   

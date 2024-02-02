@@ -70,6 +70,9 @@ class TelexRPiTTY(txBase.TelexBase):
         self._inv_rxd = params.get('inv_rxd', False)
         self._pin_relay = params.get('pin_relay', 22)
         self._inv_relay = params.get('inv_relay', False)
+
+        self._txd_powersave = params.get('txd_powersave', 0)
+
         self._pin_number_switch = params.get('pin_number_switch', 6 if self._mode not in ('V10', 'TWM', 'AGT-TWM') else 0)   # pin typical wired to rxd pin
         self._inv_number_switch = params.get('inv_number_switch', False)
 
@@ -105,7 +108,7 @@ class TelexRPiTTY(txBase.TelexBase):
             self._number_switch = NumberSwitch(self._pin_number_switch, self._callback_number_switch, self._inv_number_switch)
 
         pi.set_mode(self._pin_txd, pigpio.OUTPUT)
-        pi.write(self._pin_txd, 1)
+        pi.write(self._pin_txd, not self._txd_powersave)
 
         if self._pin_relay:
             pi.set_mode(self._pin_relay, pigpio.OUTPUT)   # relay for commutating
@@ -383,7 +386,7 @@ class TelexRPiTTY(txBase.TelexBase):
     def _enable_power(self, enable:bool):
             l.debug('enable_power {}'.format(enable))
             if self._mode not in ('V10',):            # V.10 has no current loop, more modes affected? ('AGT...')
-                pi.write(self._pin_txd, enable)       # loop current on / off
+                pi.write(self._pin_txd, enable or not self._txd_powersave)       # loop current on / off
  
     # -----
 
