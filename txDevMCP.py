@@ -101,6 +101,8 @@ class TelexMCP(txBase.TelexBase):
         self._hand_type_buffer = []
         self._hand_type_wait = -1
 
+        self._last_char_was_cr = False
+        self._cr_count = 0
 
     def __del__(self):
         super().__del__()
@@ -242,6 +244,28 @@ class TelexMCP(txBase.TelexBase):
             if self._state > S_OFFLINE:
                 self._wd.restart('ACTIVE')
 
+            # Insert text files into stream by typing five times or more  'WR' (carriage return)
+            # followed by a single number as file name ; 10 files are selectable.
+            # The files must reside in a subdirectory 'read' of piTelex and have '.txt' as extension.
+            # '0' --> '...piTelex/read/0.txt',   ....    '9' --> '...piTelex/read/9.txt'  
+
+            if a == '\r': 
+                # print('CR found from: ',source)
+                if source not in ('iTs', 'iTc'): 	#only count locally typed '\r'
+                    if self._last_char_was_cr:
+                        self._cr_count += 1
+                    else:
+                        self._cr_count = 1
+                        self._last_char_was_cr = True
+                    # print('CR count: ',self._cr_count)
+            else:
+                if self._cr_count >= 5 and self._last_char_was_cr:  
+                    if a in '0123456789':             	#Filename follows immediately after multiple 'WR'          
+                        # print('filename: ',a)
+                        self.read_file(a)
+                self._last_char_was_cr = False
+               
+
             # command line interface
             if self.cli_enable:
                 if a in ' \n+?':
@@ -330,7 +354,7 @@ class TelexMCP(txBase.TelexBase):
     # =====
 
     def _set_state(self, new_state:int, broadcast_state:bool=False):
-        ''' set new state and change hardware propperties '''
+        ''' set new state and change hardware properties '''
         if self._state == new_state:
             return
         l.debug('set_state {} -> {}'.format(self._state, new_state))
