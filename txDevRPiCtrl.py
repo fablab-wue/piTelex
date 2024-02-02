@@ -54,11 +54,11 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_LED_status_G = params.get('pin_LED_status_G', 0)   # LED green
         self._pin_LED_LT = params.get('pin_LED_LT', 0)  # LED for local mode
         self._pin_LED_Z = params.get('pin_LED_Z', 0)    # LED for standby mode
+        self._LED_Z_heartbeat = params.get('LED_Z_heartbeat', 6)     # delay between heartbeat flashes 
+                                                                     # (multiples of 500ms)
 
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
-
-        self._pin_txd = params.get('pin_txd', 0)
 
         self._delay_AT = params.get('delay_AT', 0)  # delay between pressing AT and entering WB
         self._delay_ST = params.get('delay_ST', 0)  # delay between pressing ST and leaving A
@@ -78,6 +78,9 @@ class TelexRPiCtrl(txBase.TelexBase):
 
         # Helper for local mode LED.
         self._LT_pressed = False
+
+        # Helper for LED-Status
+        self._LED_Z_count = 0
 
         self._LED_status_R = None
         self._LED_status_G = None
@@ -130,10 +133,8 @@ class TelexRPiCtrl(txBase.TelexBase):
         if self._pin_power:
             pi.set_mode(self._pin_power, pigpio.OUTPUT)
             pi.write(self._pin_power, self._inv_power) # switch mains off
-            pi.set_mode(self._pin_txd, pigpio.OUTPUT)
-            pi.write(self._pin_txd, 0)                 # switch loop current off
 
-        self._set_mode('Z')                            # Z = sleeping
+        self._set_mode('ZZ')                            # ZZ = sleeping
 
 
         # debug
@@ -148,7 +149,6 @@ class TelexRPiCtrl(txBase.TelexBase):
         global pi
 
         if pi:
-            pi.write(self._pin_txd,0)
             if self._LED_Z:
                 self._LED_Z.off()
             if self._LED_A:
@@ -163,8 +163,6 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._LED_status_G.off()
             if self._LED_status_R:
                 self._LED_status_R.off()
-            if(self._pin_relay):
-                pi.write(self._pin_relay,0)
             if(self._pin_power):
                 pi.write(self._pin_power,0)
             del pi
@@ -199,6 +197,22 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._LED_status_G.process_fade()
 
         self._wd.process()
+
+    # -----
+
+    def idle2Hz(self):
+
+        # Heartbeat for LED_Z
+        #   In 'ZZ<<', flash LED_Z every self._LED_Z_heartbeat*0,5 seconds
+        #   set self._LED_Z_heartbeat = 0 for steady light as in 'Z'
+        if self._LED_Z and self._mode in ('ZZ',):
+            if self._LED_Z_count < self._LED_Z_heartbeat:
+                if self._LED_Z_count == 0:
+                    self._LED_Z.off()
+                self._LED_Z_count += 1    
+            else:
+                self._LED_Z.on()
+                self._LED_Z_count = 0    
 
     # -----
 
@@ -384,7 +398,6 @@ class TelexRPiCtrl(txBase.TelexBase):
         if self._pin_power:
             l.debug('enable_power {}'.format(enable))
             pi.write(self._pin_power, enable != self._inv_power)   # pos polarity
-            pi.write(self._pin_txd, enable)                        # loop current on/off
 
 #######
 
