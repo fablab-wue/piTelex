@@ -250,20 +250,18 @@ class TelexMCP(txBase.TelexBase):
             # '0' --> '...piTelex/read/0.txt',   ....    '9' --> '...piTelex/read/9.txt'  
 
             if a == '\r': 
-                # print('CR found from: ',source)
                 if source not in ('iTs', 'iTc'): 	#only count locally typed '\r'
                     if self._last_char_was_cr:
                         self._cr_count += 1
                     else:
                         self._cr_count = 1
                         self._last_char_was_cr = True
-                    # print('CR count: ',self._cr_count)
             else:
-                if self._cr_count >= 5 and self._last_char_was_cr:  
-                    if a in '0123456789':             	#Filename follows immediately after multiple 'WR'          
-                        # print('filename: ',a)
-                        self.read_file(a)
-                self._last_char_was_cr = False
+                if a != '>':                        # ignore "Zi"
+                    if self._cr_count >= 5 and self._last_char_was_cr:  
+                        if a in '0123456789':             	#Filename follows immediately after multiple 'WR'          
+                            self.read_file(a)
+                    self._last_char_was_cr = False
                
 
             # command line interface
