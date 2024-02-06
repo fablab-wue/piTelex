@@ -842,11 +842,12 @@ class TelexITelexCommon(txBase.TelexBase):
     # List of TNS addresses as of 2020-04-21
     # <https://telexforum.de/viewtopic.php?f=6&t=2504&p=17795#p17795>
     # <https://telexforum.de/viewtopic.php?p=34877#p34877>
-    _tns_addresses = [
-        "tlnserv.teleprinter.net",
-        "tlnserv2.teleprinter.net",
-        "tlnserv3.teleprinter.net"
-    ]
+    #_tns_addresses = [
+    #    "tlnserv.teleprinter.net",
+    #    "tlnserv2.teleprinter.net",
+    #    "tlnserv3.teleprinter.net"
+    #]
+
 
     @classmethod
     def choose_tns_address(cls):
@@ -854,7 +855,9 @@ class TelexITelexCommon(txBase.TelexBase):
         Return randomly chosen TNS (Telex number server) address, for load
         distribution.
         """
-        return random.choice(cls._tns_addresses)
+        _srv = random.choice(cls._tns_addresses)
+        l.info('Query TNS: '+_srv)
+        return _srv
 
 
 #######

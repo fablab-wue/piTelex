@@ -59,6 +59,9 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self._number = None
             self._tns_pin = None
 
+        TelexITelexSrv._tns_addresses = params.get('tns_srv',['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
+        self._tns_port = params.get('tns_port',11811)
+
         self._block_ascii = params.get('block_ascii', True)
 
         self.clients = {}
@@ -367,7 +370,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
-                self._tns_port = 11811
+#                self._tns_port = 11811
                 s.connect((self.choose_tns_address(), self._tns_port))
                 # client_update packet:
                 #                Code  Len

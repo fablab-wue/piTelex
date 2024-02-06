@@ -40,6 +40,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         self.id = 'iTc'
         self.params = params
 
+        TelexITelexClient._tns_addresses = params.get('tns_srv', ['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
+        # print('TNS: ',TelexITelexClient._tns_addresses)
         TelexITelexClient._tns_port = params.get('tns_port', 11811)
         TelexITelexClient._userlist = params.get('userlist', 'userlist.csv')
 
