@@ -1,0 +1,4 @@
+slack-sdk >= 3.26
+slack-bolt >= 1.18
+python-dotenv >= 1.0
+pyyaml >= 6.0

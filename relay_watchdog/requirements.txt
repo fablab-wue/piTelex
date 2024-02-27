@@ -1,0 +1,2 @@
+argparse >= 1.4
+pigpio >= 1
