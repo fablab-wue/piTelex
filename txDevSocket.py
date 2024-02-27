@@ -60,6 +60,9 @@ class TelexSocket(txBase.TelexBase):
         # Sockets from which we expect to read
         self._sockets = [ self._server ]
 
+        # Telex encoding
+        self._coding = params.get("coding", 0 )
+
 
     def exit(self):
         for s in self._sockets :
@@ -90,13 +93,13 @@ class TelexSocket(txBase.TelexBase):
                 data = s.recv(102400)
                 if data:
                     # A readable client socket has data
-                    text = data.decode('ascii', 'replace').replace('\ufffd','?')
+                    text = data.decode('utf-8', 'replace').replace('\ufffd','?')
 
                     # Transform to Telex encoding an keep within 68 character width
                     linewidth = 68
                     out_lines = []
                     for line in text.split("\n"):
-                        bmc = txCode.BaudotMurrayCode.ascii_to_tty_text(line.strip())
+                        bmc = txCode.BaudotMurrayCode.ascii_to_tty_text(line.strip(), coding=self._coding)
                         bmc = bmc.replace("@","(A)")
                         while len(bmc) >= linewidth:
                             out_lines.append(bmc[0:linewidth])

@@ -94,7 +94,7 @@ class BaudotMurrayCode:
     # -----
 
     @staticmethod
-    def ascii_to_tty_text(text:str) -> str:
+    def ascii_to_tty_text(text:str, coding:int=0) -> str:
         """
         Normalise text for teleprinter output.
 
@@ -105,9 +105,18 @@ class BaudotMurrayCode:
 
         text = text.upper()
 
+        if coding == BaudotMurrayCode.CODING_US:
+            valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+$:;/()!?.,'\n\r@°"
+        elif coding == BaudotMurrayCode.CODING_MKT2:
+            valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r@°ЮЭЩШЕАСИУДРЙНФЦКТЗЛВХЫПЯОБГМЬЖ"
+        elif coding == BaudotMurrayCode.CODING_ZUSE:
+            valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/().,'\n\r@#*;[]^µ"
+        else: # Regular ITA2
+            valid_ASCII_convert_chars = BaudotMurrayCode._valid_ASCII_convert_chars
+
         for a in text:
             try:
-                if a not in BaudotMurrayCode._valid_ASCII_convert_chars:
+                if a not in valid_ASCII_convert_chars:
                     if a in BaudotMurrayCode._LUT_convert_chars:
                         a = BaudotMurrayCode._LUT_convert_chars.get(a, '?')
                     else:
@@ -115,7 +124,7 @@ class BaudotMurrayCode:
                         a =  u"".join([c for c in nkfd_norm if not unicodedata.combining(c)])
                         #a = unicodedata.normalize('NFD', a).encode('ascii', 'ignore')
                         #a = unidecode(a)
-                        if a not in BaudotMurrayCode._valid_ASCII_convert_chars:
+                        if a not in valid_ASCII_convert_chars:
                             a = '?'
                 ret += a
             except:
@@ -158,13 +167,16 @@ class BaudotMurrayCode:
         if coding == self.CODING_US:
             self._LUT_BM2A = self._LUT_BM2A_US
             self._LUT_BMsw = self._LUT_BMsw_US
+            self._valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+$:;/()!?.,'\n\r@°"
         elif coding == self.CODING_MKT2:
             self._LUT_BM2A = self._LUT_BM2A_MKT2
             self._LUT_BMsw = self._LUT_BMsw_MKT2
+            self._valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/()?.,'\n\r@°ЮЭЩШЕАСИУДРЙНФЦКТЗЛВХЫПЯОБГМЬЖ"
         elif coding == self.CODING_ZUSE:
             self._LUT_BM2A = self._LUT_BM2A_ZUSE
             self._LUT_BMsw = self._LUT_BMsw_ZUSE
-        else:
+            self._valid_ASCII_convert_chars = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+=:/().,'\n\r@#*;[]^µ"
+        else: # Regular ITA2
             self._LUT_BM2A = self._LUT_BM2A_ITA2
             self._LUT_BMsw = self._LUT_BMsw_ITA2
 

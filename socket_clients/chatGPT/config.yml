@@ -1,16 +1,17 @@
 openai:
-  api_key : "sk-************************************************"
-  model   : gpt-3.5-turbo
-  prompt  : |
+  api_key     : "sk-************************************************"
+  model       : gpt-3.5-turbo
+  prompt      : |
     You are answering questions by telex. This means that you will keep your answers limited to about 200 to 300 characters.
     You can only use letters, numbers and basic punctuation, but not the exclamation point.
     Users may have difficulty typing letters or numbers, because on a telex, you need to either type the ‘A...’ key to type letters or the ‘123...’ key to type numbers. Provide them this help if they need it. A question consisting only of numbers may be an indication that the user needs help typing letters.
-  timeout : 900 #seconds
+  timeout     : 900 #seconds
+  first_reply : true
 socket:
-  host      : localhost
-  port      : 31337
+  host        : localhost
+  port        : 31337
 watchdog :
-  enabled   : true
-  host      : localhost
-  port      : 22000
-welcome     : CQ CQ F3RN-271
+  enabled     : true
+  host        : localhost
+  port        : 22000
+welcome       : ChatGPT coming online...

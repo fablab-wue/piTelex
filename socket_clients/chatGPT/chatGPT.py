@@ -58,28 +58,47 @@ if __name__ == "__main__":
     )
     content = chat.choices[0].message.content
     messages.append({ "role" : "assistant", "content" : content})
+    # Make sure we copy the list
+    initial_context = messages.copy()
     if config.get("welcome", None) :
         if config["watchdog"]["enabled"] :
             tcp_client(config["watchdog"]["host"], config["watchdog"]["port"], "")
             time.sleep(2)
         sock.sendall(bytes("{}\n\n".format(config["welcome"]), 'utf-8'))
+    if config["openai"].get("first_reply", False)  :
+        sock.sendall(bytes("\n\n{}\n\n".format(fill(content, width=60)), 'utf-8'))
+
 
 
     timeout = time.time() + config["openai"]["timeout"]
+    active = True
+    sock.settimeout(3)
     while True:
-        data = sock.recv(1024)
+        # Do we have data?
+        try:
+            data = sock.recv(1024)
+        except TimeoutError:
+            data = None
+
+        # Check for timeout
+        if (not data) and active and time.time() >= timeout:
+            if config.get("sign-off", None) :
+                if config["watchdog"]["enabled"] :
+                    tcp_client(config["watchdog"]["host"], config["watchdog"]["port"], "")
+                    time.sleep(2)
+                sock.sendall(bytes("{}\n\n".format(config["sign-off"]), 'utf-8'))
+            active = False
+
+
         if data :
             if config["watchdog"]["enabled"] :
                 tcp_client(config["watchdog"]["host"], config["watchdog"]["port"], "")
-            if time.time() < timeout :
-                timeout = time.time() + config["openai"]["timeout"]
-            else:
-                messages = [ {"role": "system", "content": config["openai"]["prompt"]} ]
-                chat = openai.chat.completions.create(
-                    model=config["openai"]["model"], messages=messages, stream=False
-                )
-                content = chat.choices[0].message.content
-                messages.append({ "role" : "assistant", "content" : content})
+            if time.time() >= timeout :
+                messages = initial_context.copy() # Start with a clean context
+
+            # Reset timeout
+            timeout = time.time() + config["openai"]["timeout"]
+
             text = "{}{}".format(buffer,data.decode('utf-8', 'replace').replace('\ufffd','?'))
             lines = text.split("\r")
             question = ""
@@ -96,6 +115,7 @@ if __name__ == "__main__":
                     if config["watchdog"]["enabled"] :
                         tcp_client(config["watchdog"]["host"], config["watchdog"]["port"], "")
                     time.sleep(2)
+                    active = True
                     sock.sendall(bytes("---\n", 'utf-8'))
                     messages.append({"role": "user", "content": question})
                     chat = openai.chat.completions.create(
@@ -104,6 +124,6 @@ if __name__ == "__main__":
                     content = chat.choices[0].message.content
                     messages.append({ "role" : "assistant", "content" : content})
                     content = fill(content, width=60)
-                    sock.sendall(bytes(content, 'utf-8'))
-                    sock.sendall(bytes("\n\n", 'utf-8'))
+                    sock.sendall(bytes("{}\n\n".format(content), 'utf-8'))
+
 
