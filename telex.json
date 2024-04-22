@@ -134,5 +134,6 @@
   "wru_replace_always": false,
   "dial_timeout": 0,
   "continue_with_no_printer": false,
-  "errorlog_path": "./"
+  "errorlog_path": "./",
+  "welcome_msg": true	#Prints out a ed1000 style timestamp on connection
 }

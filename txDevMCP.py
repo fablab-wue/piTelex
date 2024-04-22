@@ -64,7 +64,8 @@ class TelexMCP(txBase.TelexBase):
         # Power button timeout: After ESC-PT, wait this many seconds to turn
         # teleprinter power off again
         self._power_button_timeout = params.get('power_button_timeout', 5*60)
-
+        self._welcome_msg = params.get('welcome_msg', True)
+        
         self._rx_buffer = []
 
         self._state = S_SLEEPING
@@ -206,7 +207,9 @@ class TelexMCP(txBase.TelexBase):
 
             if a == 'I':   # welcome as server
                 # The welcome banner itself has a fixed total length of 24 characters:
-                text = '<<<\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
+                text= '<<<\r\n'
+                if self._welcome_msg:
+                    text += time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n' 
                 #if self._WRU_ID:
                 #    text += self._WRU_ID   # send back device id
                 #else:
