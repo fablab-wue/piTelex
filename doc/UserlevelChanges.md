@@ -1,9 +1,7 @@
 ## List of changes relevant to the user in the  "testing" branch compared to the "master" branch 
 
 ###  New config file parameter `block_ascii`
-
 * Module: ITelexSrv
-
 * Description:
 
 Added config file parameter 
@@ -17,11 +15,8 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
 
 
 ###  Added support for USB-Keypads
-
 * Module: `Keypad` (new)
-
 * Dependencies: python-evdev, Linux ONLY!
-
 * Description:  
 
   Added device `keypad`, allows connection of a numeric keypad via usb
@@ -29,9 +24,7 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
 
 
 ### Added a "hand type simulator"
-
 * Module: MCP
-
 * Description:
  
    Added a simulator for manual typing, i.e insert random delays between "keystrokes".
@@ -42,13 +35,11 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
 ### Added modes "AGT-TWM", "AGT-TW39"
 
 * Module: RPiTTY
-
 * Description:
 
   Introduce more specific modes `AGT-TW39`, `AGT-TWM` (module RPiTTY) for use with Ö-AGT's (will probably replace general mode `AGT` in a later version)
 
 ### Added LED_Z
-
 * Module: RPiCtrl
 * Description:
 
@@ -59,7 +50,6 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
   which defines a connection pin for a LED which is lit in "Z" and "ZZ" mode.
 
 ### Added heartbeat function for LED_Z
-
 * Module: RPiCtrl
 * Description:
 
@@ -72,7 +62,6 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
   Flashing is only for ZZ mode! Z mode is indicated with steady light of the LED.
 
 ### Switch off current loop in "ZZ" mode
-
 * Module: RPiTTY
 * Description:
 
@@ -88,7 +77,6 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
   which means unnecessary thermal loss.
   
 ### Added feature to insert text files into the character stream
-
 * Module: MCP
 * Description:
 
@@ -103,12 +91,25 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
 * Module: ITelex
 * Description:
 
-Up to now, the TNS hostnames were hardcoded in the sources.
-The new config file option `tns_srv`, which defaults to
+  Up to now, the TNS hostnames were hardcoded in the sources.
+  The new config file option `tns_srv`, which defaults to
 
-```json
-"tns_srv": ['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'],
-```
-allows to configure the TNS hosts in telex.json. Under normal circumstances, there should be no need to change the default. But 
-piTelex' default mechanism of selecting a TNS host is rather rudimentary and cannot cope with nonexistent or faulty servers. In such cases, the list can be reduced to functional addresses.
+  ```json
+  "tns_srv": ['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'],
+  ```
+  allows to configure the TNS hosts in telex.json. Under normal circumstances, there should be no need to change the default. But 
+  piTelex' default mechanism of selecting a TNS host is rather rudimentary and cannot cope with nonexistent or faulty servers. In such cases, the list can be reduced to functional addresses.
 
+### Configure the welcome message
+* Module: MCP
+* Description:
+
+  When piTelex accepts a connection, it prints the welcome message which normally consists of a DateTime stamp.
+  This is historically correct for the EDS system, earlier (TW39 et al) implementations did not print such a message at the beginning of the connection.
+  The new config option
+  
+  ```json
+  "welcome_msg" : true/false # default true
+  ```
+  allows to select whether the Timestamp is printed or not.
+  
