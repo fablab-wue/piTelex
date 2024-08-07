@@ -1,4 +1,4 @@
-## List of changes relevant to the user in the  "testing" branch compared to the "master" branch 
+## List of changes relevant to the user compared to the release 2023-07 
 
 ###  New config file parameter `block_ascii`
 * Module: ITelexSrv
@@ -6,7 +6,7 @@
 
 Added config file parameter 
 ````json
-	"block_ascii" : true/false    # default true) 
+	"block_ascii" : true/false    # default true
 ````
 to avoid port scans and such being printed at the TTY, if set to true. 
 
@@ -55,11 +55,15 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
 
   Added config parameter
   ```
-  "LED_Z_heartbeat": 6     # integer > 0, default 6)
+  "LED_Z_heartbeat": 6     # integer > 0, default 6
   ```
-  which defines the pause in steps of 500ms between two flashes of the  LED. A value of 0 means "no flashing".
+  which defines the pause in steps of 500ms between two flashes of LED_Z. A value of 0 means "no flashing".
 
-  Flashing is only for ZZ mode! Z mode is indicated with steady light of the LED.
+  Used as indicator: as long as the system has heartbeat, piTelex is running and not "dead"...
+
+  Flashing is only for ZZ mode! Z mode is always indicated by steady light of LED_Z.
+  
+
 
 ### Switch off current loop in "ZZ" mode
 * Module: RPiTTY
@@ -70,9 +74,11 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
   "txd_powersave": true/false #default is false
   ```
   If set to true, loop current will be switched off in ZZ status. 
-  
+
+  Only useful for TW39/line current machines.
+
   Mostly useful in context with `"pin_power"` option of module RPiCtrl. 
-  
+
   Especially useful for t68d machines; in standby, they pull a current of 5mA, but when mains is diconnected, raise it to 40mA, 
   which means unnecessary thermal loss.
   
