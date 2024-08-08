@@ -686,6 +686,10 @@ class TelexITelexCommon(txBase.TelexBase):
         if _connected_before != self._connected:
             l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
 
+# rowo --->
+        if is_server and _connected_before > ST.CON_INIT:
+            with self._rx_lock: self._rx_buffer.append('\x1bZ')
+# rowo <---
 
     def send_heartbeat(self, s):
         '''Send heartbeat packet (0)'''

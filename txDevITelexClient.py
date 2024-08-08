@@ -147,7 +147,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             self.disconnect_client()
 
         s.close()
-        self._rx_buffer.append('\x1bZ')
+# rowo commented, not needed
+#        self._rx_buffer.append('\x1bZ')
         self._printer_running = False
 
     # =====

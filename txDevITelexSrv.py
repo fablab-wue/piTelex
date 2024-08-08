@@ -36,10 +36,6 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         self._port = params.get('port', 2342)
 
         self._number = int(params.get('tns_dynip_number', 0))
-        if not self._number:
-            self._number = int(params.get('tns-dynip-number', 0))
-            if self._number:
-                l.warning("Configuration option \"tns-dynip-number\" is deprecated and will be removed in a future version. Use \"tns_dynip_number\" instead.")
         if self._number < 10000 or self._number > 0xffffffff:
             # Own number must be a valid 32-bit integer with at least 5 digits.
             # client_update requires this, so ignore faulty number
@@ -47,10 +43,6 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self._number = None
 
         self._tns_pin = params.get('tns_pin', None)
-        if not self._tns_pin:
-            self._tns_pin = params.get('tns-pin', None)
-            if self._tns_pin:
-                l.warning("Configuration option \"tns-pin\" is deprecated and will be removed in a future version. Use \"tns_pin\" instead.")
 
         if self._tns_pin < 0 or self._tns_pin > 0xffff:
             # TNS pin no valid integer inside 16 bit; client_update requires
@@ -60,6 +52,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self._tns_pin = None
 
         TelexITelexSrv._tns_addresses = params.get('tns_srv',['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
+
         self._tns_port = params.get('tns_port',11811)
 
         self._block_ascii = params.get('block_ascii', True)
@@ -225,7 +218,8 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self.disconnect_client()
 
         s.close()
-        with self._rx_lock: self._rx_buffer.append('\x1bZ')
+# rowo  commented, handled in txDevITelexCommon.py
+#        with self._rx_lock: self._rx_buffer.append('\x1bZ')
         self._printer_running = False
         del self.clients[s]
 
