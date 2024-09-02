@@ -218,8 +218,10 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             self.disconnect_client()
 
         s.close()
-# rowo  commented, handled in txDevITelexCommon.py
+
+# rowo don't force Z mode (would wake up from ZZ...), but trigger transit to sleep
 #        with self._rx_lock: self._rx_buffer.append('\x1bZ')
+        with self._rx_lock: self._rx_buffer.append('\x1bST')
         self._printer_running = False
         del self.clients[s]
 

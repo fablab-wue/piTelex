@@ -134,7 +134,8 @@ class TelexMCP(txBase.TelexBase):
                 return True
 
             if a == 'ST':   # ST
-                self._set_state(S_OFFLINE, True)
+                if self._state > S_OFFLINE:         # don't wake up from ZZ by pressing "ST"  # rowo
+                    self._set_state(S_OFFLINE, True)
                 return True
 
             if a == 'LT':   # LT
