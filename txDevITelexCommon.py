@@ -248,6 +248,9 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def process_connection(self, s:socket.socket, is_server:bool, is_ascii:bool):  # Takes client socket as argument.
         """Handles a client or server connection."""
+
+        # print("process_connection")
+
         bmc = txCode.BaudotMurrayCode(False, False, True)
         sent_counter = 0
         self._received_counter = 0
@@ -686,6 +689,8 @@ class TelexITelexCommon(txBase.TelexBase):
         if _connected_before != self._connected:
             l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
 
+        # print("process_connection end")
+
 
     def send_heartbeat(self, s):
         '''Send heartbeat packet (0)'''
@@ -799,6 +804,16 @@ class TelexITelexCommon(txBase.TelexBase):
             pass
 
 
+    def send_end_with_reason(self, s, reason):
+        '''Send end packet with reason (3), for centralex disconnect'''
+        send = bytearray([3, len(reason)])   # End with reason
+        send.extend([ord(i) for i in reason])
+        l.debug(f'Sending i-Telex packet: End {reason} ({display_hex(send)})')
+        try:   # socket can possible be closed by other side
+            s.sendall(send)
+        except:
+            pass
+
     # Types of reject packets (see txDevMCP):
     #
     # - abs   line disabled
@@ -815,6 +830,26 @@ class TelexITelexCommon(txBase.TelexBase):
         s.sendall(send)
 
 
+    def send_connect_remote(self, s, number, pin):
+        '''Send connect remote packet (0x81)'''
+        l.info("Sending connect remote")
+        send = bytearray([129, 6])   # 81 Connect Remote
+        # Number
+        number = self._number.to_bytes(length=4, byteorder="little")
+        send.extend(number)
+        # TNS pin
+        tns_pin = self._tns_pin.to_bytes(length=2, byteorder="little")
+        send.extend(tns_pin)
+        l.debug('Sending i-Telex packet: Connect Remote ({})'.format(display_hex(send)))
+        s.sendall(send)
+
+
+    def send_accept_call_remote(self, s):
+        '''Send accept call remote packet (0x84)'''
+        send = bytearray([132, 0])   # 84 Accept call remote
+        l.debug('Sending i-Telex packet: Accept call remote ({})'.format(display_hex(send)))
+        s.sendall(send)
+
     def send_welcome(self, s):
         '''Send welcome message indirect as a server'''
         with self._rx_lock:
@@ -824,6 +859,16 @@ class TelexITelexCommon(txBase.TelexBase):
             #self._rx_buffer.append('@')
             self._rx_buffer.append('\x1bI')
         return 24 # fixed length of welcome banner, see txDevMCP
+
+
+    def socket_recv(self, s, cnt):
+        try:
+            return s.recv(cnt)
+        except (socket.timeout):
+            return []
+        except (socket.error, OSError):
+            return None
+
 
     # i-Telex epoch has been defined as 1900-01-00 00:00:00 (sic)
     # What's probably meant is          1900-01-01 00:00:00

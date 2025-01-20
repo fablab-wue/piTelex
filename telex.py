@@ -200,7 +200,12 @@ def init():
             srv = txDevITelexClient.TelexITelexClient(**dev_param)
             DEVICES.append(srv)
 
-            if dev_param['port'] > 0:
+            if "centralex" in dev_param:
+                import txDevITelexCentralex
+                srv = txDevITelexCentralex.TelexITelexCentralex(**dev_param)
+                DEVICES.append(srv)
+
+            elif dev_param['port'] > 0:
                 import txDevITelexSrv
                 srv = txDevITelexSrv.TelexITelexSrv(**dev_param)
                 DEVICES.append(srv)
@@ -210,15 +215,15 @@ def init():
             news = txDevNews.TelexNews(**dev_param)
             DEVICES.insert(0,news)
 
-        elif dev_param['type'] == 'twitter':
-            import txDevTwitter
-            twitter = txDevTwitter.TelexTwitter(**dev_param)
-            DEVICES.append(twitter)
+        #elif dev_param['type'] == 'twitter':
+        #    import txDevTwitter
+        #    twitter = txDevTwitter.TelexTwitter(**dev_param)
+        #    DEVICES.append(twitter)
 
-        elif dev_param['type'] == 'twitterV2':
-            import txDevTwitterV2
-            twitterV2 = txDevTwitterV2.TelexTwitterV2(**dev_param)
-            DEVICES.append(twitterV2)
+        #elif dev_param['type'] == 'twitterV2':
+        #    import txDevTwitterV2
+        #    twitterV2 = txDevTwitterV2.TelexTwitterV2(**dev_param)
+        #    DEVICES.append(twitterV2)
 
         elif dev_param['type'] == 'rss' :
             import txDevRSS

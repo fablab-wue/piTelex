@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{69dd0f7c-2ff2-41f9-92e0-3216315de978}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>telex.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId />
+    <IsWindowsApplication>False</IsWindowsApplication>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include=".gitignore" />
+    <Content Include=".pylintrc" />
+    <Content Include=".vscode\c_cpp_properties.json" />
+    <Content Include=".vscode\launch.json" />
+    <Content Include="doc\examples\telex_Example_CH340TTY.json" />
+    <Content Include="doc\examples\telex_Example_ED1000.json" />
+    <Content Include="doc\examples\telex_Example_KeyPad.json" />
+    <Content Include="doc\examples\telex_Example_news.json" />
+    <Content Include="doc\examples\telex_Example_RPiTTY.json" />
+    <Content Include="doc\examples\telex_Example_shellcmd.json" />
+    <Content Include="doc\examples\telex_Example_Terminal.json" />
+    <Content Include="doc\examples\userlist_example.csv" />
+    <Content Include="doc\INSTALL.md" />
+    <Content Include="doc\piTelexLogo.png" />
+    <Content Include="doc\txCode.md" />
+    <Content Include="doc\txDevMCP.md" />
+    <Content Include="doc\UserlevelChanges.md" />
+    <Content Include="LICENSE" />
+    <Content Include="piTelex-errors.log" />
+    <Content Include="piTelex.code-workspace" />
+    <Content Include="piTelex.log" />
+    <Content Include="piTelex.pyproj" />
+    <Content Include="prettify-archive-file" />
+    <Content Include="README.md" />
+    <Content Include="read\5.txt" />
+    <Content Include="requirements.txt" />
+    <Content Include="RSS-feed\newsfeeds.cfg" />
+    <Content Include="RSS-feed\rss-feed" />
+    <Content Include="telex.json" />
+    <Content Include="utils\ED1000\asoundrc-for-recording" />
+    <Content Include="utils\mail-notify\libio-socket-ssl-perl_2.074-2_all.deb" />
+    <Content Include="utils\mail-notify\SW_NotifyMail.md" />
+    <Content Include="utils\mail-notify\txnotify.sh" />
+    <Content Include="utils\systemd\pitelex.service" />
+    <Content Include="utils\systemd\README" />
+    <Content Include="utils\tshark\.gitignore" />
+    <Content Include="utils\tshark\capture.sh" />
+    <Content Include="utils\tshark\cont-capture.sh" />
+    <Content Include="__pycache__\log.cpython-312.pyc" />
+    <Content Include="__pycache__\RPiIO.cpython-312.pyc" />
+    <Content Include="__pycache__\telex.cpython-312.pyc" />
+    <Content Include="__pycache__\txBase.cpython-312.pyc" />
+    <Content Include="__pycache__\txCLI.cpython-312.pyc" />
+    <Content Include="__pycache__\txCode.cpython-312.pyc" />
+    <Content Include="__pycache__\txConfig.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevITelexClient.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevITelexCommon.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevITelexSrv.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevLog.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevMCP.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevMCP_escape_texts.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevRPiTTY.cpython-312.pyc" />
+    <Content Include="__pycache__\txDevScreen.cpython-312.pyc" />
+    <Content Include="__pycache__\txWatchdog.cpython-312.pyc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="config_twitivity.py" />
+    <Compile Include="log.py" />
+    <Compile Include="RPiIO.py" />
+    <Compile Include="RSS-feed\rssFileWriter.py" />
+    <Compile Include="telex.py" />
+    <Compile Include="txBase.py" />
+    <Compile Include="txCLI.py" />
+    <Compile Include="txCode.py" />
+    <Compile Include="txConfig.py" />
+    <Compile Include="txDevArchive.py" />
+    <Compile Include="txDevCH340TTY.py" />
+    <Compile Include="txDevED1000SC.py" />
+    <Compile Include="txDevEliza.py" />
+    <Compile Include="txDevIRC.py" />
+    <Compile Include="txDevITelexClient.py" />
+    <Compile Include="txDevITelexCommon.py" />
+    <Compile Include="txDevITelexCentralex.py" />
+    <Compile Include="txDevITelexSrv.py" />
+    <Compile Include="txDevKeyPad.py" />
+    <Compile Include="txDevLog.py" />
+    <Compile Include="txDevMCP.py" />
+    <Compile Include="txDevMCP_escape_texts.py" />
+    <Compile Include="txDevNews.py" />
+    <Compile Include="txDevREST.py" />
+    <Compile Include="txDevRPiCtrl.py" />
+    <Compile Include="txDevRPiTTY.py" />
+    <Compile Include="txDevRSS.py" />
+    <Compile Include="txDevScreen.py" />
+    <Compile Include="txDevShellCmd.py" />
+    <Compile Include="txDevTerminal.py" />
+    <Compile Include="txDevTwitter.py" />
+    <Compile Include="txDevTwitterV2.py" />
+    <Compile Include="txWatchdog.py" />
+    <Compile Include="utils\ED1000\audiotest.py" />
+    <Compile Include="utils\ED1000\squelch_check.py" />
+    <Compile Include="utils\tshark\auto-compress.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include=".vscode" />
+    <Folder Include="doc" />
+    <Folder Include="doc\examples" />
+    <Folder Include="read" />
+    <Folder Include="RSS-feed" />
+    <Folder Include="utils\" />
+    <Folder Include="utils\ED1000" />
+    <Folder Include="utils\mail-notify" />
+    <Folder Include="utils\systemd" />
+    <Folder Include="utils\tshark" />
+    <Folder Include="__pycache__" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

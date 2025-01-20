@@ -1,0 +1,156 @@
+# Configuration examples for piTelex
+# 2025-01-18
+# requirements: commentjson, argparse (additional requirements per section are listed there)
+#
+# This file can be used as a starting point for piTelex installations using the default hardware configuration.
+# Screen and log module should be enabled always for testing and debugging purposes.
+# Archive module, if enabled, saves a prettyprint transcript of each connection.
+#
+# enable the TTY module(s) that correspond to your TTY type.
+# Disable ("enable": false,) or optionally delete unused modules or entries.
+#
+#########################################################
+# For detailed configuration infos see the wiki pages !!!
+#########################################################
+#
+# Additional modules are described in the telex_Example_XXX.json files
+#
+{
+  "devices": {
+    # screen output and keyboard input (for debugging)
+    "screen": {
+      "type": "screen",
+      "enable": true,
+      "show_BuZi": true,
+      "show_ctrl": true,
+      "show_info": false,
+      "show_capital": false
+    },
+
+    ###########################################################################
+
+    # Module type "RPiTTY"
+    # requirements: pigpio (deamon and lib)
+    # TW39 or V10 teletype with FSG over GPIO pins of Raspberry Pi
+    
+    # standard, minimal example for a teletype with FSG
+    "RPiTTY_typical": {
+      "type": "RPiTTY",
+      "enable": false,
+      "mode": "TW39",
+      "pin_txd": 17,
+      "pin_rxd": 27,
+      "pin_relay": 22,
+      "pin_number_switch": 6,      # classic layput: 6   new layout: 10
+      "baudrate": 50,
+      "loopback": true
+    },
+
+    ###
+
+    # control the workflow (dialing, idle, typing-mode, text-phrases) with buttons
+    # and show status with LEDs
+    "RPiCtrl": {
+      "type": "RPiCtrl",
+      "enable": false,
+
+      # separate number switch - see also module RPiTTY
+      "pin_number_switch": 0,
+
+      # user buttons   B1/B2/B3/B4: 8/7/5/6   Pin 40: 21
+      "pin_button_1T": 21,         # Single button AT->LT->ST
+      "pin_button_AT": 0,          # AT-button to request dialing
+      "pin_button_ST": 0,          # ST-button to stop a connection
+      "pin_button_LT": 0,          # LT-button to switch to local mode
+      "pin_button_PT": 8,          # PT-button to wakeup ffrom sleep mode
+      "pin_button_U1": 0,          # user-button 1
+      "pin_button_U2": 0,          # user-button 2
+      "pin_button_U3": 0,          # user-button 3
+      "pin_button_U4": 0,          # user-button 4
+      "text_button_U1": "Hello",   # text for user-button 1
+      "text_button_U2": "Hello",   # text for user-button 2
+      "text_button_U3": "Hello",   # text for user-button 3
+      "text_button_U4": "Hello",   # text for user-button 4
+
+      # single LEDs
+      "pin_LED_LT": 0,
+      "pin_LED_A": 0,
+      "pin_LED_WB": 0,
+      "pin_LED_WB_A": 0,
+
+      # Duo-LEDs with common cathodes for status info
+      "pin_LED_status_R": 0,  # usually  23,
+      "pin_LED_status_G": 0,  # usually  24,
+
+      # power saving
+      "pin_power": 0,              # GPIO on SEU-M: 9
+      "inv_power": false
+    },
+
+    ###########################################################################
+    # New parameters for Centralex and public / local port:
+    #
+    # "local_port":     Can be used instead of "port" to specify the local piTelex port.
+    # "public_port":    Can be used instead of "port" to specify the port on your router.
+    #                   This port-number is transmitted to the Subscribe Server.
+    # You can use either "port" or the "local_port/public_port" combination.
+    # If you use Centralex you do not have to specify any port.
+    #
+    # If you do not have a public ipv4 address you now can use the Centralex Server for
+    # incoming connections.
+    # "centralex":      Specifies the Centralex Server to use (host name or ip address).
+    #                   Standard Centralex host name is "tlnserv2.teleprinter.net".
+    # "centralex_port": Standard Centralex port is 49491 (optinal)
+    # To use the Centralex Server your number must be set to dynamic IP update on the server.
+
+    # Module type "i-Telex"
+
+    "i-Telex": {
+      "type": "i-Telex",
+      "enable": true,
+
+      # "port": 2342,
+      "centralex": "tlnserv2.teleprinter.net",
+      # "centralex_port": 49491,
+
+      # WARNING
+      # Setting tns-dynip-number to anything except 0 will enable dynamic IP
+      # updates with i-Telex TNS (Teilnehmerserver, Subscriber Server).
+      #
+      # Leave at 0 if you've chosen a static TNS entry!
+      #
+      # Change to the calling number of your i-telex device if and only if
+      # - you've got your number approved by i-Telex administrators, and
+      # - you've chosen dynamic IP update and told i-Telex administrators so, and
+      # - you've set your TNS pin properly.
+      "tns_dynip_number": 0,
+      "tns_pin": 12345
+    },
+
+
+    ###########################################################################
+
+    "log": {
+      "type": "log",
+      "enable": true,
+      "filename": "./piTelex.log"
+    },
+
+    ###########################################################################
+
+    "archive": {
+      "type": "archive",
+      "enable": false,
+      "path": "./archive/"
+    }
+  },
+
+  ###########################################################################
+
+  "wru_id": "12345 dummy d",
+  "wru_replace_always": false,
+  "dial_timeout": 0,
+  "continue_with_no_printer": false,
+  "errorlog_path": "./",
+  "welcome_msg": true	#Prints out a ed1000 style timestamp on connection
+}
