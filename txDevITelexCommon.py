@@ -684,7 +684,7 @@ class TelexITelexCommon(txBase.TelexBase):
             # - Network error: There's no connection to send over anymore.
             if not error:
                 self.send_end(s)
-        l.info('end connection')
+        # l.info('end connection')
         self.disconnect_client()
         if _connected_before != self._connected:
             l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
@@ -859,15 +859,6 @@ class TelexITelexCommon(txBase.TelexBase):
             #self._rx_buffer.append('@')
             self._rx_buffer.append('\x1bI')
         return 24 # fixed length of welcome banner, see txDevMCP
-
-
-    def socket_recv(self, s, cnt):
-        try:
-            return s.recv(cnt)
-        except (socket.timeout):
-            return []
-        except (socket.error, OSError):
-            return None
 
 
     # i-Telex epoch has been defined as 1900-01-00 00:00:00 (sic)
