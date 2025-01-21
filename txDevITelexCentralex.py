@@ -206,6 +206,7 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                         l.warning('Centralex CheckAuth error')
                         self._ctx_st = CTX_ST.OFFLINE
                         with self._rx_lock: self._rx_buffer.append('\x1bCE')
+                        continue
                     elif (len(data) == 0):
                         # no data
                         continue
