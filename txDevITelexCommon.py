@@ -752,10 +752,12 @@ class TelexITelexCommon(txBase.TelexBase):
     def send_version(self, s):
         '''Send version packet (7)'''
         version = ReleaseInfo.release_version
-        send = bytearray([7, len(version) + 2, ReleaseInfo.itelex_protocol_version])
+        send = bytearray([7, 0, ReleaseInfo.itelex_protocol_version])
         send.extend([ord(i) for i in version])
-        send.append(0)
-        l.info('Sending i-Telex packet: Version ({})'.format(display_hex(send)))
+        if len(version) < 6:
+            send.append(0)
+        send[1] = len(send) - 2 # length
+        l.debug('Sending i-Telex packet: Version ({})'.format(display_hex(send)))
         s.sendall(send)
 
 
