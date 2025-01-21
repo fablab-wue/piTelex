@@ -81,6 +81,7 @@
     <Compile Include="RPiIO.py" />
     <Compile Include="RSS-feed\rssFileWriter.py" />
     <Compile Include="telex.py" />
+    <Compile Include="txReleaseInfo.py" />
     <Compile Include="txBase.py" />
     <Compile Include="txCLI.py" />
     <Compile Include="txCode.py" />

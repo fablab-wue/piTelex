@@ -2,11 +2,11 @@
 """
 Telex Device - i-Telex Centralex Client for reveiving external calls
 """
-__author__      = "Jochen Krapf / Detlef Gerhardt"
+__author__      = "Detlef Gerhardt"
 __email__       = ""
-__copyright__   = "Copyright 2018-2025, JK"
+__copyright__   = "Copyright 2025, *dg*"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "0.0.2"
 
 from threading import Thread, Event
 import socket

@@ -16,6 +16,7 @@ import sys
 import random
 random.seed()
 import enum
+from txReleaseInfo import ReleaseInfo
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -750,8 +751,11 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def send_version(self, s):
         '''Send version packet (7)'''
-        send = bytearray([7, 1, 1])
-        l.debug('Sending i-Telex packet: Version ({})'.format(display_hex(send)))
+        version = ReleaseInfo.release_version
+        send = bytearray([7, len(version) + 2, ReleaseInfo.itelex_protocol_version])
+        send.extend([ord(i) for i in version])
+        send.append(0)
+        l.info('Sending i-Telex packet: Version ({})'.format(display_hex(send)))
         s.sendall(send)
 
 
