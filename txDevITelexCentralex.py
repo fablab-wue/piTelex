@@ -58,7 +58,7 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
         self.id = 'iTs'
         self.params = params
 
-        self._centralex_address = params.get('centralex');
+        self._centralex_address = params.get('centralex_srv');
         self._centralex_port = params.get('centralex_port', 49491);
 
         self._number = int(params.get('tns_dynip_number', 0))

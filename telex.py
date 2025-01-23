@@ -139,7 +139,7 @@ def init_error_log(log_path,log_lvl):
     else:
         logger.info("===== piTelex rev " + rev)
     """
-    logger.info("===== piTelex rev. " + ReleaseInfo.release_number)
+    logger.info("===== piTelex Rev. " + ReleaseInfo.get_release_info())
 
 def excepthook(etype, value, tb):
     to_log = "".join(traceback.format_exception(etype, value, tb))
@@ -207,7 +207,8 @@ def init():
             srv = txDevITelexClient.TelexITelexClient(**dev_param)
             DEVICES.append(srv)
 
-            if "centralex" in dev_param:
+            #if "centralex" in dev_param and dev_param['centralex'] == True:
+            if dev_param.get('centralex', False) == True:
                 import txDevITelexCentralex
                 srv = txDevITelexCentralex.TelexITelexCentralex(**dev_param)
                 DEVICES.append(srv)
@@ -382,7 +383,7 @@ def main():
     #test()   # for debug only
     init()
 
-    print(f'\n\033[0;30;47m -= TELEX (rev. {ReleaseInfo.release_number}) =-\033[0m\n')
+    print(f'\n\033[0;30;47m -= TELEX (Rev. {ReleaseInfo.get_release_info()}) =-\033[0m\n')
 
     time_2Hz = time.monotonic()
     time_20Hz = time.monotonic()

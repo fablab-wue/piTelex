@@ -30,7 +30,7 @@ class TelexLog(txBase.TelexBase):
 
         self._last_time = self._last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self._last_source = '   '
-        self._line = '===== piTelex rev. ' + ReleaseInfo.release_number
+        self._line = '===== piTelex Rev. ' + ReleaseInfo.get_release_info()
         """
         try:
             from telex import find_rev

@@ -110,7 +110,8 @@
       "enable": true,
 
       # "port": 2342,
-      "centralex": "tlnserv2.teleprinter.net",
+      "centralex": True,
+      "centralex_srv": "tlnserv2.teleprinter.net",
       # "centralex_port": 49491,
 
       # WARNING
