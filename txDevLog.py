@@ -11,6 +11,8 @@ __version__     = "0.0.1"
 import time
 
 import logging
+
+from txReleaseInfo import ReleaseInfo
 l = logging.getLogger("piTelex." + __name__)
 
 import txBase
@@ -28,19 +30,20 @@ class TelexLog(txBase.TelexBase):
 
         self._last_time = self._last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         self._last_source = '   '
-        self._line = '===== piTelex '
+        self._line = '===== piTelex rev. ' + ReleaseInfo.release_number
+        """
         try:
             from telex import find_rev
             rev = find_rev()
         except:
             pass
         else:
-            self._line += 'rev '
-            self._line += rev
-            # cut line to head, commit hash and max. 50 characters description
-            # (as widely recommended)
-            self._line = self._line[:77]
-            self._line += ' '
+            self._line += 'rev ' + rev
+        """
+        # cut line to head, commit hash and max. 50 characters description
+        # (as widely recommended)
+        self._line = self._line[:77]
+        self._line += ' '
 
         self._line += (80 - len(self._line)) * '='
 

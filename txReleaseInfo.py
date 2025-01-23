@@ -14,6 +14,7 @@ import txCode
 
 class ReleaseInfo:
     itelex_protocol_version = 1
-    release_version = "pi001a"
+    release_number = "001a"
+    release_version = "pi" + release_number
 
 #######

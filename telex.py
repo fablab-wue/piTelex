@@ -16,6 +16,8 @@ import threading
 import os, os.path
 import sys
 import logging
+
+from txReleaseInfo import ReleaseInfo
 l = logging.getLogger("piTelex." + __name__)
 import logging.handlers
 import traceback
@@ -79,13 +81,15 @@ class MonthlyRotatingFileHandler(logging.handlers.RotatingFileHandler):
         if os.path.exists(source):
             os.rename(source, dest)
 
+
+"""
 def find_rev() -> str:
-    """
-    Try finding out the git commit id and return it.
-    """
+    # Try finding out the git commit id and return it.
     import subprocess
     result = subprocess.run(["git", "log", "--oneline", "-1"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
     return result.stdout.decode("utf-8", errors="replace").strip()
+"""
+
 
 def init_error_log(log_path,log_lvl):
     """
@@ -127,12 +131,15 @@ def init_error_log(log_path,log_lvl):
     threading.excepthook = threading_excepthook
 
     # Log application start
+    """
     try:
         rev = find_rev()
     except:
         pass
     else:
         logger.info("===== piTelex rev " + rev)
+    """
+    logger.info("===== piTelex rev. " + ReleaseInfo.release_number)
 
 def excepthook(etype, value, tb):
     to_log = "".join(traceback.format_exception(etype, value, tb))
@@ -375,7 +382,7 @@ def main():
     #test()   # for debug only
     init()
 
-    print('\n\033[0;30;47m -=TELEX=- \033[0m\n')
+    print(f'\n\033[0;30;47m -= TELEX (rev. {ReleaseInfo.release_number}) =-\033[0m\n')
 
     time_2Hz = time.monotonic()
     time_20Hz = time.monotonic()
