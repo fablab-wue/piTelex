@@ -838,7 +838,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def send_connect_remote(self, s, number, pin):
         '''Send connect remote packet (0x81)'''
-        l.info("Sending connect remote")
+        # l.info("Sending connect remote")
         send = bytearray([129, 6])   # 81 Connect Remote
         # Number
         number = self._number.to_bytes(length=4, byteorder="little")

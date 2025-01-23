@@ -146,7 +146,7 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
 
                 elif self._ctx_st == CTX_ST.OFFLINE:
                     # connect to centralex server
-                    l.info(f'Centralex connecting to server {self._centralex_address}:{self._centralex_port})')
+                    l.info(f'Centralex: connecting to server {self._centralex_address}:{self._centralex_port})')
                     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     address = (self._centralex_address, int(self._centralex_port))
                     s.settimeout(5.0) # Wait at most 5 s during connect
@@ -164,11 +164,11 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                         last_recv_ack = time.time()
                         last_send_ack = 0.0
                         with self._rx_lock: self._rx_buffer.append('\x1bCC')
-                        l.info('Centralex socket connected')
+                        l.info('Centralex: socket connected')
                         self._ctx_st = CTX_ST.STANDBY
                     else:
                         # Error: invalid response (authentication error)
-                        l.warning(f'Centralex authentication failed data={data[0]}')
+                        l.warning(f'Centralex: authentication failed data={data[0]}')
                         with self._rx_lock: self._rx_buffer.append('\x1bCE')
                         self._ctx_st = CTX_ST.RECYCLE
                         time.sleep(reconnect_after_error)
@@ -177,7 +177,7 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                     t = time.time()
                     if (t - last_recv_ack > 35):
                         # Error: heartbeat timeout from centralex server
-                        l.warning('Centralex heartbeat timeout: {!s} sec'.format(t - last_recv_ack))
+                        l.warning('Centralex: heartbeat timeout: {!s} sec'.format(t - last_recv_ack))
                         self._ctx_st = CTX_ST.RECYCLE
                         # s.close()
                         time.sleep(reconnect_after_error)
@@ -186,25 +186,33 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                         last_send_ack = t
                     s.settimeout(0.2)
                     try:
-                        data1 = s.recv(1)
+                        data = s.recv(1)
                     except (socket.timeout):
                         continue
 
-                    if (data1[0] != 0x00 and data1[0] != 0x83):
-                        l.debug(f'Contralex ignore invalid data {data1[0]}')
+                    if data == None:
+                        # connection lost
+                        self._ctx_st = CTX_ST.RECYCLE
+                        time.sleep(reconnect_after_error)
+                        continue
+                    
+                    if data[0] != 0x00 and data[0] != 0x83:
+                        l.debug(f'Centralex: ignore invalid data {data[0]}')
                         continue;
 
                     try:
-                        data2 = s.recv(1)
+                        d = s.recv(1)
                     except (socket.timeout):
                         continue
 
-                    if (data1[0] == 0x00 and data2[0] == 0x00):
+                    data += d
+
+                    if (data[0] == 0x00 and data[1] == 0x00):
                         # Heartbeat from centralex server
                         # l.debug('Heartbeat from centralex')
                         last_recv_ack = t
 
-                    elif (data1[0] == 0x83 and data2[0] == 0x00):
+                    elif (data[0] == 0x83 and data[1] == 0x00):
                         # incoming remote call from centralex server
                         self.send_accept_call_remote(s)
                         self._ctx_st = CTX_ST.CONNECTED
@@ -217,27 +225,15 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                         time.sleep(reconnect_after_conn)
 
             except (socket.timeout):
-                l.debug(f'Centralex socket timeout ctx_st={self._ctx_st}')
+                l.debug(f'Centralex: socket timeout ctx_st={self._ctx_st}')
                 with self._rx_lock: self._rx_buffer.append('\x1bCE')
                 self._ctx_st = CTX_ST.RECYCLE
                 time.sleep(reconnect_after_error)
             except OSError as e:
-                l.debug(f'Centralex error ctx_st={self._ctx_st} e={e}')
+                l.debug(f'Centralex: error ctx_st={self._ctx_st} e={e}')
                 with self._rx_lock: self._rx_buffer.append('\x1bCE')
                 self._ctx_st = CTX_ST.RECYCLE
                 time.sleep(reconnect_after_error)
-
-    # =====
-
-    """
-    def socket_recv(self, s, cnt):
-        try:
-            return s.recv(cnt)
-        except (socket.timeout):
-            return []
-        except (socket.error, OSError):
-            return None
-    """
 
     # =====
 
