@@ -520,7 +520,10 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
-                        l.debug('Received i-Telex packet: Version ({})'.format(display_hex(data)))
+                        if packet_len > 1:
+                            aa = data[3:].decode('ASCII', errors='ignore')
+                            aa = aa.rstrip('\x00')
+                        l.info(f"Received i-Telex packet: Version {data[2]} '{aa}' ({display_hex(data)})")
                         if self._remote_protocol_ver is None:
                             if data[2] != 1:
                                 # This is the first time an unsupported version was offered
@@ -751,7 +754,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def send_version(self, s):
         '''Send version packet (7)'''
-        version = ReleaseInfo.release_version
+        version = ReleaseInfo.release_itx_version
         send = bytearray([7, 0, ReleaseInfo.itelex_protocol_version])
         send.extend([ord(i) for i in version])
         if len(version) < 6:
