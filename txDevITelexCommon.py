@@ -520,6 +520,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
+                        aa = ''
                         if packet_len > 1:
                             aa = data[3:].decode('ASCII', errors='ignore')
                             aa = aa.rstrip('\x00')
