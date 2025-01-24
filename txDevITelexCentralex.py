@@ -190,12 +190,12 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                     except (socket.timeout):
                         continue
 
-                    if data == None:
+                    if data == None or len(data) == 0:
                         # connection lost
                         self._ctx_st = CTX_ST.RECYCLE
                         time.sleep(reconnect_after_error)
                         continue
-                    
+
                     if data[0] != 0x00 and data[0] != 0x83:
                         l.debug(f'Centralex: ignore invalid data {data[0]}')
                         continue;
@@ -217,6 +217,7 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                         self.send_accept_call_remote(s)
                         self._ctx_st = CTX_ST.CONNECTED
                         self.process_connection(s, True, False)
+                        self._tx_buffer = []
                         with self._rx_lock: self._rx_buffer.append('\x1bST') # stop teleprinter
                         self._printer_running = False
                         self.send_end_with_reason(s, 'nc')
@@ -229,7 +230,7 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                 with self._rx_lock: self._rx_buffer.append('\x1bCE')
                 self._ctx_st = CTX_ST.RECYCLE
                 time.sleep(reconnect_after_error)
-            except OSError as e:
+            except Exception as e:
                 l.debug(f'Centralex: error ctx_st={self._ctx_st} e={e}')
                 with self._rx_lock: self._rx_buffer.append('\x1bCE')
                 self._ctx_st = CTX_ST.RECYCLE
