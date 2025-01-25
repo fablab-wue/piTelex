@@ -216,7 +216,13 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
                         # incoming remote call from centralex server
                         self.send_accept_call_remote(s)
                         self._ctx_st = CTX_ST.CONNECTED
+                        l.debug(f'before _tx_buffer = {len(self._tx_buffer)}')
+                        l.debug(f'before _rx_buffer = {len(self._rx_buffer)}')
+                        self._tx_buffer = []
+                        self._rx_buffer = []
                         self.process_connection(s, True, False)
+                        l.debug(f'after _tx_buffer = {len(self._tx_buffer)}')
+                        l.debug(f'after _rx_buffer = {len(self._rx_buffer)}')
                         self._tx_buffer = []
                         with self._rx_lock: self._rx_buffer.append('\x1bST') # stop teleprinter
                         self._printer_running = False

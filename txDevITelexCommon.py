@@ -202,6 +202,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
 
     def disconnect_client(self):
+        l.debug("disconnect_client()")
         if self._tx_buffer:
             l.warning("While disconnecting, transmit buffer not empty, discarded; contents were: {!r}".format(self._tx_buffer))
         self._tx_buffer = []
@@ -689,12 +690,10 @@ class TelexITelexCommon(txBase.TelexBase):
             # - Network error: There's no connection to send over anymore.
             if not error:
                 self.send_end(s)
-        # l.info('end connection')
+        l.info('end connection')
         self.disconnect_client()
         if _connected_before != self._connected:
             l.info("State transition: {!s}=>{!s}".format(_connected_before, self._connected))
-
-        # print("process_connection end")
 
 
     def send_heartbeat(self, s):

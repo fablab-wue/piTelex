@@ -91,7 +91,7 @@ def find_rev() -> str:
 """
 
 
-def init_error_log(log_path,log_lvl):
+def init_error_log(log_path, log_lvl, log_lvl_str):
     """
     Initialise error logging, i.e. create the root logger. It saves all logged
     information in a monthly rotating file inside the path given. If the latter
@@ -139,7 +139,8 @@ def init_error_log(log_path,log_lvl):
     else:
         logger.info("===== piTelex rev " + rev)
     """
-    logger.info("===== piTelex Rev. " + ReleaseInfo.get_release_info())
+    logger.info(f"===== piTelex Rev. {ReleaseInfo.get_release_info()} =====")
+    logger.info(f"log_lvl: {log_lvl} {log_lvl_str}")
 
 def excepthook(etype, value, tb):
     to_log = "".join(traceback.format_exception(etype, value, tb))
@@ -378,7 +379,7 @@ def main():
         print('\n unknown loglevel: ',errorlog_level,', set to INFO.')       
         loglvl = logging.INFO
 
-    init_error_log(errorlog_path,loglvl)
+    init_error_log(errorlog_path, loglvl, errorlog_level)
 
     #test()   # for debug only
     init()
