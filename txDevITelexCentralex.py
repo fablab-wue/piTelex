@@ -20,7 +20,7 @@ l = logging.getLogger("piTelex." + __name__)
 import txCode
 import txBase
 import txDevITelexCommon
-from txDevITelexCommon import ST
+from txDevITelexCommon import ST, display_hex
 
 #                        Code  Len   Data ...
 selftest_packet = bytes([0x08, 0x04, 0xDE, 0xCA, 0xFB, 0xAD])
@@ -157,18 +157,43 @@ class TelexITelexCentralex(txDevITelexCommon.TelexITelexCommon):
 
                 elif self._ctx_st == CTX_ST.CHECK_AUTH:
                     s.settimeout(1)
-                    data = s.recv(2)
+                    data = s.recv(1)
+                    if data[0] == 0x82 or data[0] == 0x04 or data[0] == 0xFF:
+                        d = s.recv(1)
+                        data += d
+                        length = d[0]
+                        if length > 0:
+                            data += s.recv(length)
 
-                    if (data[0] == 0x82 and data[1] == 0x00):
-                        # Remote confirm
-                        last_recv_ack = time.time()
-                        last_send_ack = 0.0
-                        with self._rx_lock: self._rx_buffer.append('\x1bCC')
-                        l.info('Centralex: socket connected')
-                        self._ctx_st = CTX_ST.STANDBY
+                        if (data[0] == 0x82):
+                            # Remote confirm
+                            last_recv_ack = time.time()
+                            last_send_ack = 0.0
+                            with self._rx_lock: self._rx_buffer.append('\x1bCC')
+                            l.info('Centralex: socket connected')
+                            self._ctx_st = CTX_ST.STANDBY
+
+                        elif (data[0] == 0x04):
+                            # Reject
+                            aa = data[2:].decode('ASCII', errors='ignore')
+                            aa = aa.rstrip('\x00')
+                            l.warning(f'Centralex: authentication failed reason=\'{aa}\' data={format(display_hex(data))}')
+                            with self._rx_lock: self._rx_buffer.append('\x1bCE')
+                            self._ctx_st = CTX_ST.RECYCLE
+                            time.sleep(reconnect_after_error)
+
+                        elif (data[0] == 0xFF):
+                            # Error
+                            aa = data[2:].decode('ASCII', errors='ignore')
+                            aa = aa.rstrip('\x00')
+                            l.warning(f'Centralex: authentication failed error=\'{aa}\' data={format(display_hex(data))}')
+                            with self._rx_lock: self._rx_buffer.append('\x1bCE')
+                            self._ctx_st = CTX_ST.RECYCLE
+                            time.sleep(reconnect_after_error)
+
                     else:
                         # Error: invalid response (authentication error)
-                        l.warning(f'Centralex: authentication failed data={data[0]}')
+                        l.warning(f'Centralex: authentication failed data={format(display_hex(data))}')
                         with self._rx_lock: self._rx_buffer.append('\x1bCE')
                         self._ctx_st = CTX_ST.RECYCLE
                         time.sleep(reconnect_after_error)
