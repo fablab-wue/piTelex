@@ -113,3 +113,8 @@ error_log/
 
 # Archive
 archive/
+
+# Visual Studio
+.vs
+*.sln
+*.pyproj.user
