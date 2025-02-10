@@ -11,6 +11,7 @@ __version__     = "0.1.0"
 import time
 import os
 import sys
+import random
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -63,7 +64,8 @@ class TelexMCP(txBase.TelexBase):
         # Power button timeout: After ESC-PT, wait this many seconds to turn
         # teleprinter power off again
         self._power_button_timeout = params.get('power_button_timeout', 5*60)
-
+        self._welcome_msg = params.get('welcome_msg', True)
+        
         self._rx_buffer = []
 
         self._state = S_SLEEPING
@@ -97,6 +99,11 @@ class TelexMCP(txBase.TelexBase):
 
         self._on_by_PT = False
 
+        self._hand_type_buffer = []
+        self._hand_type_wait = -1
+
+        self._last_char_was_cr = False
+        self._cr_count = 0
 
     def __del__(self):
         super().__del__()
@@ -127,7 +134,8 @@ class TelexMCP(txBase.TelexBase):
                 return True
 
             if a == 'ST':   # ST
-                self._set_state(S_OFFLINE, True)
+                if self._state > S_OFFLINE:         # don't wake up from ZZ by pressing "ST"  # rowo
+                    self._set_state(S_OFFLINE, True)
                 return True
 
             if a == 'LT':   # LT
@@ -200,7 +208,9 @@ class TelexMCP(txBase.TelexBase):
 
             if a == 'I':   # welcome as server
                 # The welcome banner itself has a fixed total length of 24 characters:
-                text = '<<<\r\n' + time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n'
+                text= '<<<\r\n'
+                if self._welcome_msg:
+                    text += time.strftime("%d.%m.%Y  %H:%M", time.localtime()) + '\r\n' 
                 #if self._WRU_ID:
                 #    text += self._WRU_ID   # send back device id
                 #else:
@@ -226,12 +236,37 @@ class TelexMCP(txBase.TelexBase):
                 #self._set_state(S_OFFLINE)
                 raise(SystemExit('EXIT'))
 
+            if a == 'T':   # hand type simulator
+                if self._hand_type_wait >= 0:
+                    self._hand_type_wait = -1
+                else:
+                    self._hand_type_wait = 40   # 2 sec delay
 
         else:   # single char -------------------------------------------------
 
             # reset watchdog timers
             if self._state > S_OFFLINE:
                 self._wd.restart('ACTIVE')
+
+            # Insert text files into stream by typing five times or more  'WR' (carriage return)
+            # followed by a single number as file name ; 10 files are selectable.
+            # The files must reside in a subdirectory 'read' of piTelex and have '.txt' as extension.
+            # '0' --> '...piTelex/read/0.txt',   ....    '9' --> '...piTelex/read/9.txt'  
+
+            if a == '\r': 
+                if source not in ('iTs', 'iTc'): 	#only count locally typed '\r'
+                    if self._last_char_was_cr:
+                        self._cr_count += 1
+                    else:
+                        self._cr_count = 1
+                        self._last_char_was_cr = True
+            else:
+                if a != '>':                        # ignore "Zi"
+                    if self._cr_count >= 5 and self._last_char_was_cr:  
+                        if a in '0123456789':             	#Filename follows immediately after multiple 'WR'          
+                            self.read_file(a)
+                    self._last_char_was_cr = False
+               
 
             # command line interface
             if self.cli_enable:
@@ -298,6 +333,21 @@ class TelexMCP(txBase.TelexBase):
     def idle20Hz(self):
         self._wd.process()
 
+        # hand type simulator
+        if self._hand_type_wait >= 0:
+            if self._hand_type_wait == 0:
+                if not self._hand_type_buffer:
+                    self._hand_type_buffer = list(escape_texts['LOREM'])
+                a = self._hand_type_buffer.pop(0)
+                self._rx_buffer.append(a)   # send text
+                self._hand_type_wait = int(random.random()**2.0 * 5 + 2)   # emulate human typing waits
+                if a in ('\r', '\n'):
+                    self._hand_type_wait += 7
+                if a in (' ', '.', ',', '<', '>'):
+                    self._hand_type_wait += 1
+            else:
+                self._hand_type_wait -= 1
+
     def idle2Hz(self):
         if self._state == S_ACTIVE_NO_P and self._continue_with_no_printer:
             # Fake buffer feedback in case the teleprinter failed
@@ -306,7 +356,7 @@ class TelexMCP(txBase.TelexBase):
     # =====
 
     def _set_state(self, new_state:int, broadcast_state:bool=False):
-        ''' set new state and change hardware propperties '''
+        ''' set new state and change hardware properties '''
         if self._state == new_state:
             return
         l.debug('set_state {} -> {}'.format(self._state, new_state))

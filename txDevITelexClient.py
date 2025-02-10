@@ -40,6 +40,8 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
         self.id = 'iTc'
         self.params = params
 
+        TelexITelexClient._tns_addresses = params.get('tns_srv', ['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
+        # print('TNS: ',TelexITelexClient._tns_addresses)
         TelexITelexClient._tns_port = params.get('tns_port', 11811)
         TelexITelexClient._userlist = params.get('userlist', 'userlist.csv')
 
@@ -145,7 +147,9 @@ class TelexITelexClient(txDevITelexCommon.TelexITelexCommon):
             self.disconnect_client()
 
         s.close()
-        self._rx_buffer.append('\x1bZ')
+
+#        self._rx_buffer.append('\x1bZ') # rowo 
+        self._rx_buffer.append('\x1bST') # rowo don't force Z mode (would wake up from ZZ...), but trigger transit to sleep
         self._printer_running = False
 
     # =====

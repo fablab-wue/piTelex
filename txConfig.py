@@ -268,7 +268,6 @@ def load():
             'inv_rxd': False,
             'pin_relay': 22,
             'inv_relay': False,
-            'pin_online': 0,
             'pin_dir': 0,
             'pin_number_switch': 6,
             'baudrate': 50,

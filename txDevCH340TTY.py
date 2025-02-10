@@ -264,9 +264,6 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def _set_enable(self, enable:bool):
-        if enable and not self._is_enabled:
-            # Confirm enable status for MCP
-            self._rx_buffer.append('\x1bAA')
         self._is_enabled = enable
         self._tty.dtr = enable != self._inverse_dtr    # DTR -> True=Low=motor_on
         if 0:   # experimental
@@ -316,6 +313,10 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         enable = None
+
+        if a in ('A',):
+            # Confirm enable status for MCP
+            self._rx_buffer.append('\x1bAA')
 
         if a in ('A', 'AA'):
             self._set_pulse_dial(False)

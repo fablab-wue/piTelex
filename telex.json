@@ -9,7 +9,9 @@
 # enable the TTY module(s) that correspond to your TTY type.
 # Disable ("enable": false,) or optionally delete unused modules or entries.
 #
-# For detailed configuration infos see the wiki pages.
+#########################################################
+# For detailed configuration infos see the wiki pages !!!
+#########################################################
 #
 # Additional modules are described in the telex_Example_XXX.json files
 #
@@ -34,7 +36,7 @@
     # standard, minimal example for a teletype with FSG
     "RPiTTY_typical": {
       "type": "RPiTTY",
-      "enable": false,
+      "enable": true,
       "mode": "TW39",
       "pin_txd": 17,
       "pin_rxd": 27,
@@ -50,7 +52,7 @@
     # and show status with LEDs
     "RPiCtrl": {
       "type": "RPiCtrl",
-      "enable": true,
+      "enable": false,
 
       # separate number switch - see also module RPiTTY
       "pin_number_switch": 0,
@@ -77,8 +79,8 @@
       "pin_LED_WB_A": 0,
 
       # Duo-LEDs with common cathodes for status info
-      "pin_LED_status_R": 23,
-      "pin_LED_status_G": 24,
+      "pin_LED_status_R": 0,  # usually  23,
+      "pin_LED_status_G": 0,  # usually  24,
 
       # power saving
       "pin_power": 0,              # GPIO on SEU-M: 9
@@ -98,7 +100,8 @@
       # updates with i-Telex TNS (Teilnehmerserver, Subscriber Server).
       #
       # Leave at 0 if you've chosen a static TNS entry!
-      # Change to something nonzero if and only if
+      #
+      # Change to the calling number of your i-telex device if and only if
       # - you've got your number approved by i-Telex administrators, and
       # - you've chosen dynamic IP update and told i-Telex administrators so, and
       # - you've set your TNS pin properly.
@@ -106,19 +109,20 @@
       "tns_pin": 12345
     },
 
+
     ###########################################################################
 
     "log": {
       "type": "log",
       "enable": true,
-      "filename": "./data.log"
+      "filename": "./piTelex.log"
     },
 
     ###########################################################################
 
     "archive": {
       "type": "archive",
-      "enable": true,
+      "enable": false,
       "path": "./archive/"
     }
   
@@ -130,5 +134,6 @@
   "wru_replace_always": false,
   "dial_timeout": 0,
   "continue_with_no_printer": false,
-  "errorlog_path": "./errorlog/"
+  "errorlog_path": "./",
+  "welcome_msg": true	#Prints out a ed1000 style timestamp on connection
 }

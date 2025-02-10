@@ -53,6 +53,9 @@ class TelexRPiCtrl(txBase.TelexBase):
         self._pin_LED_status_R = params.get('pin_LED_status_R', 0)   # LED red
         self._pin_LED_status_G = params.get('pin_LED_status_G', 0)   # LED green
         self._pin_LED_LT = params.get('pin_LED_LT', 0)  # LED for local mode
+        self._pin_LED_Z = params.get('pin_LED_Z', 0)    # LED for standby mode
+        self._LED_Z_heartbeat = params.get('LED_Z_heartbeat', 6)     # delay between heartbeat flashes 
+                                                                     # (multiples of 500ms)
 
         self._pin_power = params.get('pin_power', 0)
         self._inv_power = params.get('inv_power', False)
@@ -76,6 +79,9 @@ class TelexRPiCtrl(txBase.TelexBase):
         # Helper for local mode LED.
         self._LT_pressed = False
 
+        # Helper for LED-Status
+        self._LED_Z_count = 0
+
         self._LED_status_R = None
         self._LED_status_G = None
         if self._pin_LED_status_R and self._pin_LED_status_G:
@@ -83,6 +89,7 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._LED_status_G = LED_PWM(self._pin_LED_status_G)
             self._set_status('INIT')
 
+        self._LED_Z = None
         self._LED_A = None
         self._LED_WB = None
         self._LED_WB_A = None
@@ -96,6 +103,8 @@ class TelexRPiCtrl(txBase.TelexBase):
             self._LED_WB_A = LED(self._pin_LED_WB_A)
         if self._pin_LED_LT:
             self._LED_LT = LED(self._pin_LED_LT)
+        if self._pin_LED_Z:
+            self._LED_Z = LED(self._pin_LED_Z)
 
         if self._pin_button_1T:
             self._button_1T = Button(self._pin_button_1T, self._callback_button_1T)
@@ -123,9 +132,9 @@ class TelexRPiCtrl(txBase.TelexBase):
 
         if self._pin_power:
             pi.set_mode(self._pin_power, pigpio.OUTPUT)
-            pi.write(self._pin_power, self._inv_power)
+            pi.write(self._pin_power, self._inv_power) # switch mains off
 
-        self._set_mode('Z')
+        self._set_mode('ZZ')                            # ZZ = sleeping
 
 
         # debug
@@ -140,6 +149,22 @@ class TelexRPiCtrl(txBase.TelexBase):
         global pi
 
         if pi:
+            if self._LED_Z:
+                self._LED_Z.off()
+            if self._LED_A:
+                self._LED_A.off()
+            if self._LED_WB:
+                self._LED_WB.off()
+            if self._LED_WB_A:
+                self._LED_WB_A.off()
+            if self._LED_LT:
+                self._LED_LT.off()
+            if self._LED_status_G:
+                self._LED_status_G.off()
+            if self._LED_status_R:
+                self._LED_status_R.off()
+            if(self._pin_power):
+                pi.write(self._pin_power,0)
             del pi
             pi = None
             pi_exit()
@@ -175,6 +200,22 @@ class TelexRPiCtrl(txBase.TelexBase):
 
     # -----
 
+    def idle2Hz(self):
+
+        # Heartbeat for LED_Z
+        #   In 'ZZ<<', flash LED_Z every self._LED_Z_heartbeat*0,5 seconds
+        #   set self._LED_Z_heartbeat = 0 for steady light as in 'Z'
+        if self._LED_Z and self._mode in ('ZZ',):
+            if self._LED_Z_count < self._LED_Z_heartbeat:
+                if self._LED_Z_count == 0:
+                    self._LED_Z.off()
+                self._LED_Z_count += 1    
+            else:
+                self._LED_Z.on()
+                self._LED_Z_count = 0    
+
+    # -----
+
     def idle(self):
         pass
 
@@ -198,6 +239,8 @@ class TelexRPiCtrl(txBase.TelexBase):
     def _set_mode(self, mode:str):
         self._mode = mode
         if mode in ('A', 'AA'):
+            if self._LED_Z:
+                self._LED_Z.off()
             if self._LED_A:
                 self._LED_A.on()
             if self._LED_WB:
@@ -206,11 +249,13 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._LED_WB_A.on()
             if self._LED_LT and self._LT_pressed:
                 self._LED_LT.on()
-            self._LT_pressed = False
+                self._LT_pressed = False
             if self._number_switch:
                 self._number_switch.enable(False)
 
         if mode in ('Z', 'ZZ'):
+            if self._LED_Z:
+                self._LED_Z.on()
             if self._LED_A:
                 self._LED_A.off()
             if self._LED_WB:
@@ -223,6 +268,8 @@ class TelexRPiCtrl(txBase.TelexBase):
                 self._number_switch.enable(False)
 
         if mode in ('WB',):
+            if self._LED_Z:
+                self._LED_Z.off()
             if self._LED_A:
                 self._LED_A.off()
             if self._LED_WB:
