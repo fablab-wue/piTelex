@@ -114,7 +114,7 @@ class TelexScreen(txBase.TelexBase):
         self._show_ctrl = self.params.get('show_ctrl', True)
         self._show_info = self.params.get('show_info', False)
         self._show_line = self.params.get('show_line', True)
-
+        self._coding = self.params.get('coding', 0)
         if os.name == 'nt':
             pass
 
@@ -203,7 +203,7 @@ class TelexScreen(txBase.TelexBase):
                     if c in self._LUT_typed_special_chars:
                         c = self._LUT_typed_special_chars.get(c, '?')
                     else:
-                        c = txCode.BaudotMurrayCode.ascii_to_tty_text(c)
+                        c = txCode.BaudotMurrayCode.ascii_to_tty_text(text=c, coding=self._coding)
 
                     if c[0] == '\x1b':
                         self._rx_buffer.append(c)

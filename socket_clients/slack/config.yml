@@ -1,0 +1,10 @@
+slack:
+  bot_token : "xoxb-***" # YOUR TOKEN HERE
+  app_token : "xapp-***" # YOUR TOKEN HERE
+socket:
+  host      : localhost
+  port      : 31337
+watchdog :
+  enabled   : true
+  host      : localhost
+  port      : 22000

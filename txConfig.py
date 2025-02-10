@@ -110,6 +110,10 @@ def load():
         dest="twitter", default='', nargs='?', metavar='CONSUMER_KEY:CONSUMER_SECRET:ACCESS_TOKEN:ACCESS_TOKEN_SECRET:BEARER_TOKEN:USERNAME',
         help="V2 Twitter client")
 
+    gg.add_argument("--socket",
+        dest="socket", default='', nargs='?', metavar='HOST:PORT',
+        help="Socket client")
+
     gg.add_argument("-S", "--rss",
         dest="rss", default='', nargs='?', metavar='url',
         help="RSS feed client (experimental)")
@@ -336,6 +340,10 @@ def load():
     
     if ARGS.rss:
         devices['rss'] = {'type': "rss", 'urls' : [ ARGS.rss ], 'format': "{title}\n\r{description}\r\n{pubDate}\r\n{guid}\r\r---\r\n}"}
+
+    if ARGS.socket:
+        socket_args = ARGS.socket.split(":")
+        devices['socket'] = { 'type': 'socket', 'enable'  : True, 'host' : socket_args[0], 'port' : int(socket_args[1]) }
 
     if ARGS.irc:
         devices['IRC'] = {'type': 'IRC', 'enable': True, 'channel': ARGS.irc.strip()}
