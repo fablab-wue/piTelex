@@ -116,5 +116,4 @@ archive/
 
 # Visual Studio
 .vs
-*.sln
 *.pyproj.user
