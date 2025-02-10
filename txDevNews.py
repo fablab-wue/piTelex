@@ -51,9 +51,6 @@ class TelexNews(txBase.TelexBase):
                         self._last_path = path
                         self._last_text = text
                         if text:
-                            # if self._print_path: # FIXME: this breaks due to attempting to access outer class (oversight), removed pending a suitable way to access config statically
-                            #    path = path[:-4].replace('\\', '/')
-                            #    text = path + '\r\n' + '='*len(path) + '\r\n' + text
                             self._news_buffer.append(text)
             except:
                 pass
@@ -70,7 +67,6 @@ class TelexNews(txBase.TelexBase):
         self.params = params
 
         self._newspath = params.get('newspath', './news')
-        self._print_path = self.params.get('print_path', False)
         self._rx_buffer = []
         self._news_buffer = []
         self._state_counter = 1
