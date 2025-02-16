@@ -1,11 +1,10 @@
 #!/usr/bin/python3
-# -*- coding: future_fstrings -*-
 
 """
 Simple Telex RSS Client
 
-requires python-fstrings and feedparser
-pip3 install future-fstrings feedparser
+requires feedparser
+pip3 install feedparser
 
 To turn this module on add the following to the devices section of the configuration
 
@@ -17,14 +16,6 @@ To turn this module on add the following to the devices section of the configura
       "format" : "{title}\n\r{description}\r\n{pubDate}\r\n{guid}\r\r---\r\n",
       "enable" : true
     }
-
-This article shows you how to get these credentials, make sure you give your app 'write' rights as well
-if you want to tweet from your telex
-https://www.jcchouinard.com/twitter-api-credentials/
-
-access_toeken and access_token_secret need to be generated separetely.
-
-user_mentions is the user account that you want to print the mentions of.
 
 """
 __author__ = "Frank BreBreedijk"
@@ -116,20 +107,20 @@ class TelexRSS(txBase.TelexBase):
         self._rx_buffer = []
         self._tx_buffer = []
 
-        # init Twitter Client
+        # init Client
         self._rss_client = RSS_Client(
             params.get("urls", [])
         )
         self._format=params.get("format","{title}\n")
         self._running = True
-        self._thread = threading.Thread(target=self.thread_function, name='Twitter_Handler_V2')
+        self._thread = threading.Thread(target=self.thread_function, name='RSS_Handler')
         self._thread.start()
 
 
     def __del__(self):
         super().__del__()
         self._running = False
-        self._twitter_client.stop()
+        self._rss_client.stop()
         self._thread.join()
 
     # =====
@@ -148,7 +139,7 @@ class TelexRSS(txBase.TelexBase):
 
     def thread_function(self):
         """
-            Twitter client handler
+            RSS client handler
         """
         formatstr = self._format
         elements = []
@@ -184,9 +175,13 @@ class TelexRSS(txBase.TelexBase):
                             bmc = bmc[linewidth:]
                         out_lines.append(bmc)
                     txt_out = "\r\n".join(out_lines)
+                    txt_out = '\r\n\r\n'+txt_out+'\r\n'
 
-                    for c in txt_out:
-                        self._rx_buffer.append(c)
+                    #####
+                    self._rx_buffer.append('\x1bLT')
+                    for a in txt_out:
+                        self._rx_buffer.append(a)
+                    self._rx_buffer.append('\x1bST')
 
                 except Exception as e:
                    LOG("txDevRSS.thread_function: {}".format(str(e)),1)
