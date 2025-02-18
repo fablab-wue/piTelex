@@ -71,6 +71,7 @@ class RSS_Client():
         feeds = {}
         for url in self._urls:
             feeds[url] = None
+            LOG('Monitoring {}'.format(str(url)),3)
         print(feeds)
         while self.running:
             try:
@@ -163,27 +164,43 @@ class TelexRSS(txBase.TelexBase):
                                 values.append(None)
                         else :
                             values.append(data.get(e,""))
+                    lines = []
+                    out_lines = []
                     msg = formatstr.format(*values)
                     lines = str(msg).split("\n")
                     linewidth = 68
-                    out_lines = []
+
                     for line in lines:
                         bmc = txCode.BaudotMurrayCode.ascii_to_tty_text(line.strip())
-                        bmc = bmc.replace("@","(A)")
-                        while len(bmc) >= linewidth:
-                            out_lines.append(bmc[0:linewidth])
-                            bmc = bmc[linewidth:]
-                        out_lines.append(bmc)
-                    txt_out = "\r\n".join(out_lines)
-                    txt_out = '\r\n\r\n'+txt_out+'\r\n'
+                        bmc = bmc.replace("@","(at)")
+                        while len(bmc) > linewidth:
+                            # Das Blank kurz vor Zeilenende finden
+                            lastblank = nextblank = 0
+                            while (nextblank < linewidth) and (nextblank >= 0):
+                                lastblank = nextblank
+                                nextblank = bmc.find(" ",lastblank +1)
+                            # Zeile bis zum gefundenen Blank ausgeben
+                            out_lines.append(bmc[:lastblank].lstrip())
 
-                    #####
-                    self._rx_buffer.append('\x1bLT')
+                            # Puffer entsprechend verkürzen
+                            bmc = bmc[lastblank:].lstrip()
+                        # rest ausgeben
+                        out_lines.append(bmc)
+                    
+                    # Put the parts together
+                    txt_out = "\r\n".join(out_lines)
+
+                    # message is now fomatted, turn on printer
+                    self._rx_buffer.append('\x1bA')
+                    # insert formatted text into stream
                     for a in txt_out:
                         self._rx_buffer.append(a)
-                    self._rx_buffer.append('\x1bST')
+
 
                 except Exception as e:
                    LOG("txDevRSS.thread_function: {}".format(str(e)),1)
+
+        # switch off printer
+        self._rx_buffer.append('\x1bZ')
 
         LOG('end rss handler', 2)
