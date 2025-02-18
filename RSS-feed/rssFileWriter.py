@@ -28,18 +28,16 @@ def split_newline_after(string, numchars):
     while len(string) > numchars:
         lastblank = nextblank = 0
         # Das Blank kurz vor Zeilenende finden
-        while (nextblank < numchars) and (len(string) > numchars):
+        while (nextblank < numchars) and (nextblank >= 0):
             lastblank = nextblank
             nextblank = string.find(" ",lastblank +1)
         # Zeile bis zum gefundenen Blank
         line = string[:lastblank].lstrip()
         string = string[lastblank:].lstrip()
         # Zeile ausgeben
-        if len(line) > 0:
-            lines.append(line)
+        lines.append(line)
     # restlichen String ausgeben
-    if len(string) > 0:
-        lines.append(string)
+    lines.append(string)
     return '\n'.join(lines)
 
 
@@ -48,18 +46,19 @@ def formatted_write(output_path, rss_entry, visible_name, split_lines):
     #outfilename = output_path + "entry-%d.rsstx" % (len(outfilenames) + 1)
     outfilename = output_path + "NEWS-" + time.strftime("%Y-%m-%dT%H%M%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) + ".rsstx"
     with open(outfilename, "a+") as outfile:
+
+
+        heading = split_newline_after(rss_entry.title , split_lines)
+        outfile.write("\n\n" + heading + "\n---\n")
+
         summary = h.handle(rss_entry.summary)
         summary = summary.replace('\n', ' ')
-        heading = visible_name + "  " + time.strftime("%d.%m.%Y %H:%M:%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) 
-        outfile.write(heading + "\n\n")
-        heading = rss_entry.title
-        heading = split_newline_after("== " + heading + " ==", split_lines)
-        #summary = "     " + summary
         summary = split_newline_after(summary, split_lines)
-        outfile.write(heading + "\n")
-        outfile.write(summary + "\n++++\n")
-        print(heading)
-        print(summary)
+        outfile.write(summary + "\n")
+
+
+        heading = visible_name + " " + time.strftime("%d.%m.%Y %H:%M:%S", time.localtime(calendar.timegm(rss_entry.published_parsed))) 
+        outfile.write('(' + heading + ") ++++\n")
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Scan an RSS feed and write the summy to files in a telex-friendly format")
