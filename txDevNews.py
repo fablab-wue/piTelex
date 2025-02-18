@@ -51,6 +51,9 @@ class TelexNews(txBase.TelexBase):
                         self._last_path = path
                         self._last_text = text
                         if text:
+                            # if self._print_path: # FIXME: this breaks due to attempting to access outer class (oversight), removed pending a suitable way to access config statically
+                            #    path = path[:-4].replace('\\', '/')
+                            #    text = path + '\r\n' + '='*len(path) + '\r\n' + text
                             self._news_buffer.append(text)
             except:
                 pass
@@ -67,9 +70,11 @@ class TelexNews(txBase.TelexBase):
         self.params = params
 
         self._newspath = params.get('newspath', './news')
+        self._print_path = self.params.get('print_path', False)
         self._rx_buffer = []
         self._news_buffer = []
         self._state_counter = 1
+        l.info('monitoring news directory: ' + self._newspath)
 
         self._observer = Observer()
         self._observer.schedule(self.EventHandler(self._news_buffer), path=self._newspath, recursive=True)
@@ -112,7 +117,7 @@ class TelexNews(txBase.TelexBase):
             if self._state_counter > 25:
                 text = self._news_buffer.pop(0)
                 aa = txCode.BaudotMurrayCode.translate(text)
-                aa = '\r\r\r\r\n' + aa + '\r\n\r\n\r\n'
+                aa = '\r\n' + aa + '\r\n'
                 for a in aa:
                     self._rx_buffer.append(a)
                 self._rx_buffer.append('\x1bST')
