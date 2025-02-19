@@ -1,4 +1,20 @@
-## List of changes relevant to the user compared to the release 2023-07 
+# List of changes relevant for daily use
+
+## Changes compared to release 2025-02
+
+###  Added centralex protocol
+* Module: ITelexSrv, part ITelexCentralex
+* Description:
+
+i-telex stations require an IPv4 address in order to be reachable from the internet. For stations only equipped with an IPv6 address, the use of a centralex relay server may solve this problem.
+
+See https://github.com/fablab-wue/piTelex/wiki/SW_DevITelexCentralex for details.
+
+
+
+
+---
+## Changes compared to the release 2023-07 
 
 ###  New config file parameter `block_ascii`
 * Module: ITelexSrv

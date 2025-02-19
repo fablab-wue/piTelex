@@ -9,7 +9,7 @@
         "news": {
             "type": "news",
             "enable": false,
-            "newspath": "/home/pi/piTelex/RSS-feed/news/"
+            "newspath": "/home/pi/piTelex/RSS-feed/utils/news/"
           },      
 
         # ...
