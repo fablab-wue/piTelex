@@ -35,7 +35,7 @@
       "type": "i-Telex",
       "enable": true,
       # "port": 2342,
-      "centralex": True,
+      "centralex": true,
       "centralex_srv": "tlnserv2.teleprinter.net",
       "centralex_port": 49491,
       "tns_dynip_number": 123456, # Subscriber number registerd at TNS
