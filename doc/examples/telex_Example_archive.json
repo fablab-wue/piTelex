@@ -1,0 +1,22 @@
+# Configuration examples for piTelex
+# 2023-03-15
+# This is only a partial example. This can be copied in the main configuration file "telex.json"
+ ###########################################################################
+
+    "archive": {
+      "type": "archive",
+      "enable": true,					# wether to store messages or not
+      "path": "./archive/",                             # directory path for archived messages
+      "send_email": true,    				# notify via email when a telex has arrived?
+      "recipient": "recipient@targetdomain.domain"      # E-Mail address of recipient
+      # now some data of mailaccount to use
+      "email_sender": "sendername@mailprovider.de",     # E-Mail address of sender
+      "smtp_server": "smtp.mailserver.de",              # FQDN or IP of mailserver
+      "smtp_port": 587,					# TCP port at mailserver (often 25, 465, or 587)
+      "smtp_user": "MailAccountName",			# user at mail server
+      "smtp_password": "VeryVerySecret",	        # password for user
+    }
+  },
+
+  ###########################################################################
+

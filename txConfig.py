@@ -346,8 +346,23 @@ def load():
     if ARGS.eliza:
         devices['eliza'] = {'type': 'eliza', 'enable': True}
 
+#    if ARGS.archive:
+#        devices['archive'] = {'type': 'archive', 'enable': True, 'path': 'archive'}
+#
+#   New 2025-03-20: Added ability to send email notifications when a telex has arrived
     if ARGS.archive:
-        devices['archive'] = {'type': 'archive', 'enable': True, 'path': 'archive'}
+        devices['archive'] = {
+            'type': 'archive',
+            'enable': True,
+            'path': 'archive',
+            'send_email': false,
+            'smtp_server': 'smtp.example.com',
+            'smtp_port': 587,
+            'smtp_user': 'user@example.com',
+            'smtp_password': 'password',
+            'recipient': 'recipient@example.com',
+            'email_sender': 'noreply@example.com',
+        }
 
     if ARGS.shellcmd:
         devices['shellcmd'] = {'type': 'shellcmd', 'enable': True, 'LUT': { 'X': 'xxx'} }

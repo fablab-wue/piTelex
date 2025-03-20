@@ -34,4 +34,6 @@
 * A few additional python3 modules (see Documentation)
 
 ### Documentation
-Complete Docuemtation for installation and usage can be found at https://github.com/fablab-wue/piTelex/wiki
+* Complete Docuemtation for installation and usage can be found at https://github.com/fablab-wue/piTelex/wiki
+* The file(s) "piTelex-Install-für-NichtSysAdmins.\*", contributed by Wolfram Henkel,  provide installation instructions (in german) using the example of a TW39 system with Ö-AGT and Raspberry Pi under linux, specifically geared towards experienced windows users but without specific linux knowledge.
+
