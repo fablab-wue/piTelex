@@ -355,13 +355,13 @@ def load():
             'type': 'archive',
             'enable': True,
             'path': 'archive',
-            'send_email': false,
+            'send_email': true,
             'smtp_server': 'smtp.example.com',
             'smtp_port': 587,
             'smtp_user': 'user@example.com',
             'smtp_password': 'password',
             'recipient': 'recipient@example.com',
-            'email_sender': 'noreply@example.com',
+            'email_sender': 'noreply@example.com'
         }
 
     if ARGS.shellcmd:
