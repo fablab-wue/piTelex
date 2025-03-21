@@ -10,6 +10,21 @@ i-telex stations require an IPv4 address in order to be reachable from the inter
 
 See https://github.com/fablab-wue/piTelex/wiki/SW_DevITelexCentralex for details.
 
+### E-Mail notification when a telex arrives
+* Module: Archive
+* Description:
+
+    The archive module now can not only save incoming messages to an archive directory, but can also send the content of the message to an e-mail address.
+    To achieve this, several new config file options have been added (see also the wiki page for the module)
+    ```json
+         "send_email": true,    				# notify via email when a telex has arrived
+         "recipient": "recipient@targetdomain.domain",       # E-Mail address of recipient
+         "email_sender": "sendername@provider.domain",       # E-Mail address of sender
+         "smtp_server": "smtp.mailserver.org",               # FQDN or IP of mailserver
+         "smtp_port": 587,					# TCP port at mailserver (often 25, 465, 587)
+         "smtp_user": "username",		                # username at mail server
+         "smtp_password": "VeryVerySecret"	                # password for username
+    ```
 
 
 
@@ -134,4 +149,7 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
   "welcome_msg" : true/false # default true
   ```
   allows to select whether the Timestamp is printed or not.
+  
+
+  
   
