@@ -278,7 +278,7 @@ class TelexArchive(txBase.TelexBase):
         Replace all not allowed characters in mail text by "_"
         """
         allowed_chars = " abcdefghijklmnopqrstuvwxyz0123456789-+=:/()?.,'\n\r@°"
-        return "".join(c if c in allowed_chars else "_" for c in text.lower())
+        return "".join(c if c in allowed_chars else "" for c in text.lower())
 
 def main():
     import sys
