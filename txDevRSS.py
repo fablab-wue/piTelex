@@ -27,7 +27,7 @@ access_toeken and access_token_secret need to be generated separetely.
 user_mentions is the user account that you want to print the mentions of.
 
 """
-__author__ = "Frank BreBreedijk"
+__author__ = "Frank Breedijk"
 __license__ = "CC0"
 __version__ = "0.5.0"
 

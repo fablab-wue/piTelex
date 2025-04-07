@@ -220,6 +220,11 @@ def init():
             twitterV2 = txDevTwitterV2.TelexTwitterV2(**dev_param)
             DEVICES.append(twitterV2)
 
+        elif dev_param['type'] == 'socket':
+            import txDevSocket
+            socket = txDevSocket.TelexSocket(**dev_param)
+            DEVICES.append(socket)        
+
         elif dev_param['type'] == 'rss' :
             import txDevRSS
             rss = txDevRSS.TelexRSS(**dev_param)
