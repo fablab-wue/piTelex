@@ -13,8 +13,9 @@ import socket
 import time
 import datetime
 import sys
-import random
-random.seed()
+#---rowo
+#import random
+#random.seed()
 import enum
 from txReleaseInfo import ReleaseInfo
 
@@ -893,17 +894,48 @@ class TelexITelexCommon(txBase.TelexBase):
     #    "tlnserv3.teleprinter.net"
     #]
 
+#--- rowo
+# This old method cannot handle misconfigured server entries or dead servers
+#    @classmethod
+#    def choose_tns_address(cls):
+#        """
+#        Return randomly chosen TNS (Telex number server) address, for load
+#        distribution.
+#        """
+#        _srv = random.choice(cls._tns_addresses)
+#        l.info('Query TNS: '+_srv)
+#        return _srv
+
+
+#######
 
     @classmethod
     def choose_tns_address(cls):
         """
-        Return randomly chosen TNS (Telex number server) address, for load
-        distribution.
+        Return a valid TNS (Telex number server) address:
+        Servers are tested for connectivity in the order of the given set of servers,
+        default see above. Can be overridden by the value of "tns_srv" in telex.json
+        Assumes that at least one of the servers is functional and responding.
         """
-        _srv = random.choice(cls._tns_addresses)
-        l.info('Query TNS: '+_srv)
+        _srvno = 0
+        while _srvno < len(cls._tns_addresses):
+            _srv = (cls._tns_addresses[_srvno])
+            l.info('Trying TNS: '+_srv)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.settimeout(3.0)
+                    s.connect((_srv, cls._tns_port))
+                except (socket.error, ConnectionError) as e:
+                    l.info(e)
+                    _srvno += 1
+                else:
+                    _srvno=len(cls._tns_addresses)
+                finally:
+                    s.close()
+        l.info("TNS selected: "+_srv)
         return _srv
 
 
 #######
+
 

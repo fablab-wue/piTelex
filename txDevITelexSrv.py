@@ -56,10 +56,12 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             l.warning("Invalid TNS pin, ignored: " + repr(self._tns_pin))
             self._number = None
             self._tns_pin = None
-
+#---rowo
         TelexITelexSrv._tns_addresses = params.get('tns_srv',['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
+#        self._tns_addresses = params.get('tns_srv',['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
 
-        self._tns_port = params.get('tns_port',11811)
+        TelexITelexSrv._tns_port = params.get('tns_port',11811)
+ #       self._tns_port = params.get('tns_port',11811)
 
         self._block_ascii = params.get('block_ascii', True)
 
