@@ -2,6 +2,19 @@
 
 ## Changes compared to release 2025-02
 
+### Improved selection of the TNS server
+* Module: ITelex
+* Description:
+
+  Previously, the TN server was selected from a list at random and without a reachability test.
+  The list is specified in the configuration option `tns_srv` and is set by default to `tlnserv.teleprinter.net, tlnserv2.teleprinter.net, tlnserv3.teleprinter.net`.
+
+  The list is now a priority list, i.e. the first entry has the highest priority and the last entry the lowest. There can be more than three entries.
+  Each time a server needs to be selected, piTelex checks the entries in the list starting with the first one (=highest priority) and returns the first working entry.
+  Non-functioning server entries no longer lead to sporadic (random) errors during TN resolution.
+  
+
+
 ###  Added centralex protocol
 * Module: ITelexSrv, part ITelexCentralex
 * Description:
