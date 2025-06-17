@@ -13,9 +13,11 @@ import socket
 import time
 import datetime
 import sys
-import random
-random.seed()
+#---rowo
+#import random
+#random.seed()
 import enum
+from txReleaseInfo import ReleaseInfo
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
@@ -201,6 +203,7 @@ class TelexITelexCommon(txBase.TelexBase):
 
 
     def disconnect_client(self):
+        l.debug("disconnect_client()")
         if self._tx_buffer:
             l.warning("While disconnecting, transmit buffer not empty, discarded; contents were: {!r}".format(self._tx_buffer))
         self._tx_buffer = []
@@ -248,6 +251,9 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def process_connection(self, s:socket.socket, is_server:bool, is_ascii:bool):  # Takes client socket as argument.
         """Handles a client or server connection."""
+
+        # print("process_connection")
+
         bmc = txCode.BaudotMurrayCode(False, False, True)
         sent_counter = 0
         self._received_counter = 0
@@ -516,7 +522,11 @@ class TelexITelexCommon(txBase.TelexBase):
 
                     # Version
                     elif data[0] == 7 and packet_len >= 1 and packet_len <= 20:
-                        l.debug('Received i-Telex packet: Version ({})'.format(display_hex(data)))
+                        aa = ''
+                        if packet_len > 1:
+                            aa = data[3:].decode('ASCII', errors='ignore')
+                            aa = aa.rstrip('\x00')
+                        l.info(f"Received i-Telex packet: Version {data[2]} '{aa}' ({display_hex(data)})")
                         if self._remote_protocol_ver is None:
                             if data[2] != 1:
                                 # This is the first time an unsupported version was offered
@@ -745,7 +755,12 @@ class TelexITelexCommon(txBase.TelexBase):
 
     def send_version(self, s):
         '''Send version packet (7)'''
-        send = bytearray([7, 1, 1])
+        version = ReleaseInfo.release_itx_version
+        send = bytearray([7, 0, ReleaseInfo.itelex_protocol_version])
+        send.extend([ord(i) for i in version])
+        if len(version) < 6:
+            send.append(0)
+        send[1] = len(send) - 2 # length
         l.debug('Sending i-Telex packet: Version ({})'.format(display_hex(send)))
         s.sendall(send)
 
@@ -799,6 +814,16 @@ class TelexITelexCommon(txBase.TelexBase):
             pass
 
 
+    def send_end_with_reason(self, s, reason):
+        '''Send end packet with reason (3), for centralex disconnect'''
+        send = bytearray([3, len(reason)])   # End with reason
+        send.extend([ord(i) for i in reason])
+        l.debug(f'Sending i-Telex packet: End {reason} ({display_hex(send)})')
+        try:   # socket can possible be closed by other side
+            s.sendall(send)
+        except:
+            pass
+
     # Types of reject packets (see txDevMCP):
     #
     # - abs   line disabled
@@ -815,6 +840,26 @@ class TelexITelexCommon(txBase.TelexBase):
         s.sendall(send)
 
 
+    def send_connect_remote(self, s, number, pin):
+        '''Send connect remote packet (0x81)'''
+        # l.info("Sending connect remote")
+        send = bytearray([129, 6])   # 81 Connect Remote
+        # Number
+        number = self._number.to_bytes(length=4, byteorder="little")
+        send.extend(number)
+        # TNS pin
+        tns_pin = self._tns_pin.to_bytes(length=2, byteorder="little")
+        send.extend(tns_pin)
+        l.debug('Sending i-Telex packet: Connect Remote ({})'.format(display_hex(send)))
+        s.sendall(send)
+
+
+    def send_accept_call_remote(self, s):
+        '''Send accept call remote packet (0x84)'''
+        send = bytearray([132, 0])   # 84 Accept call remote
+        l.debug('Sending i-Telex packet: Accept call remote ({})'.format(display_hex(send)))
+        s.sendall(send)
+
     def send_welcome(self, s):
         '''Send welcome message indirect as a server'''
         with self._rx_lock:
@@ -824,6 +869,7 @@ class TelexITelexCommon(txBase.TelexBase):
             #self._rx_buffer.append('@')
             self._rx_buffer.append('\x1bI')
         return 24 # fixed length of welcome banner, see txDevMCP
+
 
     # i-Telex epoch has been defined as 1900-01-00 00:00:00 (sic)
     # What's probably meant is          1900-01-01 00:00:00
@@ -848,17 +894,48 @@ class TelexITelexCommon(txBase.TelexBase):
     #    "tlnserv3.teleprinter.net"
     #]
 
+#--- rowo
+# This old method cannot handle misconfigured server entries or dead servers
+#    @classmethod
+#    def choose_tns_address(cls):
+#        """
+#        Return randomly chosen TNS (Telex number server) address, for load
+#        distribution.
+#        """
+#        _srv = random.choice(cls._tns_addresses)
+#        l.info('Query TNS: '+_srv)
+#        return _srv
+
+
+#######
 
     @classmethod
     def choose_tns_address(cls):
         """
-        Return randomly chosen TNS (Telex number server) address, for load
-        distribution.
+        Return a valid TNS (Telex number server) address:
+        Servers are tested for connectivity in the order of the given set of servers,
+        default see above. Can be overridden by the value of "tns_srv" in telex.json
+        Assumes that at least one of the servers is functional and responding.
         """
-        _srv = random.choice(cls._tns_addresses)
-        l.info('Query TNS: '+_srv)
+        _srvno = 0
+        while _srvno < len(cls._tns_addresses):
+            _srv = (cls._tns_addresses[_srvno])
+            l.info('Trying TNS: '+_srv)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.settimeout(3.0)
+                    s.connect((_srv, cls._tns_port))
+                except (socket.error, ConnectionError) as e:
+                    l.info(e)
+                    _srvno += 1
+                else:
+                    _srvno=len(cls._tns_addresses)
+                finally:
+                    s.close()
+        l.info("TNS selected: "+_srv)
         return _srv
 
 
 #######
+
 

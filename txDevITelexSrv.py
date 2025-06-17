@@ -33,7 +33,13 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         self.id = 'iTs'
         self.params = params
 
-        self._port = params.get('port', 2342)
+        port = params.get('port', 0)
+        if port > 0:
+            self._local_port = port
+            self._public_port = port
+        else:
+            self._local_port = params.get('local_port', 2342)
+            self._public_port = params.get('public_port', 2342)
 
         self._number = int(params.get('tns_dynip_number', 0))
         if self._number < 10000 or self._number > 0xffffffff:
@@ -50,10 +56,12 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
             l.warning("Invalid TNS pin, ignored: " + repr(self._tns_pin))
             self._number = None
             self._tns_pin = None
-
+#---rowo
         TelexITelexSrv._tns_addresses = params.get('tns_srv',['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
+#        self._tns_addresses = params.get('tns_srv',['tlnserv.teleprinter.net','tlnserv2.teleprinter.net','tlnserv3.teleprinter.net'])
 
-        self._tns_port = params.get('tns_port',11811)
+        TelexITelexSrv._tns_port = params.get('tns_port',11811)
+ #       self._tns_port = params.get('tns_port',11811)
 
         self._block_ascii = params.get('block_ascii', True)
 
@@ -65,7 +73,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         # < 240 s).
         # https://stackoverflow.com/questions/5040491/python-socket-doesnt-close-connection-properly
         self.SERVER.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.SERVER.bind(('', self._port))
+        self.SERVER.bind(('', self._local_port))
 
         # Set timeout for server socket so that calling accept will not block
         # indefinitely. Otherwise, the server thread would prevent quitting
@@ -335,7 +343,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3.0)
-                s.connect((self.ip_address, self._port))
+                s.connect((self.ip_address, self._public_port))
                 qry = selftest_packet
                 # Reset selftest event before sending in case it was
                 # accidentally triggered before
@@ -378,7 +386,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 tns_pin = self._tns_pin.to_bytes(length=2, byteorder="little")
                 qry.extend(tns_pin)
                 # Port
-                port = self._port.to_bytes(length=2, byteorder="little")
+                port = self._public_port.to_bytes(length=2, byteorder="little")
                 qry.extend(port)
                 s.sendall(qry)
                 data = s.recv(1024)

@@ -3,8 +3,8 @@
 ### Change these settings to your needs.
 ### Keep in mind that LINELENGTH does not consider Umlaut or "ß" expansion, so calculate some extra space in case of Umlauts...
 
-RSSROOT=/home/pi/piTelex/RSS-feed
-NEWS=$RSSROOT/news
+RSSROOT=/home/pi/piTelex/utils/RSS-feed
+NEWS=$RSSROOT/news     # This path must be identical to the value of "newspath" for device "News" in telex.json
 LOG=$NEWS/log
 LINELENGTH=65
 CFG=$RSSROOT/newsfeeds.cfg

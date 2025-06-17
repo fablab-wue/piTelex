@@ -69,6 +69,12 @@ class BaudotMurrayCode:
         '#': '(HASH)',
         '@': '(AT)',
         '"': "'",
+        '‘': "'",   # inserted 25-04-28 rowo as suggested in issue #32 by ketzer128
+        '’': "'",   # inserted 25-04-28 rowo as suggested in issue #32 by ketzer128
+        '„': "'",   # inserted 25-04-28 rowo as suggested in issue #32 by ketzer128
+        '“': "'",   # inserted 25-04-28 rowo as suggested in issue #32 by ketzer128
+        '«': "'",   # inserted 25-04-28 rowo as suggested in issue #32 by ketzer128
+        '»': "'",   # inserted 25-04-28 rowo as suggested in issue #32 by ketzer128
         ';': ',.',
         '!': '(./)',
         '%': '(./.)',

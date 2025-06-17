@@ -1,0 +1,45 @@
+# Configuration examples for piTelex
+# 2025-01-18
+# requirements: commentjson, argparse (additional requirements per section are listed there)
+#
+    ###########################################################################
+    # New parameters for Centralex and public / local port:
+    #
+    # "local_port":     Can be used instead of "port" to specify the local piTelex port.
+    # "public_port":    Can be used instead of "port" to specify the port on your router.
+    #                   This port-number is transmitted to the Subscribe Server.
+    # You can use either "port" or the "local_port/public_port" combination.
+    # If you use Centralex you do not have to specify any port.
+    #
+    # If you do not have a public ipv4 address you now can use the Centralex Server for
+    # incoming connections.
+    # "centralex":      Specifies the Centralex Server to use (host name or ip address).
+    #                   Standard Centralex host name is "tlnserv2.teleprinter.net".
+    # "centralex_port": Standard Centralex port is 49491 (optinal)
+    # To use the Centralex Server your number must be set to dynamic IP update on the server.
+
+    # WARNING
+    # Setting tns-dynip-number to anything except 0 will enable dynamic IP
+    # updates with i-Telex TNS (Teilnehmerserver, Subscriber Server).
+    #
+    # Leave at 0 if you've chosen a static TNS entry!
+    #
+    # Change to the calling number of your i-telex device if and only if
+    # - you've got your number approved by i-Telex administrators, and
+    # - you've chosen dynamic IP update and told i-Telex administrators so, and
+    # - you've set your TNS pin properly.
+
+    # Module type "i-Telex"
+
+    "i-Telex": {
+      "type": "i-Telex",
+      "enable": true,
+      # "port": 2342,
+      "centralex": true,
+      "centralex_srv": "tlnserv2.teleprinter.net",
+      "centralex_port": 49491,
+      "tns_dynip_number": 123456, # Subscriber number registerd at TNS
+      "tns_pin": 12345
+    },
+
+

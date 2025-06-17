@@ -1,4 +1,48 @@
-## List of changes relevant to the user compared to the release 2023-07 
+# List of changes relevant for daily use
+
+## Changes compared to release 2025-02
+
+### Improved selection of the TNS server
+* Module: ITelex
+* Description:
+
+  Previously, the TN server was selected from a list at random and without a reachability test.
+  The list is specified in the configuration option `tns_srv` and is set by default to `tlnserv.teleprinter.net, tlnserv2.teleprinter.net, tlnserv3.teleprinter.net`.
+
+  The list is now a priority list, i.e. the first entry has the highest priority and the last entry the lowest. There can be more than three entries.
+  Each time a server needs to be selected, piTelex checks the entries in the list starting with the first one (=highest priority) and returns the first working entry.
+  Non-functioning server entries no longer lead to sporadic (random) errors during TN resolution.
+  
+
+
+###  Added centralex protocol
+* Module: ITelexSrv, part ITelexCentralex
+* Description:
+
+i-telex stations require an IPv4 address in order to be reachable from the internet. For stations only equipped with an IPv6 address, the use of a centralex relay server may solve this problem.
+
+See https://github.com/fablab-wue/piTelex/wiki/SW_DevITelexCentralex for details.
+
+### E-Mail notification when a telex arrives
+* Module: Archive
+* Description:
+
+    The archive module now can not only save incoming messages to an archive directory, but can also send the content of the message to an e-mail address.
+    To achieve this, several new config file options have been added (see also the wiki page for the module)
+    ```json
+         "send_email": true,    				# notify via email when a telex has arrived
+         "recipient": "recipient@targetdomain.domain",       # E-Mail address of recipient
+         "email_sender": "sendername@provider.domain",       # E-Mail address of sender
+         "smtp_server": "smtp.mailserver.org",               # FQDN or IP of mailserver
+         "smtp_port": 587,					# TCP port at mailserver (often 25, 465, 587)
+         "smtp_user": "username",		                # username at mail server
+         "smtp_password": "VeryVerySecret"	                # password for username
+    ```
+
+
+
+---
+## Changes compared to the release 2023-07 
 
 ###  New config file parameter `block_ascii`
 * Module: ITelexSrv
@@ -118,4 +162,7 @@ Hint: On an incoming ASCII-connection, the teleprinter may or may not be switche
   "welcome_msg" : true/false # default true
   ```
   allows to select whether the Timestamp is printed or not.
+  
+
+  
   

@@ -166,10 +166,11 @@ class TelexRPiTTY(txBase.TelexBase):
     def write(self, a:str, source:str):
         ''' called by system to output next character or send control sequence '''
         if a:
-            if a == '#':   a = '@'   # WRU - ask teletype for hardware ID (KG)
-            self._tx_buffer.append(a)
-            if self._double_WR and a == '\r':
+            if a != '@':
+                if a == '#':   a = '@'   # WRU - ask teletype for hardware ID (KG)
                 self._tx_buffer.append(a)
+                if self._double_WR and a == '\r':
+                    self._tx_buffer.append(a)
 
     # =====
 

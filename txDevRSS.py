@@ -1,11 +1,10 @@
 #!/usr/bin/python3
-# -*- coding: future_fstrings -*-
 
 """
 Simple Telex RSS Client
 
-requires python-fstrings and feedparser
-pip3 install future-fstrings feedparser
+requires feedparser
+pip3 install feedparser
 
 To turn this module on add the following to the devices section of the configuration
 
@@ -17,14 +16,6 @@ To turn this module on add the following to the devices section of the configura
       "format" : "{title}\n\r{description}\r\n{pubDate}\r\n{guid}\r\r---\r\n",
       "enable" : true
     }
-
-This article shows you how to get these credentials, make sure you give your app 'write' rights as well
-if you want to tweet from your telex
-https://www.jcchouinard.com/twitter-api-credentials/
-
-access_toeken and access_token_secret need to be generated separetely.
-
-user_mentions is the user account that you want to print the mentions of.
 
 """
 __author__ = "Frank BreBreedijk"
@@ -80,6 +71,7 @@ class RSS_Client():
         feeds = {}
         for url in self._urls:
             feeds[url] = None
+            LOG('Monitoring {}'.format(str(url)),3)
         print(feeds)
         while self.running:
             try:
@@ -116,20 +108,20 @@ class TelexRSS(txBase.TelexBase):
         self._rx_buffer = []
         self._tx_buffer = []
 
-        # init Twitter Client
+        # init Client
         self._rss_client = RSS_Client(
             params.get("urls", [])
         )
         self._format=params.get("format","{title}\n")
         self._running = True
-        self._thread = threading.Thread(target=self.thread_function, name='Twitter_Handler_V2')
+        self._thread = threading.Thread(target=self.thread_function, name='RSS_Handler')
         self._thread.start()
 
 
     def __del__(self):
         super().__del__()
         self._running = False
-        self._twitter_client.stop()
+        self._rss_client.stop()
         self._thread.join()
 
     # =====
@@ -148,7 +140,7 @@ class TelexRSS(txBase.TelexBase):
 
     def thread_function(self):
         """
-            Twitter client handler
+            RSS client handler
         """
         formatstr = self._format
         elements = []
@@ -172,23 +164,43 @@ class TelexRSS(txBase.TelexBase):
                                 values.append(None)
                         else :
                             values.append(data.get(e,""))
+                    lines = []
+                    out_lines = []
                     msg = formatstr.format(*values)
                     lines = str(msg).split("\n")
                     linewidth = 68
-                    out_lines = []
+
                     for line in lines:
                         bmc = txCode.BaudotMurrayCode.ascii_to_tty_text(line.strip())
-                        bmc = bmc.replace("@","(A)")
-                        while len(bmc) >= linewidth:
-                            out_lines.append(bmc[0:linewidth])
-                            bmc = bmc[linewidth:]
+                        bmc = bmc.replace("@","(at)")
+                        while len(bmc) > linewidth:
+                            # Das Blank kurz vor Zeilenende finden
+                            lastblank = nextblank = 0
+                            while (nextblank < linewidth) and (nextblank >= 0):
+                                lastblank = nextblank
+                                nextblank = bmc.find(" ",lastblank +1)
+                            # Zeile bis zum gefundenen Blank ausgeben
+                            out_lines.append(bmc[:lastblank].lstrip())
+
+                            # Puffer entsprechend verkürzen
+                            bmc = bmc[lastblank:].lstrip()
+                        # rest ausgeben
                         out_lines.append(bmc)
+                    
+                    # Put the parts together
                     txt_out = "\r\n".join(out_lines)
 
-                    for c in txt_out:
-                        self._rx_buffer.append(c)
+                    # message is now fomatted, turn on printer
+                    self._rx_buffer.append('\x1bA')
+                    # insert formatted text into stream
+                    for a in txt_out:
+                        self._rx_buffer.append(a)
+
 
                 except Exception as e:
                    LOG("txDevRSS.thread_function: {}".format(str(e)),1)
+
+        # switch off printer
+        self._rx_buffer.append('\x1bZ')
 
         LOG('end rss handler', 2)
