@@ -1,18 +1,20 @@
 #!/usr/bin/python3
 """
 Telex Device - Babelfish (Baf)
-Version     : 1.0.0
-Ersteller   : Wolfram (38718 wlfhnk d) mit KI-Assistant
-Datum       : 2025-04-18
+Version     : 1.0.1
+Datum       : 2025-08-17
 
 Babelfish-Modul für piTelex. Lauscht passiv auf den Datenstrom,
 startet bei ESC+A von iTs, beendet bei ESC+Z von MCP,
-filtert WRUs, übersetzt den Text via OpenAI und gibt ihn
-über Telex zurück.
+übersetzt den Text via OpenAI und gibt ihn über Telex zurück.
+
+Änderung:
+- WRU-Filterung entfernt.
+- Sitzungshandling korrigiert: {A} löst nur einmal Start aus,
+  MCP-Puffer wird nicht mehr ständig geleert.
 """
 
 import re
-import time
 import logging
 import openai
 import txConfig
@@ -34,7 +36,7 @@ class TelexBabelfish(txBase.TelexBase):
         self.coding = txConfig.CFG.get('coding', 0)
         super().__init__()
         self.id = params.get('id', 'Baf')
-        self.target_lang = params.get('language', 'Deutsch')
+        self.target_lang = params.get('Zielsprache', 'Deutsch')
         if (key := params.get('openai_api_key')):
             openai.api_key = key
         self._iTs_buffer = bytearray()
@@ -45,6 +47,7 @@ class TelexBabelfish(txBase.TelexBase):
         self._state_counter = 1
         self._rx_buffer = []
         self._last_pit_load = 0
+        self._session_open = False
         l.info(f"{self.id} initialized with model: {OPENAI_MODEL}")
 
     def read(self) -> str:
@@ -64,7 +67,8 @@ class TelexBabelfish(txBase.TelexBase):
 
     @staticmethod
     def strip_wru_blocks(segment: bytes) -> bytes:
-        return re.sub(WRU_BLOCK_REGEX, b'', segment)
+        # WRU-Filterung entfernt: keine Veränderung
+        return segment
 
     @staticmethod
     def strip_all_escape_sequences(segment: bytes) -> bytes:
@@ -72,37 +76,50 @@ class TelexBabelfish(txBase.TelexBase):
 
     def idle20Hz(self):
         if not self._processing:
-            if ESC_A.encode() in self._iTs_buffer:
-                start = self._iTs_buffer.find(ESC_A.encode())
-                self._iTs_buffer = self._iTs_buffer[start:]
+            # Start nur einmal pro Sitzung
+            if not self._session_open and ESC_A.encode() in self._iTs_buffer:
+                start_idx = self._iTs_buffer.find(ESC_A.encode())
+                if start_idx != -1:
+                    self._iTs_buffer = self._iTs_buffer[start_idx:]
+                self._mcp_buffer.clear()
+                self._session_open = True
+                l.info(f"{self.id}: Session started")
 
+            if self._session_open:
                 if len(self._iTs_buffer) > MAX_SEGMENT_SIZE:
                     l.error("Session aborted: ESC+Z missing at max segment size")
                     self._iTs_buffer.clear()
                     self._mcp_buffer.clear()
+                    self._session_open = False
                     return
 
                 if ESC_Z.encode() in self._mcp_buffer:
                     segment = self._iTs_buffer[:]
                     self._iTs_buffer.clear()
                     self._mcp_buffer.clear()
-
+                    self._session_open = False
                     cleaned = self.strip_all_escape_sequences(self.strip_wru_blocks(segment))
                     cleaned = cleaned.replace(b'<', b'').replace(b'>', b'').replace(b'#', b'')
                     try:
                         text = cleaned.decode('utf-8', 'replace')
+                        l.info(f"Raw Text: {segment}")
                         l.info(f"{self.id}: Payload received ({len(text)} characters)")
                         l.info(f"{self.id}: Text to be translated: {text}")
-
                         system_prompt = (
     f"You are an automatic translator."
     f"Translate the following message into {self.target_lang}."
-    "The text might include dialects, slang or jokes."
-    "Return only the pure translation, no explanations."
-    "Break lines at word boundaries, each max 68 characters."
-    "If the message is already in the target language or nonsense, reply with 'SKIP'."
-    "Do not judge the meaning too strictly."
+    f"Ignore teleprinter artefacts such as WRU/callsigns (e.g. '38718 WLFHNK D'), leading/trailing header/footer lines, and former shift markers. "
+    f"The text might include dialects, slang or jokes."
+    f"Return only the pure translation, no explanations."
+    f"Break lines at word boundaries, each max 68 characters. Umlauts count as 2 characters"
+    f"Your output is to be sent to a very old teletype. Therefore"
+    f"after every CR(chr$13) send a LF(chr$10) separately. The old machine needs it."
+    f"Do not judge the meaning too strictly."
+    f"Only respond with 'SKIP' if, after ignoring those artefacts, there is truly no "
+    f"translatable body text at all. If at least one alphabetic word remains, do not "
+    f"respond with 'SKIP'. Translate what you can and leave unknown tokens verbatim."
 )
+
 
                         resp = openai.chat.completions.create(
                             model=OPENAI_MODEL,
@@ -124,12 +141,12 @@ class TelexBabelfish(txBase.TelexBase):
                         l.info(f"{self.id}: Translation received ({len(self._translation)} characters)")
 
                         abschluss_prompt = (
-    f"Imagine you're an overly friendly teleprinter from 'Hitchhiker's Guide to the Galaxy'. "
-    f"Thank the user for letting you help. "
-    f"The line must sound overly cheerful, mechanical, and unnecessarily enthusiastic. "
-    f"Only one single line. Never more than 68 characters – hard limit. Umlauts count as 2. "
-    f"Use periods (.) instead of exclamation marks. Commas and question marks are allowed. "
-    f"NEVER use exclamation marks (!), encoded symbols, or emojis. "
+    f"Imagine you're an overly friendly teleprinter from 'Hitchhiker's Guide to the Galaxy'."
+    f"Thank the user for letting you help."
+    f"The line must sound overly cheerful, mechanical, and unnecessarily enthusiastic."
+    f"Only one single line. Never more than 68 characters – hard limit. Umlauts count as 2."
+    f"Use periods (.) instead of exclamation marks. Commas and question marks are allowed."
+    f"NEVER use exclamation marks (!), encoded symbols, or emojis."
     f"Respond strictly in {self.target_lang}."
 )
                         try:
@@ -179,3 +196,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
