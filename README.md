@@ -42,6 +42,10 @@ For building the hardware and implementing the software it was important to unde
 
 **[For more information see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
 
+#### Issues, suggestions questions?
+
+Feel free to share your thoughts at www.telexforum.de. Especially if you cannot get a solution here at github, telexforum is the right place for you! Besides aspects concerning piTelex, the whole world of teletypes and telex is addressed there. 
+
 <!--
 <hr>
 
