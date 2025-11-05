@@ -207,10 +207,7 @@ class TelexITelexSrv(txDevITelexCommon.TelexITelexCommon):
                 # Our line is occupied (occ), reject client. Little issue here:
                 # ASCII clients get an i-Telex package. But the content should
                 # be readable enough to infer our message.
-                try: # connection can already be closed at this point
-                    self.send_reject(client, "occ")
-                except:
-                    pass
+                self.send_reject(client, "occ")
                 l.warning("Rejecting client (occupied)")
                 client.close()
                 continue
