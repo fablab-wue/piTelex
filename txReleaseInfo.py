@@ -15,11 +15,7 @@ import txCode
 
 class ReleaseInfo:
 
-<<<<<<< HEAD
-    release_number = "002b"
-=======
-    release_number = "002"
->>>>>>> 514c133686d561b9327e93fe26a19f70765a5f6a
+    release_number = "002c"
 
     itelex_protocol_version = 1
 
