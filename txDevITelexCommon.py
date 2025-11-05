@@ -628,10 +628,14 @@ class TelexITelexCommon(txBase.TelexBase):
                 #l.debug('.')
                 if is_server and self.printer_start_timed_out:
                     self.printer_start_timed_out = False
-                    if is_ascii:
-                        s.sendall(b"der")
-                    else:
-                        self.send_reject(s, "der")
+                    try: # connection can be closed at this point
+                        if is_ascii:
+                            s.sendall(b"der")
+                        else:
+                            self.send_reject(s, "der")
+                    except:
+                            error = True
+                            break
                     l.error("Disconnecting client because printer didn't start up")
                     error = True
                     break
@@ -647,7 +651,11 @@ class TelexITelexCommon(txBase.TelexBase):
                         if (timeout_counter % 5) == 0:   # every 1 sec
                             # Send Acknowledge if printer is running
                             if self._connected >= ST.CON_FULL:
-                                self.send_ack(s, self._acknowledge_counter)
+                                try: # connection can be closed at this point
+                                    self.send_ack(s, self._acknowledge_counter)
+                                except:
+                                    error = True
+                                    break
 
                         if self._tx_buffer:
                             if time_next_send and time.monotonic() < time_next_send:
@@ -679,7 +687,7 @@ class TelexITelexCommon(txBase.TelexBase):
                             # character jumble.
 
 
-            except socket.error:
+            except (socket.error,BrokenPipeError,ConnectionResetError):
                 l.error("Exception caught:", exc_info = sys.exc_info())
                 error = True
                 break

@@ -4,13 +4,13 @@
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/RPiTW39.JPG" width="240px" align="right">
 
-### Control a historic Telex device with a Raspberry Pi or PC in Python 3
+## Control a historic Telex device with a Raspberry Pi or PC in Python 3
 
 The goal is to connect a historic telex device (teletype) with **TW39** protocol on a **current loop** to a modern **Windows/Linux-PC** (over USB) or a **Raspberry Pi** (over GPIO) with minimal hardware.
 
 Our ambition is also to support all telex features as AT/ST buttons and pulse dialing for handling the teletype like in the good old days.
 
-#### Hardware
+### Hardware
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="120px" align="right">
 
@@ -24,7 +24,7 @@ As side effect teletypes with **V.10 interface** (like TeKaDe FS200Z / FS220Z) c
 
 Another playground is the **ED1000 interface** used by (more) modern teletypes (like Siemens T1000, T1200 or SEL Lo2000, Lo3000). It is based on frequency-shift-keying (FSK) and is handled by a USB sound card, a few passive components and a lot of software.
 
-#### Software
+### Software
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/SW_Modules.png" width="240px" align="right">
 
@@ -34,13 +34,17 @@ With the characters arrived in the PC / RPi the data can be routed to an interne
 
 The software supports also a connection to another telex device in the **[i-Telex Network](https://www.i-telex.net)** over TCP/IP.
 
-#### Documentation
+### Documentation
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/TW39Call8.png" width="180px" align="right">
 
 For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.
 
 **[For more information see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
+
+### Issues, suggestions, questions?
+
+Feel free to share your thoughts at www.telexforum.de. Especially if you cannot get a solution here at github, telexforum is the right place for you! Besides aspects concerning piTelex, the whole world of teletypes, telex and i-telex  is addressed there. 
 
 <!--
 <hr>
