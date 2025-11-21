@@ -12,6 +12,8 @@ else:   # Linux and RPi
         ret = subprocess.check_output(cmd, shell = True )
         ret = ret.decode("utf-8", "ignore").replace('@', '?').replace('#', '?').replace('\n', '\r\n')
         return ret
+        
+##einige Sachen für testing veraendert von WolfHenk (2025)##
 
 #######
 
@@ -32,13 +34,221 @@ def get_IP() -> str:
 
 #######
 
+def get_IP_all() -> str:
+    """
+    Liefert alle IPv4-Adressen pro Interface (ohne lo), z.B.:
+    eth0 192.168.x.y HOSTNAME
+    wlan0 192.168.a.b HOSTNAME SSID
+    """
+    if os.name == 'nt':
+        return "na"
+
+    import subprocess
+    import socket
+
+    hostname = socket.gethostname()
+
+    try:
+        # ip -o -4 addr show -> eine Zeile pro IPv4-Adresse
+        out = subprocess.check_output(
+            "ip -o -4 addr show",
+            shell=True,
+            stderr=subprocess.DEVNULL
+        ).decode("utf-8", "ignore")
+    except Exception:
+        return "NO IP"
+
+    lines_out = []
+
+    for line in out.splitlines():
+        # Beispielzeile:
+        # 2: eth0    inet 192.168.3.150/24 brd ... scope global eth0
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+
+        iface = parts[1]
+        if iface == 'lo':
+            continue  # Loopback weglassen
+
+        cidr = parts[3]          # 192.168.3.150/24
+        ip = cidr.split('/')[0]  # 192.168.3.150
+
+        entry = f"{iface} {ip} {hostname}"
+
+        # WLAN-Interface erkennt man meist an "wlan" oder "wl"
+        if iface.startswith("wl") or "wlan" in iface:
+            try:
+                ssid = subprocess.check_output(
+                    f"iwgetid {iface} -r",
+                    shell=True,
+                    stderr=subprocess.DEVNULL
+                ).decode("utf-8", "ignore").strip()
+                if ssid:
+                    entry += f" {ssid}"
+            except Exception:
+                pass
+
+        lines_out.append(entry)
+
+    if not lines_out:
+        return "NO IP"
+
+    result = "\r\n".join(lines_out)
+    result = result.replace('@', '?').replace('#', '?')
+    return result
+
+#######
+
+def get_IP_external() -> str:
+    """
+    Liefert die externe (öffentliche) IPv4-Adresse des Internetzugangs,
+    soweit über einen externen Dienst ermittelbar.
+    """
+    if os.name == 'nt':
+        return "na"
+
+    import subprocess
+
+    # Mehrere Dienste / Tools durchprobieren
+    commands = [
+        "curl -s https://ifconfig.me",
+        "curl -s https://api.ipify.org",
+        "wget -qO- https://ifconfig.me",
+        "wget -qO- https://api.ipify.org",
+        "dig +short myip.opendns.com @resolver1.opendns.com"
+    ]
+
+    for cmd in commands:
+        try:
+            out = subprocess.check_output(
+                cmd,
+                shell=True,
+                stderr=subprocess.DEVNULL
+            ).decode("utf-8", "ignore").strip()
+            if not out:
+                continue
+            # Nur erstes „Wort“ nehmen, falls der Dienst mehr liefert
+            ip = out.split()[0]
+            ip = ip.replace('@', '?').replace('#', '?').replace('\n', '\r\n')
+            return f"die externe ip-adresse ist {ip}."
+        except Exception:
+            continue
+
+    return "die externe ip-adresse kann nicht festgestellt werden."
+
+#######
+
+def get_wlan_ip() -> str:
+    """
+    Liefert die IPv4-Adresse von wlan0 (ohne CIDR),
+    oder '' wenn keine vergeben ist.
+    """
+    import subprocess
+    try:
+        ip = subprocess.check_output(
+            "ip -4 addr show wlan0 | awk '/inet /{print $2}' | cut -d/ -f1",
+            shell=True,
+            stderr=subprocess.DEVNULL
+        ).decode("utf-8", "ignore").strip()
+        return ip
+    except Exception:
+        return ''
+
+
+def get_WLAN_from_sudo(password: str) -> str:
+    """
+    Führt 'sudo iw wlan0 scan' aus (mit Passwort auf stdin), wertet die SSIDs aus
+    und liefert Zeilen im Format:
+      +++ SSID IP   für das aktive Netz
+      --- SSID      für alle anderen
+    """
+    import subprocess
+
+    # aktives WLAN (SSID) ermitteln – braucht kein sudo
+    try:
+        active_ssid = subprocess.check_output(
+            "iwgetid -r",
+            shell=True,
+            stderr=subprocess.DEVNULL
+        ).decode("utf-8", "ignore").strip()
+    except Exception:
+        active_ssid = ''
+
+    wlan_ip = get_wlan_ip()
+
+    # sudo iw wlan0 scan mit Passwort auf stdin
+    proc = subprocess.Popen(
+        ['sudo', '-S', 'iw', 'wlan0', 'scan'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    out, err = proc.communicate((password + '\n').encode('utf-8'))
+
+    if proc.returncode != 0:
+        # falsches Passwort oder keine Berechtigung / Fehler
+        return "NO WLAN"
+
+    scan_output = out.decode('utf-8', 'ignore')
+
+    seen = set()
+    lines = []
+
+    for line in scan_output.splitlines():
+        line = line.strip()
+        if "SSID:" not in line:
+            continue
+
+        ssid = line.split("SSID:", 1)[1].strip().strip('"')
+        if not ssid or ssid == "<hidden>":
+            continue
+
+        if ssid in seen:
+            continue
+        seen.add(ssid)
+
+        is_active = bool(active_ssid and ssid == active_ssid)
+        marker = "+++" if is_active else "---"
+
+        entry = f"{marker} {ssid}"
+        if is_active and wlan_ip:
+            entry += f" {wlan_ip}"
+
+        lines.append(entry)
+
+    if not lines:
+        return "NO WLAN"
+
+    result = "\r\n".join(lines)
+    result = result.replace('@', '?').replace('#', '?')
+    return result   
+
+#######
+
 class CLI():
     def __init__(self, **params):
         self.params = params
         self.keyboard_mode = '<'
+        self._wlan_wait_password = False
         pass
 
     def command(self, cmd_in:str) -> str:
+        # Sonderfall: wir warten auf das sudo-Passwort für WLAN
+        if getattr(self, "_wlan_wait_password", False):
+            # Passwort NICHT uppercased, keine Sonderbehandlung von '<' / '>'
+            password = cmd_in.strip()
+
+            # Flag zurücksetzen
+            self._wlan_wait_password = False
+
+            ans = get_WLAN_from_sudo(password)
+            if ans == '':
+                ans = '?'
+            ans += '\r\n: '
+            ans += self.keyboard_mode
+            return ans
+
         ans = ''
         cmd = ''
         cmd_in = cmd_in.upper().strip()
@@ -67,7 +277,8 @@ class CLI():
             ans = 'PONG'
 
         elif cmd == 'IP':
-            ans = get_IP()
+            # alle Interfaces mit ihren IPv4-Adressen
+            ans = get_IP_all()
 
         elif cmd == 'PORT':
             devices = self.params.get('devices', None)
@@ -91,7 +302,8 @@ class CLI():
         # https://www.cyberciti.biz/tips/top-linux-monitoring-tools.html
 
         elif cmd == 'IPX':
-            ans = get_shell_result("hostname -I | cut -d' ' -f1")
+            # externe (WAN-)IP, soweit ermittelbar
+            ans = get_IP_external()
 
         elif cmd == 'CPU':
             ans = get_shell_result("top -bn1 | grep load | awk '{printf \"CPU Load: %.2f\", $(NF-2)}'")
@@ -107,10 +319,16 @@ class CLI():
 
         elif cmd == 'W':
             ans = get_shell_result("w")
-
+        
+        elif cmd == 'WLAN':
+            # beim nächsten Aufruf erwarten wir das sudo-passwort (im Klartext)
+            self._wlan_wait_password = True
+            ans = "passwort (nur kleinbuchstaben und zahlen, keine sonderzeichen)"
 
         if ans == '':
             ans = '?'
         ans += '\r\n: '
         ans += self.keyboard_mode
         return ans
+
+
