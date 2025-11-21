@@ -15,3 +15,11 @@ See https://github.com/fablab-wue/piTelex/wiki/SW_DevBabelfish
   Previously, it was possible in some cases that the socket connection is already closed when we want to send some data like 'der', 'occ',… Without catching this, the i-telex-server would die and the machine would not be reachable anymore.
 
   Now, this is catched and the server will still run after these exceptions.
+
+### More commands for CLI 
+* Module: txCLI
+* Description:
+  Added commands:
+  * WLAN: print all available WiFi SSIDs and assigned IPv4 WiFi addresses
+  * IP: print all assigned IPv4 addresses
+  * IPX: print external (public) IPv4 address, if available
