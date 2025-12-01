@@ -17,9 +17,30 @@ See https://github.com/fablab-wue/piTelex/wiki/SW_DevBabelfish
   Now, this is catched and the server will still run after these exceptions.
 
 ### More commands for CLI 
-* Module: txCLI
+* Module: txCLI (linux only)
 * Description:
-  Added commands:
-  * WLAN: print all available WiFi SSIDs and assigned IPv4 WiFi addresses
-  * IP: print all assigned IPv4 addresses
-  * IPX: print external (public) IPv4 address, if available
+ CLI now takes the following commands:
+<pre>
+ "AVAILABLE COMMANDS:"
+                "HELP, ?        - show this help"
+                "CPU            - show CPU load"
+                "DEV, DEVICES   - list enabled devices"
+                "DISK           - show root filesystem usage"
+                "IP             - list local interfaces and IPv4 addresses"
+                "IPX            - show external (WAN) IPv4 address"
+                "KG, WRU        - show WRU ID"
+                "LUPD           - linux system update (apt-get update/upgrade)"
+                "MEM            - show memory usage"
+                "PING           - ping 8.8.8.8, (4 packets)"
+                "PORT           - show i-Telex port (if configured)"
+                "TUPD           - piTelex update from GitHub (stable)"
+                "TUPD-T         - piTelex update from GitHub (testing)"
+                "UPTIME         - show system uptime"
+                "W              - show logged in users"
+                "WHOAMI         - identify this CLI"
+                "WLAN           - scan WLAN networks (requires sudo password)"
+                "WPS            - connect WLAN via WPS (requires sudo password)"
+                "REBOOT         - reboot system (requires sudo password)"
+                "SHUTDOWN       - shutdown system (requires sudo password)"
+                "EXIT           - exit CLI"
+</pre>  
