@@ -1,0 +1,6 @@
+      "babelfish": {
+        "type": "babelfish",
+        "enable": true,     
+        "openai_api_key": "sk-proj-naturally_your_not_mine._but_it_is_not_expensive",
+        "language": "deutsch"   #YOUR Language. Babelfish will translate all incoming telex to this 
+       }

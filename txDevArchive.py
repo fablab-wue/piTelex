@@ -87,6 +87,11 @@ class TelexArchive(txBase.TelexBase):
         telex.py main loop writes all data passing through piTelex to us by
         this method.
         """
+        #ATTENTION DO NOT react to Baf (Babelfish) it will be an endless loop....
+        if source == 'Baf':
+            return
+        #this prevents Archive from endless loop by repeating Babelfish translations... WH
+
         if len(data) > 1:
             # this is a command
             if data == "\x1bWB":
@@ -249,10 +254,10 @@ class TelexArchive(txBase.TelexBase):
 
     def send_email(self, wru: str, msg: str):
         """
-        Send incoming telex message via e-mail, if enabled.
+        Send received message by mail, if configured
         """
         if not all([self.smtp_server, self.smtp_port, self.smtp_user, self.smtp_password, self.recipient]):
-            l.error("E-mails enabled, but not fully configured! Check config file.")
+            l.error("Incomplete mail configuration.")
             return
 
         subject = f"Telex from {wru}"
@@ -268,14 +273,14 @@ class TelexArchive(txBase.TelexBase):
                 server.starttls()
                 server.login(self.smtp_user, self.smtp_password)
                 server.sendmail(self.email_sender, self.recipient, email_msg.as_string())
-            l.info(f"E-Mail containing telex from {wru} sent to {self.recipient}")
+            l.info(f"E-Mail containing telex message from {wru} sent to {self.recipient}")
         except Exception as e:
             l.error(f"Error while sending e-mail: {e}")
 
     @staticmethod
     def filter_email_text(text: str) -> str:
         """
-        Replace all not allowed characters in mail text by "_"
+        Delete invalid characters in mail text
         """
         allowed_chars = " abcdefghijklmnopqrstuvwxyz0123456789-+=:/()?.,'\n\r@°"
         return "".join(c if c in allowed_chars else "" for c in text.lower())

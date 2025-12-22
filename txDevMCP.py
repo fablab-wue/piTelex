@@ -552,7 +552,7 @@ class TelexMCP(txBase.TelexBase):
     # -----
 
     def _WRU_watchdog_callback(self, name:str):
-        self._rx_buffer.extend(list('<\r\n' + self._WRU_ID))   # send back device id
+        self._rx_buffer.extend(list('#<\r\n' + self._WRU_ID))   # send back device id
         l.info("Sending software WRU response: {!r}".format(self._WRU_ID))
 
 #######

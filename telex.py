@@ -224,10 +224,10 @@ def init():
             news = txDevNews.TelexNews(**dev_param)
             DEVICES.insert(0,news)
 
-        #elif dev_param['type'] == 'twitter':
-        #    import txDevTwitter
-        #    twitter = txDevTwitter.TelexTwitter(**dev_param)
-        #    DEVICES.append(twitter)
+        elif dev_param['type'] == 'babelfish':
+            import txDevBabelfish
+            babelfish = txDevBabelfish.TelexBabelfish(**dev_param)
+            DEVICES.append(babelfish)
 
         #elif dev_param['type'] == 'twitterV2':
         #    import txDevTwitterV2
