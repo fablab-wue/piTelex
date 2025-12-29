@@ -1,46 +1,32 @@
-# Changes since release 2025-06
+# Changes since release 2025-12
 
-### Fix software WRU response
-* Module: MCP
-* Description:
-  Reformat software WRU for better compatibility with Archive e-mail functionaltiy
 
-### New module "babelfish" 
-Babelfish allows automatic translation of incoming messages to a predefined language.<br>
-See https://github.com/fablab-wue/piTelex/wiki/SW_DevBabelfish
+### New module "StartMsg" 
+Print some diagnostics after startup of piTelex. Documentation see 
+https://github.com/fablab-wue/piTelex/blob/testing/doc/SW_StartMsg.md
 
-### Fix unhandled exceptions
-* Module: i-telex
-* Description:
-  Previously, it was possible in some cases that the socket connection is already closed when we want to send some data like 'der', 'occ',… Without catching this, the i-telex-server would die and the machine would not be reachable anymore.
+### CLI commands updated and cleared
+Some commands had to be removed.
 
-  Now, this is catched and the server will still run after these exceptions.
-
-### More commands for CLI 
-* Module: txCLI (linux only)
-* Description:
- CLI now takes the following commands:
-<pre>
- "AVAILABLE COMMANDS:"
-                "HELP, ?        - show this help"
-                "CPU            - show CPU load"
-                "DEV, DEVICES   - list enabled devices"
-                "DISK           - show root filesystem usage"
-                "IP             - list local interfaces and IPv4 addresses"
-                "IPX            - show external (WAN) IPv4 address"
-                "KG, WRU        - show WRU ID"
-                "LUPD           - linux system update (apt-get update/upgrade)"
-                "MEM            - show memory usage"
-                "PING           - ping 8.8.8.8, (4 packets)"
-                "PORT           - show i-Telex port (if configured)"
-                "TUPD           - piTelex update from GitHub (stable)"
-                "TUPD-T         - piTelex update from GitHub (testing)"
-                "UPTIME         - show system uptime"
-                "W              - show logged in users"
-                "WHOAMI         - identify this CLI"
-                "WLAN           - scan WLAN networks (requires sudo password)"
-                "WPS            - connect WLAN via WPS (requires sudo password)"
-                "REBOOT         - reboot system (requires sudo password)"
-                "SHUTDOWN       - shutdown system (requires sudo password)"
-                "EXIT           - exit CLI"
-</pre>  
+```text
+available·commands:                                                  
+help,·?········-·show·this·help                                      
+cpu············-·show·cpu·load                                       
+dev,·devices···-·list·enabled·devices                                
+disk···········-·show·root·filesystem·usage                          
+ip·············-·list·local·interfaces·and·ipv4·addresses            
+ipx············-·show·external·(wan)·ipv4·address                    
+kg,·wru········-·show·wru·id                                         
+lupd···········-·linux·system·update·(apt-get·update/upgrade)        
+mem············-·show·memory·usage                                   
+ping···········-·ping·8.8.8.8,·(4·packets)                           
+port···········-·show·i-telex·port·(if·configured)                   
+uptime·········-·show·system·uptime                                  
+w··············-·show·logged·in·users                                
+whoami·········-·identify·this·cli                                   
+wlan···········-·scan·wlan·networks                                  
+wps············-·connect·wlan·via·wps                                
+reboot·········-·reboot·system                                       
+shutdown·······-·shutdown·system                                     
+exit···········-·exit·cli
+```
