@@ -2,10 +2,10 @@
 
 ### Description
 
-Prints exactly one startup message after piTelex and the TTY device have been initialized and :
+Prints exactly one startup message after piTelex and the TTY device have been initialized, and checks wether
 
  - at least one internal IP address assigned (no local loopback)
-  - at least one backend server can be reached:
+ - at least one backend server can be reached:
       * Centralex (if enabled), or
       * TNS server
 
@@ -39,7 +39,7 @@ The verbosity of the startup message can be controlled by the  option 'verbosity
 | 2         | like (1) + external + internal IP addresses                  |
 | 3         | like (2) + `INTERNET CONNECTION OK/MISSING`                  |
 | 4         | like (3) + backend checks:  <br />* if 'centralex' is enabled in the i-Telex device: Centralex server from telex.json<br/>* otherwise: TNS servers (default list or tns_srv/tns_port from i-Telex) |
-| 5         | like 4 + two lines of `RYRYRY...`                            |
+| 5         | like (4) + two lines of `RYRYRY...`                            |
 
 > NOTE: The backend diagnostics are missing up to now. Will be added in a future release.
 > 
