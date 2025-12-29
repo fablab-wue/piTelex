@@ -1,18 +1,21 @@
 #!/usr/bin/python3
 """
 Telex Device - Babelfish (Baf)
-Version     : 1.0.1
-Datum       : 2025-08-17
 
-Babelfish-Modul für piTelex. Lauscht passiv auf den Datenstrom,
-startet bei ESC+A von iTs, beendet bei ESC+Z von MCP,
-übersetzt den Text via OpenAI und gibt ihn über Telex zurück.
+Babelfish module for piTelex. Passively listens to the data stream,
+starts on ESC+A from iTs, ends on ESC+Z from MCP,
+translates the text via OpenAI and sends it back over telex.
 
-Änderung:
-- WRU-Filterung entfernt.
-- Sitzungshandling korrigiert: {A} löst nur einmal Start aus,
-  MCP-Puffer wird nicht mehr ständig geleert.
+
 """
+__author__      = "WolfHenk"
+__programming_tool__ = "ChatGPT 5.1-thinking"
+__email__       = "wolfhenk@wolfhenk.de"
+__copyright__   = "2025"
+__license__     = "GPL3"
+__version__     = "1.0.3"
+
+""" cleared for testing - WH - 2025-12-04-1000Z """
 
 import re
 import logging
@@ -36,7 +39,7 @@ class TelexBabelfish(txBase.TelexBase):
         self.coding = txConfig.CFG.get('coding', 0)
         super().__init__()
         self.id = params.get('id', 'Baf')
-        self.target_lang = params.get('Zielsprache', 'Deutsch')
+        self.target_lang = params.get('language', 'Deutsch')
         if (key := params.get('openai_api_key')):
             openai.api_key = key
         self._iTs_buffer = bytearray()
@@ -67,7 +70,6 @@ class TelexBabelfish(txBase.TelexBase):
 
     @staticmethod
     def strip_wru_blocks(segment: bytes) -> bytes:
-        # WRU-Filterung entfernt: keine Veränderung
         return segment
 
     @staticmethod
@@ -115,9 +117,10 @@ class TelexBabelfish(txBase.TelexBase):
     f"Your output is to be sent to a very old teletype. Therefore"
     f"after every CR(chr$13) send a LF(chr$10) separately. The old machine needs it."
     f"Do not judge the meaning too strictly."
-    f"Only respond with 'SKIP' if, after ignoring those artefacts, there is truly no "
-    f"translatable body text at all. If at least one alphabetic word remains, do not "
-    f"respond with 'SKIP'. Translate what you can and leave unknown tokens verbatim."
+    f"Only respond with 'SKIP' if, after ignoring those artefacts, there is truly no translatable body text at all."
+    f"If at least one alphabetic word remains, do not respond with 'SKIP'."
+    f"If the message is already in {self.target_lang} then respond with 'SKIP'."
+    f"Translate what you can and leave unknown tokens verbatim."
 )
 
 

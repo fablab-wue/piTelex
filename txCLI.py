@@ -13,7 +13,7 @@ __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
 __version__     = "2.3.1"
 
-
+""" cleared for testing - WH - 2025-12-04-1000Z """
 
 import logging
 l = logging.getLogger("piTelex." + __name__)

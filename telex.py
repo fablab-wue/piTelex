@@ -274,6 +274,11 @@ def init():
             keypad = txDevKeyPad.TelexKeyPad(**dev_param)
             DEVICES.append(keypad)
 
+        elif dev_param['type'] == 'startmsg':
+            import txStartMsg
+            startmsg = txStartMsg.TelexStartMsg(**dev_param)
+            DEVICES.append(startmsg)
+
         else:
             l.warning("Unknown module type in configuration, section {!r}: {!r}".format(dev_name, dev_param['type']))
 
