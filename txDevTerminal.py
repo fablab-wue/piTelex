@@ -8,8 +8,9 @@ ESC/POS is a registered trademark or trademark of Seiko Epson Corporation.
 __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
 __copyright__   = "Copyright 2021, JK"
+__changing__	= "berthold.bredenkamp@gmail.com"
 __license__     = "GPL3"
-__version__     = "0.0.2"
+__version__     = "0.0.3"
 
 import serial
 import serial.rs485
@@ -22,9 +23,13 @@ import txCode
 import txBase
 import log
 
+ASCII_CR = 13		# Carriage Return
+
 #######
 
 class TelexTerminal(txBase.TelexBase):
+
+
     def __init__(self, **params):
         super().__init__()
 
@@ -78,10 +83,14 @@ class TelexTerminal(txBase.TelexBase):
             self._tty.rs485_mode = serial.rs485.RS485Settings()
 
         text = params.get('init', '')
+        
+
+        self.char_count = 0
+
         if text:
             self._write_hextext(text)
         
-        self.char_count = 0
+        # self.char_count = 0
 
     # -----
 
@@ -149,9 +158,11 @@ class TelexTerminal(txBase.TelexBase):
     # =====
 
     def _write_raw(self, bb:bytes):
+        l.debug('-Bre - Write {}'.format(bb))
         self._tty.write(bb)
 
     # -----
+
 
     def _write_ascii(self, text:str):
         if not text:
@@ -162,12 +173,17 @@ class TelexTerminal(txBase.TelexBase):
         if self._auto_CRLF:
             for b in bb:
                 self.char_count += 1
-                if b == b'\r':
+#                l.debug('-Bre - Count {}'.format(self.char_count))
+#               b istype integer
+                if b == ASCII_CR:
                     self.char_count = 0
-                self._write_raw(b)
+#                    l.debug('-Bre - CR')
+#                l.debug('-Bre - Char {}'.format(type(b)))
+                self._write_raw(chr(b).encode('ASCII'))
                 if self.char_count >= self._auto_CRLF:
                     self._write_raw(b'\r\n')
                     self.char_count = 0
+#                    l.debug('-Bre - CR LF')
 
         else:
             self._write_raw(bb)
