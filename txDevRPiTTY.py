@@ -345,6 +345,7 @@ class TelexRPiTTY(txBase.TelexBase):
 
         if new_state == S_ACTIVE_READY:
             self._enable_power(True)
+            self._set_time_squelch(0.5) # time to start motor before printing 'occ', 'bk' etc
             if self._mode == 'V10':
                 self._write_wave('%\\_')
 
