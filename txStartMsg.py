@@ -8,15 +8,22 @@ __programming_tool__ = "ChatGPT 5.1-thinking"
 __email__       = "wolfhenk@wolfhenk.de"
 __copyright__   = "2025"
 __license__     = "GPL3"
-__version__     = "0.1.1"
+__version__     = "0.1.2"
 
-""" cleared for testing - WH - 2025-12-04-1000Z """
+"""
+0.1.2 - 2026-05-10 - WH
+- StartMsg no longer starts the printer directly with ESC+A.
+- Uses MCP-controlled ESC+LT start and ESC+ST stop.
+- Waits for ESC+AA before sending text.
+- Adds rate-limited output with ESC+~<n> buffer feedback.
+"""
 
 import os
 import socket
 import subprocess
 import logging
 import time
+import re
 
 l = logging.getLogger("piTelex." + __name__)
 
@@ -29,8 +36,29 @@ except ImportError:
     cjson = None
 
 ESC = "\x1b"
-ESC_A = ESC + "A"
-ESC_Z = ESC + "Z"
+ESC_LT = ESC + "LT"
+ESC_ST = ESC + "ST"
+ESC_AA = ESC + "AA"
+
+# Rate limited output. This does not change the physical line speed;
+# it only controls how quickly this module feeds characters to the bus.
+START_BAUD = 55.0
+MIN_BAUD = 45.0
+BITS_PER_CHAR = 7.5
+TICK_HZ = 20.0
+
+TARGET_LOAD = 7
+LOAD_MIN = 4
+LOAD_MAX = 10
+LOAD_HARD_MAX = 14
+
+START_TIMEOUT_TICKS = 10 * 20
+DRAIN_TIMEOUT_TICKS = 5 * 20
+
+TX_REQUEST_START = "request_start"
+TX_WAIT_READY = "wait_ready"
+TX_SENDING = "sending"
+TX_WAIT_DRAIN = "wait_drain"
 
 
 """ 
@@ -67,8 +95,11 @@ class TelexStartMsg(txBase.TelexBase):
 
     Motor start / stop:
 
-      - In idle20Hz, when _state_counter == 2: ESC+A (motor on)
-      - After a short delay: full message + ESC+Z
+      - In idle20Hz, when _state_counter == 2: ESC+LT is sent to MCP.
+      - MCP starts the printer path and broadcasts ESC+A.
+      - StartMsg waits for ESC+AA before sending text.
+      - Text is sent rate-limited; ESC+~<n> feedback regulates speed.
+      - At the end, ESC+ST is sent so MCP terminates the session cleanly.
     """
 
     def __init__(self, **params):
@@ -90,10 +121,21 @@ class TelexStartMsg(txBase.TelexBase):
             v = 5
         self.verbosity = v
 
-        # Send state as in the Babelfish module
+        # Send state as in the Babelfish module, but MCP-controlled.
         self._processing = False
         self._state_counter = 0
         self._out_buffer = []
+        self._tx_state = TX_REQUEST_START
+        self._start_wait_ticks = 0
+        self._drain_wait_ticks = 0
+
+        # Rate limiter / buffer control
+        self._tx_baud = START_BAUD
+        self._tx_accumulator = 0.0
+        self._last_buffer_load = None
+        self._buffer_seen = False
+        self._buffer_report_age = 999
+        self._tx_paused_by_buffer = False
 
         # Prepare message (once at startup)
         self._prepare_message()
@@ -423,9 +465,18 @@ class TelexStartMsg(txBase.TelexBase):
         # full message as list of characters
         self._out_buffer = list(ba)
 
-        # Activate send state - motor start etc. is handled in idle20Hz
+        # Activate send state - printer start etc. is handled in idle20Hz
         self._processing = True
         self._state_counter = 0
+        self._tx_state = TX_REQUEST_START
+        self._start_wait_ticks = 0
+        self._drain_wait_ticks = 0
+        self._tx_baud = START_BAUD
+        self._tx_accumulator = 0.0
+        self._last_buffer_load = None
+        self._buffer_seen = False
+        self._buffer_report_age = 999
+        self._tx_paused_by_buffer = False
 
         l.info(
             "Startup message prepared (verbosity=%d, ready=%s):\n%s",
@@ -439,8 +490,108 @@ class TelexStartMsg(txBase.TelexBase):
         return self._rx_buffer.pop(0) if self._rx_buffer else ''
 
     def write(self, a: str, source: str):
-        # ignores incoming chars; this device only sends on startup
-        return
+        """
+        Listen for printer-ready and buffer feedback while sending.
+
+        ESC+AA starts the actual text output after MCP has started
+        the printer path. ESC+~<n> from any device is buffer feedback
+        and regulates the output speed while StartMsg is sending.
+        """
+        if not a or ESC not in a:
+            return
+
+        for match in re.finditer(r"\x1b(~\d+|\^\d+|[A-Z]{1,3})", a):
+            cmd = match.group(1)
+
+            if cmd == "AA":
+                if self._processing and self._tx_state == TX_WAIT_READY:
+                    l.info("%s: printer ready (ESC+AA) received from %s", self.id, source)
+                    self._tx_state = TX_SENDING
+                    self._tx_baud = START_BAUD
+                    self._tx_accumulator = 0.0
+                continue
+
+            if cmd.startswith("~"):
+                if self._processing and self._tx_state in (TX_SENDING, TX_WAIT_DRAIN):
+                    try:
+                        self._update_rate_from_buffer(int(cmd[1:]))
+                    except ValueError:
+                        pass
+                continue
+
+    def _update_rate_from_buffer(self, load: int):
+        """
+        Adapt virtual output speed from ESC+~<n> buffer feedback.
+
+        Rising buffer load slows down, falling load speeds up. There is
+        deliberately no MAX_BAUD here. idle20Hz sends at most one char
+        per tick, which limits practical output to about 150 baud.
+        """
+        if self._last_buffer_load is None:
+            trend = 0
+        else:
+            # positive: buffer load is falling -> speed up
+            # negative: buffer load is rising -> slow down
+            trend = self._last_buffer_load - load
+
+        self._last_buffer_load = load
+        self._buffer_seen = True
+        self._buffer_report_age = 0
+
+        error = TARGET_LOAD - load
+        correction = 1.2 * error + 1.0 * trend
+
+        if load > LOAD_MAX:
+            correction -= 3.0
+        elif load < LOAD_MIN:
+            correction += 3.0
+
+        self._tx_baud = max(MIN_BAUD, self._tx_baud + correction)
+
+        if load >= LOAD_HARD_MAX:
+            self._tx_paused_by_buffer = True
+            self._tx_accumulator = 0.0
+        elif load <= LOAD_MAX:
+            self._tx_paused_by_buffer = False
+
+    def _send_rate_limited_char(self):
+        """Send at most one character per idle20Hz tick."""
+        if not self._out_buffer:
+            return
+
+        if self._tx_paused_by_buffer:
+            self._tx_accumulator = 0.0
+            return
+
+        cps = self._tx_baud / BITS_PER_CHAR
+        self._tx_accumulator += cps / TICK_HZ
+
+        # Avoid bursts after pauses. One char per 20-Hz tick is the limit.
+        self._tx_accumulator = min(self._tx_accumulator, 1.0)
+
+        if self._tx_accumulator >= 1.0 and self._out_buffer:
+            self._rx_buffer.append(self._out_buffer.pop(0))
+            self._tx_accumulator -= 1.0
+
+    def _finish_startmsg(self):
+        self._rx_buffer.append(ESC_ST)
+        l.info("%s: Startup message completely sent, ESC+ST queued", self.id)
+        self._processing = False
+        self._state_counter = 0
+        self._out_buffer = []
+        self._tx_state = TX_REQUEST_START
+        self._tx_accumulator = 0.0
+        self._tx_paused_by_buffer = False
+
+    def _abort_startmsg(self, reason: str):
+        l.warning("%s: Startup message aborted: %s", self.id, reason)
+        self._rx_buffer.append(ESC_ST)
+        self._processing = False
+        self._state_counter = 0
+        self._out_buffer = []
+        self._tx_state = TX_REQUEST_START
+        self._tx_accumulator = 0.0
+        self._tx_paused_by_buffer = False
 
     def idle(self):
         # nothing to do, we work via idle20Hz
@@ -448,32 +599,53 @@ class TelexStartMsg(txBase.TelexBase):
 
     def idle20Hz(self):
         """
-        Control motor start and output, similar to Babelfish:
-          - first send ESC+A to MCP
-          - short delay
-          - then send the complete message + ESC+Z
+        MCP-controlled startup output:
+          - request local printer start with ESC+LT, not ESC+A
+          - wait for ESC+AA
+          - feed the prepared message with buffer-controlled braking
+          - end with ESC+ST so MCP terminates the session cleanly
         """
         if not self._processing:
             return
 
         self._state_counter += 1
 
-        if self._state_counter == 2:
-            # Motor start
-            l.info("%s: Motor start (ESC+A) sent", self.id)
-            self._rx_buffer.append(ESC_A)
+        if self._tx_state == TX_REQUEST_START:
+            if self._state_counter >= 2:
+                l.info("%s: Printer start request (ESC+LT) sent", self.id)
+                self._rx_buffer.append(ESC_LT)
+                self._tx_state = TX_WAIT_READY
+                self._start_wait_ticks = 0
+            return
 
-        elif self._state_counter > 25:
-            # full message + ESC+Z
-            for ch in self._out_buffer:
-                self._rx_buffer.append(ch)
-            self._rx_buffer.append(ESC_Z)
-            l.info("%s: Startup message completely sent", self.id)
+        if self._tx_state == TX_WAIT_READY:
+            self._start_wait_ticks += 1
+            if self._start_wait_ticks > START_TIMEOUT_TICKS:
+                self._abort_startmsg("printer did not answer with ESC+AA")
+            return
 
-            # Cleanup
-            self._processing = False
-            self._state_counter = 0
-            self._out_buffer = []
+        if self._tx_state == TX_SENDING:
+            self._buffer_report_age += 1
+            self._send_rate_limited_char()
+            if not self._out_buffer:
+                self._tx_state = TX_WAIT_DRAIN
+                self._drain_wait_ticks = 0
+            return
+
+        if self._tx_state == TX_WAIT_DRAIN:
+            self._buffer_report_age += 1
+            self._drain_wait_ticks += 1
+
+            if (not self._buffer_seen) or self._last_buffer_load == 0:
+                self._finish_startmsg()
+                return
+
+            if self._drain_wait_ticks > DRAIN_TIMEOUT_TICKS:
+                l.warning(
+                    "%s: Drain timeout, last buffer load was %r",
+                    self.id, self._last_buffer_load
+                )
+                self._finish_startmsg()
 
     def idle2Hz(self):
         pass

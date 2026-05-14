@@ -259,6 +259,13 @@ def init():
             archive = txDevArchive.TelexArchive(**dev_param)
             DEVICES.append(archive)
 
+        elif dev_param['type'] == 'answerbox':
+            import txDevAnswerbox
+            answerbox_param = dev_param.copy()
+            answerbox_param['devices'] = txConfig.CFG['devices']
+            answerbox = txDevAnswerbox.TelexAnswerbox(**answerbox_param)
+            DEVICES.append(answerbox)
+
         elif dev_param['type'] == 'shellcmd':
             import txDevShellCmd
             module = txDevShellCmd.TelexShellCmd(**dev_param)

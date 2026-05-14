@@ -5,23 +5,46 @@ revised version:
 - reacts to ESC+CLI OR dial 009
 - provides status and basic control over the host system
 """
-__author__      = "Jochen Krapf"
-__revisor__     = "Wolfram Henkel"
+__author__      = "Jochen Krapf (jk)"
+__revisor__     = "Wolfram Henkel (wh)"
+__revisor2      = "Rolf Obrecht (ro)"
 __email__       = "jk@nerd2nerd.org"
 __email2__      = "wolfhenk@wolfhenk.de"
+__email3__      = "rolf.obrecht@web.de"
 __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "2.3.1"
+__version__     = "2.3.8"
+__date__        = "2026-05-06"
 
-""" cleared for testing - WH - 2025-12-04-1000Z """
+"""
+2.3.7 2026-05-05 (wh)
+normalize J/Y confirmations:
+- filter all non-letter characters from confirmation input
+- accept semi-automatic teletype prefixes like "<j"
+- applied to REBOOT, SHUTDOWN, RESTART and WPS confirmation
+
+2.3.8 2026-05-06 (ro)
+- translate "hessisch" to english :-)
+- deactivate ifconfig.me in get_IP_external() for it delivers no IPv4 info
+- group command help list by function, clarify CLI usage string
+- start each answer with a new line
+- change prompt from ':' to '+?'
+- eliminate double CR's, this can be switched on by "double_wr": true in telex.json if needed
+  and would result in 4x CR otherwise ...
+
+2.3.9 2026-05-14 (ro)
+- For the sake of peace, reinstate the Hessian error message :-)
+- clarify system message after network restart
+"""
 
 import logging
 l = logging.getLogger("piTelex." + __name__)
 import os
+import threading
 
 if os.name == 'nt':
     def get_shell_result(cmd: str) -> str:
-        return "\r\r\n...ach bass emal uff, mir gehn nur uff linux...\r\r\n"
+        return "\r\n... CLI commands require linux os...\r\n"
 
 else:   # Linux and RPi
     import subprocess
@@ -32,7 +55,7 @@ else:   # Linux and RPi
                  .replace('@', '?') \
                  .replace('#', '?') \
                  .replace('%', ' percent') \
-                 .replace('\n', '\r\r\n')
+                 .replace('\n', '\r\n')
         return ret
 
 
@@ -110,7 +133,7 @@ def get_IP_all() -> str:
     if not lines_out:
         return "NO IP"
 
-    result = "\r\r\n".join(lines_out)
+    result = "\r\n".join(lines_out)
     result = result.replace('@', '?').replace('#', '?')
     return result
 
@@ -124,7 +147,7 @@ def get_IP_external() -> str:
     import subprocess
 
     commands = [
-        "curl -s https://ifconfig.me",
+#        "curl -s https://ifconfig.me",  # only delivers IPv6-address
         "curl -s https://api.ipify.org",
         "wget -qO- https://ifconfig.me",
         "wget -qO- https://api.ipify.org",
@@ -141,7 +164,7 @@ def get_IP_external() -> str:
             if not out:
                 continue
             ip = out.split()[0]
-            ip = ip.replace('@', '?').replace('#', '?').replace('\n', '\r\r\n')
+            ip = ip.replace('@', '?').replace('#', '?').replace('\n', '\r\n')
             return f"external ip-address is {ip}."
         except Exception:
             continue
@@ -222,14 +245,14 @@ def get_WLAN_from_sudo(password: str) -> str:
 
         entry = f"{marker} {ssid}"
         if is_active and wlan_ip:
-            entry += f" {wlan_ip}"
+            entry += f"  /  {wlan_ip}"
 
         lines.append(entry)
 
     if not lines:
         return "NO WLAN"
 
-    result = "\r\r\n".join(lines)
+    result = "\r\n".join(lines)
     result = result.replace('@', '?').replace('#', '?')
     return result
 
@@ -572,6 +595,18 @@ def wlan_wps_nm_sudo(password: str, iface: str = "wlan0", country: str = "DE"):
 
 #######
 
+def _normalize_confirm_char(text: str) -> str:
+    """
+    Normalize confirmation input from semi-automatic teleprinters.
+    Keep letters only and return the first one in lowercase.
+    """
+    for ch in text.lower():
+        if 'a' <= ch <= 'z':
+            return ch
+    return ''
+
+#######
+
 class CLI():
     def __init__(self, **params):
         self.params = params
@@ -581,85 +616,93 @@ class CLI():
         self._wps_wait_password = False
         self._wps_wait_confirm = False
         self._wps_password = ""
+        self._wps_running = False
+        self._wps_result = None
+        self._wps_thread = None
 
         self._reboot_wait_password = False
         self._shutdown_wait_password = False
+        self._restart_wait_password = False
 
-        self._lupd_wait_password = False
 
         self.id = 'CLI'
+
+    def _wps_worker(self):
+        self._wps_result = wlan_wps_nm_sudo("", iface="wlan0", country="DE")
 
     def command(self, cmd_in: str) -> str:
                 # waiting for REBOOT confirmation j/y
         if getattr(self, "_reboot_wait_password", False):
-            ch = cmd_in.strip().lower()
+            ch = _normalize_confirm_char(cmd_in)
             self._reboot_wait_password = False
 
             if ch not in ('j', 'y'):
-                ans = "reboot aborted"
-                ans += "\r\r\n: "
+                ans = "\rreboot aborted"
+                ans += "\r\n+? "
                 ans += self.keyboard_mode
                 return ans
 
             ok = _sudo_schedule("", "sleep 10; systemctl reboot")
             if not ok:
-                ans = "reboot failed"
-                ans += "\r\r\n: "
+                ans = "\rreboot failed"
+                ans += "\r\n+? "
                 ans += self.keyboard_mode
                 return ans
 
-            return 'BYE\r\n'
+            return '\rBYE\r\n'
 
         # waiting for SHUTDOWN confirmation j/y
         if getattr(self, "_shutdown_wait_password", False):
-            ch = cmd_in.strip().lower()
+            ch = _normalize_confirm_char(cmd_in)
             self._shutdown_wait_password = False
 
             if ch not in ('j', 'y'):
-                ans = "shutdown aborted"
-                ans += "\r\r\n: "
+                ans = "\rshutdown aborted"
+                ans += "\r\n+? "
                 ans += self.keyboard_mode
                 return ans
 
             ok = _sudo_schedule("", "sleep 10; systemctl poweroff")
             if not ok:
-                ans = "shutdown failed"
-                ans += "\r\r\n: "
+                ans = "\rshutdown failed"
+                ans += "\r\n+? "
                 ans += self.keyboard_mode
                 return ans
 
-            return 'BYE\r\n'
+            return '\rBYE\r\n'
 
-        # waiting for LUPD confirmation j/y
-        if getattr(self, "_lupd_wait_password", False):
-            ch = cmd_in.strip().lower()
-            self._lupd_wait_password = False
+        # waiting for RESTART confirmation j/y
+        if getattr(self, "_restart_wait_password", False):
+            ch = _normalize_confirm_char(cmd_in)
+            self._restart_wait_password = False
 
             if ch not in ('j', 'y'):
-                ans = "linux update aborted"
+                ans = "\rrestart aborted"
+                ans += "\r\n+? "
+                ans += self.keyboard_mode
+                return ans
+
+            ok = _sudo_schedule("", "sleep 10; systemctl restart pitelex.service")
+            if not ok:
+                ans = "\rrestart failed"
+                ans += "\r\n+? "
+                ans += self.keyboard_mode
+                return ans
+
+            return '\rBYE\r\n'
+
+        # WPS is running in background. Return WAIT immediately after j/y.
+        # While WPS is still active, every further CLI input returns WAIT.
+        # When the worker has finished, the next CLI input returns the result.
+        if getattr(self, "_wps_running", False):
+            if self._wps_thread and self._wps_thread.is_alive():
+                ans = "WAIT..."
             else:
-                cmd = (
-                    "DEBIAN_FRONTEND=noninteractive apt-get update && "
-                    "DEBIAN_FRONTEND=noninteractive apt-get -y upgrade"
-                )
-                ok = _sudo_schedule("", cmd)
-                if not ok:
-                    ans = "linux update could not be started"
-                else:
-                    ans = "linux update started in background"
+                self._wps_running = False
+                code, ssid_safe, ip_safe = self._wps_result or (WPS_ERR_WPA_STATUS, "", "")
+                self._wps_result = None
+                self._wps_thread = None
 
-            ans += "\r\r\n: "
-            ans += self.keyboard_mode
-            return ans
-
-        # waiting for WPS confirmation j/y
-        if getattr(self, "_wps_wait_confirm", False):
-            ch = cmd_in[0].lower() if cmd_in else ''
-
-            self._wps_wait_confirm = False
-
-            if ch in ('j', 'y'):
-                code, ssid_safe, ip_safe = wlan_wps_nm_sudo("", iface="wlan0", country="DE")
                 if code == WPS_ERR_OK:
                     if ip_safe == "0.0.0.0":
                         ans = f"connected to {ssid_safe}, IP unknown"
@@ -668,10 +711,36 @@ class CLI():
                 else:
                     errtxt = WPS_ERROR_TEXT.get(code, f"Error {code}: unknown error")
                     ans = errtxt
+
+            ans ="\r" + ans + "\r\n+? "
+            ans += self.keyboard_mode
+            return ans
+
+        # waiting for WPS confirmation j/y
+        # T68d and similar strip printers may need a pure CR after the long
+        # WPS prompt to release the 68-character keyboard lock.
+        # Ignore such line-end input here and keep waiting for j/y.
+        if getattr(self, "_wps_wait_confirm", False):
+            cmd_wait = cmd_in.strip()
+
+            if not cmd_wait:
+                ans += "\r\n+? "
+                ans += self.keyboard_mode
+                return ans
+
+            self._wps_wait_confirm = False
+            ch = _normalize_confirm_char(cmd_wait)
+
+            if ch in ('j', 'y'):
+                self._wps_running = True
+                self._wps_result = None
+                self._wps_thread = threading.Thread(target=self._wps_worker, daemon=True)
+                self._wps_thread.start()
+                ans = "WAIT"
             else:
                 ans = "WPS aborted"
 
-            ans += "\r\r\n: "
+            ans ="\r" + ans + "\r\n+? "
             ans += self.keyboard_mode
             return ans
 
@@ -685,7 +754,7 @@ class CLI():
                 cmd += c
 
         if cmd == 'WHOAMI':
-            ans = '<<<\r\r\nPITELEX-CLI - INTERNAL COMMAND LINE INTERFACE\r\r\nHELP or ? FOR HELP.\r\r\n'
+            ans = "<<<\r\nPITELEX-CLI - INTERNAL COMMAND LINE INTERFACE\r\nTERMINATE EACH COMMAND WITH 'LF'\r\nENTER 'HELP' FOR A LIST OF AVAILABLE COMMANDS.\r\n"
 
         elif cmd in ['KG', 'WRU']:
             ans = self.params.get('wru_id', 'NO')
@@ -711,31 +780,31 @@ class CLI():
             if devices:
                 for name, dev in devices.items():
                     if dev.get('enable'):
-                        ans += '\r\r\n{}: {}'.format(name, dev.get('type', 'UNKNOWN'))
+                        ans += '\r{}: {}\r\n'.format(name, dev.get('type', 'UNKNOWN'))
 
         elif cmd == 'EXIT':
-            return 'BYE\r\n'
+            return '\rBYE\r\n\n'
 
         elif cmd == 'IPX':
             ans = get_IP_external()
 
         elif cmd == 'CPU':
             ans = get_shell_result(
-                "top -bn1 | grep \"load average\" | awk '{printf \"CPU Load: %.2f percent\\n\", $(NF-2)}'"
+                "top -bn1 | grep \"load average\" | awk '{printf \"CPU Load: %.2f percent\", $(NF-2)}'"
             )
 
         elif cmd == 'MEM':
             ans = get_shell_result(
-                "free -m | awk 'NR==2{printf \"Mem: %s/%sMB %.2f percent\\n\", $3,$2,$3*100/$2 }'"
+                "free -m | awk 'NR==2{printf \"Mem: %s/%sMB %.2f percent\", $3,$2,$3*100/$2 }'"
             )
 
         elif cmd == 'DISK':
             ans = get_shell_result(
-                "df -h / | awk 'NR==2{gsub(\"%\",\" percent\",$5); printf \"Disk: %s/%s %s\\n\", $3,$2,$5}'"
+                "df -h / | awk 'NR==2{gsub(\"%\",\" percent\",$5); printf \"Disk: %s/%s %s\", $3,$2,$5}'"
             )
 
         elif cmd == 'UPTIME':
-            ans = get_shell_result("uptime -p")
+            ans = get_shell_result("uptime -p").replace("\n","")
 
         elif cmd == 'W':
             ans = get_shell_result("w -us")
@@ -747,52 +816,61 @@ class CLI():
 
         elif cmd == 'WPS':
             self._wps_wait_confirm = True
-            ans = "WPS button on router pressed? (j/y)"
-            ans += "\r\r\n-this may take up to 2 minutes...\r\r\n: "
+            ans = "WPS button on router pressed? (y/n)"
+            ans += "\r\n-this may take up to 2 minutes...\r\n+? "
             ans += self.keyboard_mode
             return ans
 
         elif cmd == 'REBOOT':
             self._reboot_wait_password = True
-            ans = "reboot system? (j/y)"
+            ans = "reboot system? (y/n)"
 
         elif cmd == 'SHUTDOWN':
             self._shutdown_wait_password = True
-            ans = "shutdown system? (j/y)"
+            ans = "shutdown system? (y/n)"
 
-        elif cmd == 'LUPD':
-            self._lupd_wait_password = True
-            ans = "start linux update? (j/y)"
+        elif cmd == 'RESTART':
+            self._restart_wait_password = True
+            ans = "restart pitelex.service? (y/n)"
+
+        elif cmd == 'RLNET':
+            ok = _sudo_schedule("", "sleep 2; systemctl restart NetworkManager")
+            if not ok:
+                ans = "network reload failed"
+            else:
+                ans = "network reload started. use IP command to check for success"
 
         elif cmd in ['HELP', '?']:
             ans = (
-                "\r\r\nAVAILABLE COMMANDS:\r\r\n"
-                "HELP, ?        - show this help\r\r\n"
-                "CPU            - show CPU load\r\r\n"
-                "DEV, DEVICES   - list enabled devices\r\r\n"
-                "DISK           - show root filesystem usage\r\r\n"
-                "IP             - list local interfaces and IPv4 addresses\r\r\n"
-                "IPX            - show external (WAN) IPv4 address\r\r\n"
-                "KG, WRU        - show WRU ID\r\r\n"
-                "LUPD           - linux system update (apt-get update/upgrade)\r\r\n"
-                "MEM            - show memory usage\r\r\n"
-                "PING           - ping 8.8.8.8, (4 packets)\r\r\n"
-                "PORT           - show i-Telex port (if configured)\r\r\n"
-                "UPTIME         - show system uptime\r\r\n"
-                "W              - show logged in users\r\r\n"
-                "WHOAMI         - identify this CLI\r\r\n"
-                "WLAN           - scan WLAN networks\r\r\n"
-                "WPS            - connect WLAN via WPS\r\r\n"
-                "REBOOT         - reboot system\r\r\n"
-                "SHUTDOWN       - shutdown system\r\r\n"
-                "EXIT           - exit CLI"
+                "\r\nAVAILABLE COMMANDS:\r\n"
+                "HELP           - show this help\r\n"
+                "EXIT           - exit CLI\r\n"
+                "---- pitelex ----\r\n"
+                "DEV, DEVICES   - list enabled devices\r\n"
+                "KG, WRU        - show WRU ID\r\n"
+                "PORT           - show i-Telex port (if configured)\r\n"
+                "WHOAMI         - identify this CLI\r\n"
+                "---- system info ----\r\n"
+                "CPU            - show CPU load\r\n"
+                "DISK           - show root filesystem usage\r\n"
+                "MEM            - show memory usage\r\n"
+                "UPTIME         - show system uptime\r\n"
+                "IP             - list local interfaces and IPv4 addresses\r\n"
+                "IPX            - show external (WAN) IPv4 address\r\n"
+                "PING           - ping 8.8.8.8, (4 packets)\r\n"
+                "W              - show logged in users\r\n"
+                "WLAN           - scan for available WLAN networks\r\n"
+                "---- system management ----\r\n"
+                "RLNET          - restart NetworkManager\r\n"
+                "WPS            - connect WLAN via WPS\r\n"
+                "REBOOT         - reboot system\r\n"
+                "RESTART        - restart pitelex.service\r\n"
+                "SHUTDOWN       - shutdown system\r\n"
             )
 
         if ans == '':
             ans = '?'
-        ans += "\r\r\n: "
+        ans = "\r" + ans    
+        ans += "\r\n+? "
         ans += self.keyboard_mode
         return ans
-
-
-       

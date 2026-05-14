@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Telex Device - Archive all printed messages
-and (if allowed and configured) send them by mail
 """
 __author__      = "Björn Schließmann"
-__revisor__      = "Wolfram Henkel"
-__programmer__  = "ChatGPT 5.1 thinking"
-__date__        = "24nov2025"
 __license__     = "GPL3"
-__version__     = "1.8.0"
+__updater__     = "WolfHenk"
+__programming_tool__ = "ChatGPT 5.1-thinking"
+__version__     = "1.0.5"
+
+""" UPDATED - WH - 2026-04-12"""
 
 import datetime
 import os
@@ -92,11 +92,11 @@ class TelexArchive(txBase.TelexBase):
         telex.py main loop writes all data passing through piTelex to us by
         this method.
         """
-        
-        # Do not react to Babelfish, Start message or local CLI/MCP output
-        # to avoid endless loops and archiving system messages.
-        if source in ('Baf', 'Set', 'Sta', 'CLI'):
-            return ''
+        # ATTENTION: DO NOT react to Baf or Ans.
+        # Baf would cause endless translation loops.
+        # Ans replays night-stored messages which Archive has already seen live.
+        if source in ('Baf', 'Ans'):
+            return
 
         if len(data) > 1:
             # this is a command

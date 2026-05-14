@@ -10,7 +10,13 @@ __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
 __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
-__version__     = "0.0.2"
+__version__     = "2.1.0"
+
+"""
+updated to use with answerbox 2026-04-12 WH
+whilst i have NO ch340TTY-telex, it is NOT tested
+please report error or success to wolfhenk@wolfhenk.de or telex 38718 wlfhnk d
+"""
 
 import serial
 import time
@@ -55,6 +61,10 @@ class TelexCH340TTY(txBase.TelexBase):
         self._is_enabled = False
         self._is_online = False
         self._last_out_waiting = 0
+
+        self._daytime = True
+        self._pending_mode_cmd = None
+        self._pending_local_at = False
 
         self._set_mode(params['mode'])
         if loopback is not None:
@@ -149,27 +159,34 @@ class TelexCH340TTY(txBase.TelexBase):
             bb = self._tty.read(1)
 
             if bb and (not self._use_squelch or time.monotonic() >= self._time_squelch):
-                if self._is_enabled or self._use_dedicated_line:
-                    if self._local_echo:
-                        self._tty.write(bb)
-                    
+                if self._daytime:
+                    if self._is_enabled or self._use_dedicated_line:
+                        if self._local_echo:
+                            self._tty.write(bb)
+
+                        a = self._mc.decodeBM2A(bb)
+
+                        if a:
+                            self._check_special_sequences(a)
+
+                    elif self._is_online and self._use_pulse_dial:
+                        b = bb[0]
+
+                        if b == 0:   # break or idle mode
+                            pass
+                        elif (b & 0x13) == 0x10:   # valid dial pulse - min 3 bits = 40ms, max 5 bits = 66ms
+                            self._counter_dial += 1
+                            self._time_last_dial = time.monotonic()
+
+                elif (self._is_enabled or self._use_dedicated_line) and not self._use_cts:
                     a = self._mc.decodeBM2A(bb)
 
                     if a:
                         self._check_special_sequences(a)
 
-                elif self._is_online and self._use_pulse_dial:
-                    b = bb[0]
-
-                    if b == 0:   # break or idle mode
-                        pass
-                    elif (b & 0x13) == 0x10:   # valid dial pulse - min 3 bits = 40ms, max 5 bits = 66ms
-                        self._counter_dial += 1
-                        self._time_last_dial = time.monotonic()
-
                 self._cts_counter = 0
 
-                if a:
+                if a and self._daytime:
                     self._rx_buffer.append(a)
                     #if self._local_echo:
                     #    self._tx_buffer.append(a)
@@ -182,8 +199,19 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         if len(a) > 1 and a[0] == '\x1b':
-            self._check_commands(a[1:])
-            return 
+            a = a[1:]
+            if a == 'DTM' or a == 'NTM':
+                self._pending_mode_cmd = a
+                return
+
+            if not self._daytime:
+                return
+
+            self._check_commands(a)
+            return
+
+        if not self._daytime:
+            return
 
         if a == '#':
             a = '@'   # ask teletype for hardware ID
@@ -195,6 +223,15 @@ class TelexCH340TTY(txBase.TelexBase):
     # =====
 
     def idle(self):
+        if self._pending_mode_cmd:
+            a = self._pending_mode_cmd
+            self._pending_mode_cmd = None
+            self._check_commands(a)
+            return
+
+        if not self._daytime:
+            return
+
         if (not self._use_squelch) or time.monotonic() >= max(self._time_squelch, self._time_tx_lock):
             if self._tx_buffer:
                 aa = []
@@ -222,7 +259,7 @@ class TelexCH340TTY(txBase.TelexBase):
     def idle20Hz(self):
         time_act = time.monotonic()
 
-        if self._use_pulse_dial and self._counter_dial and (time_act - self._time_last_dial) > 0.2:
+        if self._daytime and self._use_pulse_dial and self._counter_dial and (time_act - self._time_last_dial) > 0.2:
             if self._counter_dial >= 10:
                 self._counter_dial = 0
             a = str(self._counter_dial)
@@ -237,10 +274,15 @@ class TelexCH340TTY(txBase.TelexBase):
                 if self._cts_counter == 10:   # 0.5sec
                     self._cts_stable = cts
                     if not cts:   # rxd=Low
-                        self._rx_buffer.append('\x1bST')
+                        if self._daytime:
+                            self._rx_buffer.append('\x1bST')
                         pass
                     elif not self._is_enabled:   # rxd=High
-                        self._rx_buffer.append('\x1bAT')
+                        if self._daytime:
+                            self._rx_buffer.append('\x1bAT')
+                        elif not self._pending_local_at:
+                            self._pending_local_at = True
+                            self._rx_buffer.append('\x1bWUP')
                         pass
                     pass
             else:
@@ -249,6 +291,9 @@ class TelexCH340TTY(txBase.TelexBase):
     # -----
 
     def idle2Hz(self):
+        if not self._daytime:
+            return
+
         # send printer FIFO info
         out_waiting = self._tty.out_waiting
         if out_waiting != self._last_out_waiting:
@@ -297,7 +342,7 @@ class TelexCH340TTY(txBase.TelexBase):
         if not self._use_cts:
             if a == '<':
                 self._counter_LTRS += 1
-                if self._counter_LTRS == 5:
+                if self._counter_LTRS == 5 and self._daytime:
                     self._rx_buffer.append('\x1bST')
             else:
                 self._counter_LTRS = 0
@@ -305,7 +350,11 @@ class TelexCH340TTY(txBase.TelexBase):
             if a == '>':
                 self._counter_FIGS += 1
                 if self._counter_FIGS == 5:
-                    self._rx_buffer.append('\x1bAT')
+                    if self._daytime:
+                        self._rx_buffer.append('\x1bAT')
+                    elif not self._pending_local_at:
+                        self._pending_local_at = True
+                        self._rx_buffer.append('\x1bWUP')
             else:
                 self._counter_FIGS = 0
 
@@ -313,6 +362,23 @@ class TelexCH340TTY(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         enable = None
+
+        if a == 'DTM':
+            self._daytime = True
+            if self._pending_local_at:
+                self._pending_local_at = False
+                self._rx_buffer.append('\x1bAT')
+            return
+
+        elif a == 'NTM':
+            self._daytime = False
+            self._pending_local_at = False
+            self._tx_buffer = []
+            self._rx_buffer = []
+            return
+
+        if not self._daytime:
+            return
 
         if a in ('A',):
             # Confirm enable status for MCP

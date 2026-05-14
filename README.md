@@ -10,6 +10,10 @@ The goal is to connect a historic telex device (teletype) with **TW39** protocol
 
 Our ambition is also to support all telex features as AT/ST buttons and pulse dialing for handling the teletype like in the good old days.
 
+For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/TW39Call8.png" width="180px" align="right">
+
+
+
 ### Hardware
 
 <img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/USB.JPG" width="120px" align="right">
@@ -36,28 +40,8 @@ The software supports also a connection to another telex device in the **[i-Tele
 
 ### Documentation
 
-<img src="https://raw.githubusercontent.com/wiki/fablab-wue/piTelex/img/TW39Call8.png" width="180px" align="right">
-
-For building the hardware and implementing the software it was important to understand the protocols and timings. So, another objective was to pick up the pieces of information a bring it into an understandable form.
-
-**[For more information see the WIKI pages](https://github.com/fablab-wue/piTelex/wiki)**
+Comprehensive user documentation concerning installing, configuring and using piTelex can be found under https://github.com/fablab-wue/piTelex/wiki
 
 ### Issues, suggestions, questions?
 
 Feel free to share your thoughts at www.telexforum.de. Especially if you cannot get a solution here at github, telexforum is the right place for you! Besides aspects concerning piTelex, the whole world of teletypes, telex and i-telex  is addressed there. 
-
-<!--
-<hr>
-
-##### Project Status
-
-The software and hardware are in use by about 10 teletype stations and working fine.
-
-##### Last changes
-
-- 2020-09: Moved non-source-code folders to new project [piTelex.supplement](https://github.com/fablab-wue/piTelex.supplement)
-- 2020-09: Merged Björns rework of i-Telex protocol handling and ED1000 workflow
-- 2020-08: Merged Björns fork (https://github.com/b-schliessmann/piTelex) with TNS, ED1000 and i-Telex-connection rework
-- 2020-08: Added device module CLI for commands over teletype
-- 2020-07: Merged Dirks device module for Twitter (https://github.com/dirkenstein/piTelex)
--->

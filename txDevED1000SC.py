@@ -15,7 +15,14 @@ __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
 __copyright__   = "Copyright 2018, JK"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "2.1.0"
+
+"""
+updated to use with answerbox 2026-04-12 WH
+whilst i have NO ED1000-telex, it is NOT tested
+please report error or success to wolfhenk@wolfhenk.de or telex 38718 wlfhnk d
+"""
+
 
 from threading import Thread, Event
 import time
@@ -77,6 +84,10 @@ class TelexED1000SC(txBase.TelexBase):
         self._rx_buffer = []
         self._is_online = Event()
         self._ST_pressed = False
+
+        self._daytime = True
+        self._pending_mode_cmd = None
+        self._pending_local_at = False
         # State of rx thread, governs most of the module operation (see class
         # ST)
         self._rx_state = ST.OFFLINE
@@ -129,7 +140,17 @@ class TelexED1000SC(txBase.TelexBase):
     def write(self, a:str, source:str):
         l.debug("write from {!r}: {!r}".format(source, a))
         if len(a) != 1:
+            if a == '\x1bDTM' or a == '\x1bNTM':
+                self._pending_mode_cmd = a
+                return
+
+            if not self._daytime:
+                return
+
             self._check_commands(a)
+            return
+
+        if not self._daytime:
             return
 
         if a == '#':
@@ -140,7 +161,36 @@ class TelexED1000SC(txBase.TelexBase):
 
     # =====
 
+    def idle(self):
+        if self._pending_mode_cmd:
+            a = self._pending_mode_cmd
+            self._pending_mode_cmd = None
+            self._check_commands(a)
+
+    # =====
+
     def _check_commands(self, a:str):
+        if a == '\x1bDTM':
+            l.debug("received daytime command")
+            self._daytime = True
+            if self._pending_local_at:
+                self._pending_local_at = False
+                self._rx_buffer.append('\x1bAT')
+            return
+
+        if a == '\x1bNTM':
+            l.debug("received nighttime command")
+            self._daytime = False
+            self._pending_local_at = False
+            self._tx_buffer = []
+            self._rx_buffer = []
+            self._MCP_active = False
+            self._set_online(False)
+            return
+
+        if not self._daytime:
+            return
+
         if a == '\x1bA':
             l.debug("received online command")
             self._tx_buffer.append('§A')   # signaling type A - connection
@@ -419,7 +469,11 @@ class TelexED1000SC(txBase.TelexBase):
                 # ESC-AT only once.
                 if _bit_counter_1 == 20:
                     l.info("[rx] Detected AT press")
-                    self._rx_buffer.append('\x1bAT')
+                    if self._daytime:
+                        self._rx_buffer.append('\x1bAT')
+                    elif not self._pending_local_at:
+                        self._pending_local_at = True
+                        self._rx_buffer.append('\x1bWUP')
                     # Don't send printer start confirmation since AT was
                     # pressed.
             elif self._rx_state == ST.ONLINE_REQ: # ====================
@@ -698,6 +752,9 @@ class TelexED1000SC(txBase.TelexBase):
         return bit
 
     def idle2Hz(self):
+        if not self._daytime:
+            return
+
         # Send printer start (ESC-AA) and buffer feedback (ESC-~)
         #
         # ESC-AA is sent as soon as the teleprinter is running and MCP is in

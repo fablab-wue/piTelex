@@ -10,7 +10,7 @@ __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
 __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "0.0.1"
+__version__     = "2.1.0"
 
 #https://www.programcreek.com/python/example/93338/pigpio.pi
 
@@ -53,6 +53,10 @@ class TelexRPiTTY(txBase.TelexBase):
 
         self._tx_buffer = []
         self._rx_buffer = []
+
+        self._daytime = True
+        self._pending_mode_cmd = None
+        self._pending_local_at = False
 
         # get setting params
 
@@ -165,17 +169,38 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def write(self, a:str, source:str):
         ''' called by system to output next character or send control sequence '''
-        if a:
-            if a != '@':
-                if a == '#':   a = '@'   # WRU - ask teletype for hardware ID (KG)
+        if not a:
+            return
+
+        if len(a) > 1 and a[0] == '\x1b':
+            a = a[1:]
+            if a == 'DTM' or a == 'NTM':
+                self._pending_mode_cmd = a
+                return
+            a = '\x1b' + a
+
+        if not self._daytime:
+            return
+
+        if a != '@':
+            if a == '#':   a = '@'   # WRU - ask teletype for hardware ID (KG)
+            self._tx_buffer.append(a)
+            if self._double_WR and a == '\r':
                 self._tx_buffer.append(a)
-                if self._double_WR and a == '\r':
-                    self._tx_buffer.append(a)
 
     # =====
 
     def idle(self):
         ''' called by system as often as possible to do background stuff '''
+        if self._pending_mode_cmd:
+            a = self._pending_mode_cmd
+            self._pending_mode_cmd = None
+            self._check_commands(a)
+            return
+
+        if not self._daytime:
+            return
+
         if not self._tx_buffer \
             or (self._use_squelch and (time.monotonic() <= self._time_squelch)) \
             or self._is_writing_wave():
@@ -196,7 +221,6 @@ class TelexRPiTTY(txBase.TelexBase):
             a = self._tx_buffer.pop(0)
             if len(a) > 1 and a[0] == '\x1b':
                 self._check_commands(a[1:])
-
     # -----
 
     def idle20Hz(self):
@@ -208,14 +232,21 @@ class TelexRPiTTY(txBase.TelexBase):
                 if self._nZZ_observe_line and self._state in (S_SLEEPING,):
                     pass   # ignore line if sleeping/power_saving
                 elif self._state in (S_SLEEPING, S_OFFLINE):
-                    self._send_control_sequence('AT')
-                elif self._state == S_ACTIVE_INIT:
+                    if self._daytime:
+                        self._send_control_sequence('AT')
+                    elif not self._pending_local_at:
+                        self._pending_local_at = True
+                        self._send_control_sequence('WUP')
+                elif self._daytime and self._state == S_ACTIVE_INIT:
                     self._send_control_sequence('AA')
                     self._set_state(S_ACTIVE_READY)
             elif line is False:   # rxd=Low
                 self._send_control_sequence('¯¯¯\\___')
-                if self._state not in (S_SLEEPING, S_OFFLINE):
+                if self._daytime and self._state not in (S_SLEEPING, S_OFFLINE):
                     self._send_control_sequence('ST')
+
+        if not self._daytime:
+            return
 
         count, bb = pi.bb_serial_read(self._pin_rxd)
         #LOG('.', 5)
@@ -242,6 +273,9 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def idle2Hz(self):
         ''' called by system every 500ms to do background stuff '''
+        if not self._daytime:
+            return
+
         # send printer FIFO info
         waiting = int((self._time_EOT - time.monotonic()) / self._character_duration + 0.9)
         waiting += len(self._tx_buffer)   # estimation of left chars in buffer
@@ -270,6 +304,23 @@ class TelexRPiTTY(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         ''' check for control sequences and set new state '''
+        if a == 'DTM':
+            self._daytime = True
+            if self._pending_local_at:
+                self._pending_local_at = False
+                self._send_control_sequence('AT')
+            return
+
+        elif a == 'NTM':
+            self._daytime = False
+            self._pending_local_at = False
+            self._tx_buffer = []
+            self._rx_buffer = []
+            return
+
+        if not self._daytime:
+            return
+
         if a == 'ZZ':
             self._set_state(S_SLEEPING)
 

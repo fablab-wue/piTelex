@@ -1,0 +1,26 @@
+# Configuration examples for piTelex
+# 2026-04-12
+# This is only a partial example. This can be copied in the main configuration file "telex.json"
+#
+
+  ###########################################################################
+                "answerbox": {
+                    "type": "answerbox",
+                    "enable": false,
+                    "store_path": "answerbox/",
+                    "weekly_schedule": {
+                        "mon": { "active": [["08:00", "22:00"]] },
+                        "tue": { "active": [["08:00", "22:00"]] },
+                        "wed": { "active": [["08:00", "22:00"]] },
+                        "thu": { "active": [["08:00", "22:00"]] },
+                        "fri": { "active": [["08:00", "23:00"]] },
+                        "sat": { "active": [["09:00", "13:00"], ["18:30", "23:00"]] },
+                        "sun": { "active": [["09:00", "13:00"], ["18:30", "22:00"]] }
+                        },
+                    "urgent_words": ["=urgent=", "=eil=", "=blitz="],    # messages with one of these words will be printed even at night, 
+                                                                         # immediately after the message is complete sent.
+                                                                         # live chat at night-mode is not possible.
+                    "urgent_scan_chars": 100                             #urgent_word must be within the first xxx characters of the message
+                    },
+  ###########################################################################
+
