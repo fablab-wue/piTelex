@@ -35,6 +35,10 @@ normalize J/Y confirmations:
 2.3.9 2026-05-14 (ro)
 - For the sake of peace, reinstate the Hessian error message :-)
 - clarify system message after network restart
+
+2.3.10 2026-06-06 (ro)
+- Clarify BYE message: how to terminate CLI
+- Reorder and reformat HELP list
 """
 
 import logging
@@ -44,7 +48,8 @@ import threading
 
 if os.name == 'nt':
     def get_shell_result(cmd: str) -> str:
-        return "\r\n... CLI commands require linux os...\r\n"
+        #return "\r\n... CLI commands require linux os...\r\n"
+        return "\r\r\n...ach bass emal uff, mir gehn nur uff linux...\r\r\n"
 
 else:   # Linux and RPi
     import subprocess
@@ -783,7 +788,7 @@ class CLI():
                         ans += '\r{}: {}\r\n'.format(name, dev.get('type', 'UNKNOWN'))
 
         elif cmd == 'EXIT':
-            return '\rBYE\r\n\n'
+            return '\rBYE... TERMINATE CLI BY PRESSING (ST)\r\n\n'
 
         elif cmd == 'IPX':
             ans = get_IP_external()
@@ -844,13 +849,14 @@ class CLI():
             ans = (
                 "\r\nAVAILABLE COMMANDS:\r\n"
                 "HELP           - show this help\r\n"
+                "WHOAMI         - identify this CLI\r\n"
                 "EXIT           - exit CLI\r\n"
-                "---- pitelex ----\r\n"
+                "\r\n---- pitelex ----\r\n"
                 "DEV, DEVICES   - list enabled devices\r\n"
                 "KG, WRU        - show WRU ID\r\n"
                 "PORT           - show i-Telex port (if configured)\r\n"
-                "WHOAMI         - identify this CLI\r\n"
-                "---- system info ----\r\n"
+                "RESTART        - restart pitelex.service\r\n"
+                "\r\n---- system info ----\r\n"
                 "CPU            - show CPU load\r\n"
                 "DISK           - show root filesystem usage\r\n"
                 "MEM            - show memory usage\r\n"
@@ -860,11 +866,10 @@ class CLI():
                 "PING           - ping 8.8.8.8, (4 packets)\r\n"
                 "W              - show logged in users\r\n"
                 "WLAN           - scan for available WLAN networks\r\n"
-                "---- system management ----\r\n"
+                "\r\n---- system management ----\r\n"
                 "RLNET          - restart NetworkManager\r\n"
                 "WPS            - connect WLAN via WPS\r\n"
                 "REBOOT         - reboot system\r\n"
-                "RESTART        - restart pitelex.service\r\n"
                 "SHUTDOWN       - shutdown system\r\n"
             )
 
