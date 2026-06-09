@@ -13,8 +13,8 @@ __email2__      = "wolfhenk@wolfhenk.de"
 __email3__      = "rolf.obrecht@web.de"
 __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "2.3.8"
-__date__        = "2026-05-06"
+__version__     = "2.3.10"
+__date__        = "2026-06-06"
 
 """
 2.3.7 2026-05-05 (wh)
