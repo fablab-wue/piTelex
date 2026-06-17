@@ -6,7 +6,17 @@ __author__      = "Jochen Krapf"
 __email__       = "jk@nerd2nerd.org"
 __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "0.1.0"
+__version__     = "0.1.1"
+
+__revisor__     = "Rolf Obrecht" (ro)"
+__email2__      = "rolf.obrecht@web.de"
+__date__        = "2026-06-17"
+"""
+0.1.1 2026-06-17 (ro)
+- correct detection of terminating command in CLI (\rBYE\r\n)
+"""
+
+
 
 import time
 import os
@@ -273,9 +283,9 @@ class TelexMCP(txBase.TelexBase):
                 if a in ' \n+?':
                     ans = self.cli.command(self.cli_text)
                     self._rx_buffer.extend(list(ans))
-                    if ans == 'BYE\r\n':
+                    if ans == '\rBYE\r\n':
                         self.enable_cli(False)
-                        self._rx_buffer.append('\x1bZ')
+                        self._rx_buffer.append('\x1bST')
                     self.cli_text = ''
                 else:
                     self.cli_text += a
