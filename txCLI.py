@@ -39,6 +39,9 @@ normalize J/Y confirmations:
 2.3.10 2026-06-06 (ro)
 - Clarify BYE message: how to terminate CLI
 - Reorder and reformat HELP list
+
+2.3.11 2026-06-17 (ro)
+- reverted BYE message to 2.3.10: typo in answer prevented txDevMCP.py from correct ending of CLI
 """
 
 import logging
@@ -788,7 +791,7 @@ class CLI():
                         ans += '\r{}: {}\r\n'.format(name, dev.get('type', 'UNKNOWN'))
 
         elif cmd == 'EXIT':
-            return '\rBYE... TERMINATE CLI BY PRESSING (ST)\r\n\n'
+            return '\rBYE\r\n'
 
         elif cmd == 'IPX':
             ans = get_IP_external()
