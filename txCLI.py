@@ -13,8 +13,8 @@ __email2__      = "wolfhenk@wolfhenk.de"
 __email3__      = "rolf.obrecht@web.de"
 __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
-__version__     = "2.3.10"
-__date__        = "2026-06-06"
+__version__     = "2.3.11"
+__date__        = "2026-06-22"
 
 """
 2.3.7 2026-05-05 (wh)
@@ -42,6 +42,9 @@ normalize J/Y confirmations:
 
 2.3.11 2026-06-17 (ro)
 - reverted BYE message to 2.3.10: typo in answer prevented txDevMCP.py from correct ending of CLI
+
+2.3.12 2026-06-22 (ro)
+- Added cmds "OSVER", "PITXREL"
 """
 
 import logging
@@ -801,6 +804,23 @@ class CLI():
                 "top -bn1 | grep \"load average\" | awk '{printf \"CPU Load: %.2f percent\", $(NF-2)}'"
             )
 
+        elif cmd == 'OSVER':
+            ans = get_shell_result(
+                "grep PRETTY /etc/os-release" 
+            )
+            ans += get_shell_result(
+                "grep FULL /etc/os-release" 
+            )
+            ans += get_shell_result(
+                "uname -rs" 
+            )
+
+        elif cmd == 'PITXREL':
+            ans = get_shell_result(
+                "cat release_date"
+            )    
+
+
         elif cmd == 'MEM':
             ans = get_shell_result(
                 "free -m | awk 'NR==2{printf \"Mem: %s/%sMB %.2f percent\", $3,$2,$3*100/$2 }'"
@@ -855,11 +875,13 @@ class CLI():
                 "WHOAMI         - identify this CLI\r\n"
                 "EXIT           - exit CLI\r\n"
                 "\r\n---- pitelex ----\r\n"
+                "PITXREL        - show pitelex release" 
                 "DEV, DEVICES   - list enabled devices\r\n"
                 "KG, WRU        - show WRU ID\r\n"
                 "PORT           - show i-Telex port (if configured)\r\n"
                 "RESTART        - restart pitelex.service\r\n"
                 "\r\n---- system info ----\r\n"
+                "OSVER          - show OS Version"
                 "CPU            - show CPU load\r\n"
                 "DISK           - show root filesystem usage\r\n"
                 "MEM            - show memory usage\r\n"
