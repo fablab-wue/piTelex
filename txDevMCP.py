@@ -8,7 +8,7 @@ __copyright__   = "Copyright 2020, JK"
 __license__     = "GPL3"
 __version__     = "0.1.1"
 
-__revisor__     = "Rolf Obrecht" (ro)"
+__revisor__     = "Rolf Obrecht (ro)"
 __email2__      = "rolf.obrecht@web.de"
 __date__        = "2026-06-17"
 """
