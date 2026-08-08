@@ -41,10 +41,14 @@ normalize J/Y confirmations:
 - Reorder and reformat HELP list
 
 2.3.11 2026-06-17 (ro)
-- reverted BYE message to 2.3.10: typo in answer prevented txDevMCP.py from correct ending of CLI
+- reverted BYE message: typo in answer prevented txDevMCP.py from correct ending of CLI
 
 2.3.12 2026-06-22 (ro)
 - Added cmds "OSVER", "PITXREL"
+
+2.3.13 2026-08-08 (ro)
+- corrected some typos
+- optimized help texts, esp. with "WPS"
 """
 
 import logging
@@ -747,7 +751,7 @@ class CLI():
                 self._wps_result = None
                 self._wps_thread = threading.Thread(target=self._wps_worker, daemon=True)
                 self._wps_thread.start()
-                ans = "WAIT"
+                ans = "WAIT..."
             else:
                 ans = "WPS aborted"
 
@@ -765,7 +769,7 @@ class CLI():
                 cmd += c
 
         if cmd == 'WHOAMI':
-            ans = "<<<\r\nPITELEX-CLI - INTERNAL COMMAND LINE INTERFACE\r\nTERMINATE EACH COMMAND WITH 'LF'\r\nENTER 'HELP' FOR A LIST OF AVAILABLE COMMANDS.\r\n"
+            ans = "<<<\r\nPITELEX CMDLINE INTERFACE\r\nTERMINATE EACH COMMAND WITH 'LF'\r\nENTER 'HELP' FOR A LIST OF COMMANDS.\r\n"
 
         elif cmd in ['KG', 'WRU']:
             ans = self.params.get('wru_id', 'NO')
@@ -844,8 +848,11 @@ class CLI():
 
         elif cmd == 'WPS':
             self._wps_wait_confirm = True
-            ans = "WPS button on router pressed? (y/n)"
-            ans += "\r\n-this may take up to 2 minutes...\r\n+? "
+            ans = "\r\n- The router must provide WPS."
+            ans += "\r\n- Connecting WLAN via WPS may take up to 2 minutes."
+            ans += "\r\n- Then use 'WLAN' or 'IP' to check the results.\r\n"
+            ans += "\r\nTo continue, start WPS on the router or enter 'n' to abort."
+            ans += "\r\nWPS on router started? (y/n) +?"
             ans += self.keyboard_mode
             return ans
 
@@ -870,18 +877,19 @@ class CLI():
 
         elif cmd in ['HELP', '?']:
             ans = (
-                "\r\nAVAILABLE COMMANDS:\r\n"
+                "\r\nCOMMANDS:\r\n"
+                "\r\n---- GENERAL ----\r\n"
                 "HELP           - show this help\r\n"
                 "WHOAMI         - identify this CLI\r\n"
                 "EXIT           - exit CLI\r\n"
                 "\r\n---- pitelex ----\r\n"
-                "PITXREL        - show pitelex release" 
+                "PITXREL        - show pitelex release\r\n" 
                 "DEV, DEVICES   - list enabled devices\r\n"
                 "KG, WRU        - show WRU ID\r\n"
                 "PORT           - show i-Telex port (if configured)\r\n"
                 "RESTART        - restart pitelex.service\r\n"
                 "\r\n---- system info ----\r\n"
-                "OSVER          - show OS Version"
+                "OSVER          - show OS Version\r\n"
                 "CPU            - show CPU load\r\n"
                 "DISK           - show root filesystem usage\r\n"
                 "MEM            - show memory usage\r\n"

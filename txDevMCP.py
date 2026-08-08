@@ -285,7 +285,7 @@ class TelexMCP(txBase.TelexBase):
                     self._rx_buffer.extend(list(ans))
                     if ans == '\rBYE\r\n':
                         self.enable_cli(False)
-                        self._rx_buffer.append('\x1bST')
+                        self._rx_buffer.append('\x1bZ')
                     self.cli_text = ''
                 else:
                     self.cli_text += a
