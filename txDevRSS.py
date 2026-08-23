@@ -113,9 +113,9 @@ class TelexRSS(txBase.TelexBase):
             params.get("urls", [])
         )
         # marker to indicate a forced line break when no blank is found
-        self._forced_marker = params.get('forced_break_marker', '[-]')
+        self._forced_marker = params.get('forced_break_marker', None)
         self._format=params.get("format","{title}\n")
-        self._message_separator = params.get('message_separator', '\r\n==== RSS MESSAGE ====\r\n')
+        self._message_separator = params.get('message_separator', None)
         self._running = True
         self._thread = threading.Thread(target=self.thread_function, name='RSS_Handler')
         self._thread.start()
@@ -186,7 +186,9 @@ class TelexRSS(txBase.TelexBase):
                             if lastblank <= 0:
                                 # append forced-break marker so the reader sees the cut
                                 part = bmc[:linewidth].lstrip().rstrip()
-                                out_lines.append(part + self._forced_marker)
+                                if self._forced_marke :
+                                    part += self._forced_marker
+                                out_lines.append(part)
                                 bmc = bmc[linewidth:].lstrip()
                             else:
                                 # Output up to the found blank
