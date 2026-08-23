@@ -112,7 +112,10 @@ class TelexRSS(txBase.TelexBase):
         self._rss_client = RSS_Client(
             params.get("urls", [])
         )
+        # marker to indicate a forced line break when no blank is found
+        self._forced_marker = params.get('forced_break_marker', None)
         self._format=params.get("format","{title}\n")
+        self._message_separator = params.get('message_separator', None)
         self._running = True
         self._thread = threading.Thread(target=self.thread_function, name='RSS_Handler')
         self._thread.start()
@@ -144,7 +147,7 @@ class TelexRSS(txBase.TelexBase):
         """
         formatstr = self._format
         elements = []
-        for match in re.findall("\{.*?\}",self._format):
+        for match in re.findall(r"\{.*?\}",self._format):
             formatstr = formatstr.replace(match,"{}")
             matchstr=str(match)
             matchstr=matchstr.replace("{","")
@@ -156,7 +159,7 @@ class TelexRSS(txBase.TelexBase):
                     data = self._rss_client.q.get()
                     values = []
                     for e in elements :
-                        if e == "published" :
+                        if e == "pubDate" :
                             pubTime = data.get("published_parsed",None)
                             if pubTime :
                                 values.append(time.strftime("%d-%m-%y %H:%M:%S",pubTime))
@@ -174,23 +177,37 @@ class TelexRSS(txBase.TelexBase):
                         bmc = txCode.BaudotMurrayCode.ascii_to_tty_text(line.strip())
                         bmc = bmc.replace("@","(at)")
                         while len(bmc) > linewidth:
-                            # Das Blank kurz vor Zeilenende finden
+                            # Find blank before line end
                             lastblank = nextblank = 0
                             while (nextblank < linewidth) and (nextblank >= 0):
                                 lastblank = nextblank
-                                nextblank = bmc.find(" ",lastblank +1)
-                            # Zeile bis zum gefundenen Blank ausgeben
-                            out_lines.append(bmc[:lastblank].lstrip())
-
-                            # Puffer entsprechend verkürzen
-                            bmc = bmc[lastblank:].lstrip()
-                        # rest ausgeben
+                                nextblank = bmc.find(" ", lastblank + 1)
+                            # If no blank was found (lastblank == 0) we must force a split
+                            if lastblank <= 0:
+                                # append forced-break marker so the reader sees the cut
+                                part = bmc[:linewidth].lstrip().rstrip()
+                                if self._forced_marke :
+                                    part += self._forced_marker
+                                out_lines.append(part)
+                                bmc = bmc[linewidth:].lstrip()
+                            else:
+                                # Output up to the found blank
+                                out_lines.append(bmc[:lastblank].lstrip())
+                                # Shrink buffer accordingly
+                                bmc = bmc[lastblank:].lstrip()
+                        # rest output
                         out_lines.append(bmc)
                     
                     # Put the parts together
                     txt_out = "\r\n".join(out_lines)
 
-                    # message is now fomatted, turn on printer
+                    # message is now formatted
+                    # insert message separator if configured
+                    if self._message_separator:
+                        for ch in self._message_separator:
+                            self._rx_buffer.append(ch)
+
+                    # turn on printer
                     self._rx_buffer.append('\x1bA')
                     # insert formatted text into stream
                     for a in txt_out:
