@@ -319,13 +319,13 @@ def process_data():
                     l.debug("writing {!r} to {!r}".format(c, out_device))
                     try:
                         ret = out_device.write(c, in_device.id)
+                        if ret:
+                            l.debug("writing returned {!r}".format(ret))
+                            break   # stop writing to other devices (discard data)
                     except (KeyboardInterrupt, SystemExit):
                         raise
                     except Exception as e:
                         l.warning("Uncaught Exception in {}.write({!r}), {!r}: {!r}".format(out_device.id, c, in_device.id, e))
-                    if ret:
-                        l.debug("writing returned {!r}".format(ret))
-                        break   # stop writing to other devices (discard data)
 
     return new_data
 

@@ -177,7 +177,7 @@ class BaudotMurrayCode:
     # -----
 
     def reset(self):
-        self._ModeA2BM = None   # 0=LTRS 1=FIGS
+        self._mode = None   # 0=LTRS 1=FIGS
 
     # -----
 

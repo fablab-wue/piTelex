@@ -44,6 +44,7 @@ class TelexTerminal(txBase.TelexBase):
         self._show_capital = self.params.get('show_capital', False)
         self._show_BuZi = self.params.get('show_BuZi', False)
         self._show_ctrl = self.params.get('show_ctrl', True)
+        self._show_ctrl_inverse = self.params.get('show_ctrl_inverse', False)
         self._show_info = self.params.get('show_info', False)
         self._send_only = self.params.get('send_only', False)
         self._auto_CRLF = self.params.get('auto_CRLF', 0)
@@ -82,6 +83,7 @@ class TelexTerminal(txBase.TelexBase):
             self._write_hextext(text)
         
         self.char_count = 0
+        self._escape = ''
 
     # -----
 
@@ -100,8 +102,27 @@ class TelexTerminal(txBase.TelexBase):
             return
         if self._tty.in_waiting:
             b = self._tty.read(1)
-            if b[0] < 0x20:
-                pass
+            if b == b'\x1b' or b == '\x1b':
+                self._escape = b'\x1b'
+                if self._show_ctrl:
+                    if self._show_ctrl_inverse:
+                        self._write_raw(b'\x1B[7m')
+                    self._write_raw(b'{')
+                return ''
+
+            if self._escape:
+                if b == b'\r' or b == b'\n':
+                    self._escape = self._escape.upper()
+                    self._rx_buffer.append(self._escape.decode('ASCII', errors='ignore'))
+                    if self._show_ctrl:
+                        self._write_raw(b'}')
+                        if self._show_ctrl_inverse:
+                            self._write_raw(b'\x1B[0m')
+                    self._escape = ''
+                else:
+                    if self._show_ctrl:
+                        self._write_raw(b)
+                    self._escape += b
             else:
                 if self._local_echo:
                     self._write_raw(b)
@@ -128,7 +149,10 @@ class TelexTerminal(txBase.TelexBase):
 
             self._check_commands(a)
             if (self._show_ctrl and a[0].isalpha()) or (self._show_info and not a[0].isalpha()):
-                a = '{' + a + '}'
+                if self._show_ctrl_inverse:
+                    a = '\x1B[7m' + '<' + a + '>' + '\x1B[0m'   # show inverse text
+                else:
+                    a = '<' + a + '>'
             else:
                 return
 
@@ -213,7 +237,8 @@ class TelexTerminal(txBase.TelexBase):
 
     def _check_commands(self, a:str):
         if a == 'A':
-            pass
+            # Confirm enable status for MCP
+            self._rx_buffer.append('\x1bAA')
 
         if a == 'Z':
             pass

@@ -11,8 +11,7 @@
             "program": "${workspaceFolder}/telex.py",
             "console": "integratedTerminal",
             "args": [
-                "-k 234200 FABLABWUE D",
-                "-L test.log"
+                "-c ${userHome}/telex.json"
             ]
         },
         {
@@ -23,11 +22,18 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Python: Attach",
+            "name": "Python: Attach Remote",
             "type": "python",
             "request": "attach",
             "port": 5678,
-            "host": "localhost"
+            "host": "pitelex",
+            "justMyCode": true,
+            "pathMappings": [
+              {
+                "localRoot": "${workspaceFolder}",
+                "remoteRoot": "/home/pi/piTelex"
+              }
+            ]
         },
         {
             "name": "Python: Module",

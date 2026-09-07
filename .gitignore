@@ -117,3 +117,5 @@ archive/
 # Visual Studio
 .vs
 *.pyproj.user
+
+.DS_Store
